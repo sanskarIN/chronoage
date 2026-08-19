@@ -268,7 +268,7 @@ function calendarDifference(
     anchor = addYearsClamped(start, years, leapDayPolicy);
   }
 
-  let months = (end.year - anchor.year) * 12 + (end.month - anchor.month);
+  let months = Math.min(11, (end.year - anchor.year) * 12 + (end.month - anchor.month));
   let monthAnchor = addMonthsClamped(anchor, months);
   if (compareLocalDate(monthAnchor, end) > 0) {
     months -= 1;
