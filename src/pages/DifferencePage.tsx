@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ageDifference, compareLocalDate, formatDateInput, parseDateInput } from '../domain/dateMath';
+import { getUserSafeErrorMessage } from '../errors';
 import type { AppSettings } from '../types/models';
 import { todayInputValue } from '../utils/dateDefaults';
 import { DurationVisualization } from '../components/DurationVisualization';
@@ -30,7 +31,7 @@ export function DifferencePage({ settings }: { settings: AppSettings }): React.J
         result: null,
         startLabel: '',
         endLabel: '',
-        error: error instanceof Error ? error.message : en.difference.unable,
+        error: getUserSafeErrorMessage(error, en.difference.unable),
       };
     }
   }, [first, second, settings.leapDayPolicy]);
