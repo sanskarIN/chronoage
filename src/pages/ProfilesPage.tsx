@@ -54,6 +54,7 @@ export function ProfilesPage({
       saveProfile({ name, birthDate });
       setProfiles(loadProfiles());
       setName('');
+      setRecentlyDeleted(null);
       setError('');
       setMessage(en.profiles.saved);
     } catch (caught) {
