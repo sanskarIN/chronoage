@@ -50,11 +50,15 @@
 - [x] Automated first-party JavaScript/CSS gzip budgets in local checks, CI, and release tags
 - [x] Manual GitHub Actions CI dispatch option for release-candidate verification
 - [x] Release tag/package-version identity gate
+- [x] Pin permanent CI/release Node runtime to `.nvmrc` and enforce runtime-pin consistency
 - [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
 - [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
 - [ ] Execute the complete clean-checkout install/check/E2E release gate in a network-enabled environment and record the passing run
+- [ ] Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings
 
-The remaining unchecked release-hardening items depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfile, but these items remain unchecked until the resulting dependency graph and quality runs are actually verified.
+The three dependency-installation items above depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfile, but these items remain unchecked until the resulting dependency graph and quality runs are actually verified.
+
+`main` branch protection is a separate GitHub repository-setting task. The GitHub API reported the branch as unprotected on 2026-08-19; see [docs/github.md](docs/github.md) for the intended ruleset. Do not mark that item complete until GitHub reports an effective protection/ruleset configuration.
 
 ## Desktop delivery decision
 
