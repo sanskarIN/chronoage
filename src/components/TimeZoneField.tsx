@@ -5,8 +5,8 @@ import { Field } from './Field';
 interface TimeZoneFieldProps {
   label: string;
   value: string;
-  hint?: string;
-  error?: string;
+  hint?: string | undefined;
+  error?: string | undefined;
   onChange: ChangeEventHandler<HTMLInputElement>;
 }
 
