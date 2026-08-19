@@ -4,19 +4,23 @@
 
 1. Pull the latest `main` from a clean checkout.
 2. Verify Node version matches `package.json`.
-3. Run `npm install`.
-4. Run `npm run check`, including project-metadata and static-security verification.
+3. Run `npm install` while the repository has no generated lockfile; after a reviewed `package-lock.json` is committed, use `npm ci` instead.
+4. Run `npm run check`, including project-metadata, static-security, tests, production build, and bundle-budget verification.
 5. Run `npx playwright install --with-deps chromium` and `npm run test:e2e`.
 6. Confirm the Playwright suite includes maintained axe WCAG audits, offline PWA coverage, and release-candidate screenshot scenarios.
 7. Run `npm audit --omit=dev --audit-level=high` and review CodeQL/Dependabot results.
 8. Verify PWA install, offline reload, update-check, and waiting-update application behavior manually.
 9. Verify keyboard navigation, focus visibility, dark/light/system theme, reduced motion, 200% zoom, and print output.
-10. Review the generated calculator, difference, milestone, and mobile screenshots for layout regressions.
-11. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, and `what_changed.md`.
-12. Run `npm run metadata:check` again after changing version metadata.
-13. Verify the intended tag before pushing it with `npm run release:check -- vX.Y.Z`.
-14. Confirm no real credentials, private data, debug exports, local profile backups, or browser-storage dumps are staged.
-15. Create and push a signed/annotated version tag where available.
+10. Trigger one controlled render failure in a development/release-candidate environment and verify the local crash-recovery screen appears without uploading diagnostics or exposing private values.
+11. Review the generated calculator, difference, milestone, and mobile screenshots for layout regressions.
+12. Confirm `npm run performance:check` reports JavaScript and CSS gzip totals within the release budgets.
+13. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, and `what_changed.md`.
+14. Run `npm run metadata:check` again after changing version metadata.
+15. Verify the intended tag before pushing it with `npm run release:check -- vX.Y.Z`.
+16. Confirm no real credentials, private data, debug exports, local profile backups, or browser-storage dumps are staged.
+17. Create and push a signed/annotated version tag where available.
+
+The CI workflow also supports manual dispatch, so maintainers can run both quality and browser jobs explicitly on the release candidate before tagging.
 
 ## GitHub release workflow
 
@@ -24,7 +28,7 @@ Pushing a tag matching `v*.*.*` runs `.github/workflows/release.yml`. The tag wo
 
 1. installs dependencies;
 2. verifies the tag exactly matches `v${package.json version}`;
-3. runs the complete non-E2E quality suite, including metadata and static-security invariants;
+3. runs the complete non-E2E quality suite, including metadata, static-security, unit/component tests, production build, and bundle-budget invariants;
 4. audits high-severity runtime dependency vulnerabilities;
 5. installs Chromium;
 6. reruns browser journeys, offline PWA coverage, and automated accessibility verification on the tagged commit;
@@ -32,6 +36,19 @@ Pushing a tag matching `v*.*.*` runs `.github/workflows/release.yml`. The tag wo
 8. creates the GitHub Release from the verified tag.
 
 A release therefore cannot be produced from a mismatched version tag and does not rely only on an earlier branch build for browser/accessibility confidence.
+
+## Reproducible dependency installation
+
+A generated npm lockfile must come from a real successful npm resolution in a clean, network-enabled environment. Do not hand-author or infer `package-lock.json` metadata.
+
+Once a reviewed lockfile exists:
+
+1. commit it atomically;
+2. change CI and release workflows from `npm install` to `npm ci`;
+3. verify a clean checkout installs using only the lockfile contract;
+4. keep Dependabot/dependency-review automation aligned with the committed lockfile.
+
+Until that migration is complete, dependency versions remain pinned in `package.json`, but clean-install reproducibility is not considered fully proven.
 
 ## Versioning
 
