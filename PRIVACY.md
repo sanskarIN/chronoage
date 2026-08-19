@@ -17,6 +17,14 @@ Time-aware preferences include the default timezone and the choice of earlier/la
 
 ChronoAge includes no account system, analytics SDK, advertising SDK, telemetry endpoint, cloud synchronization, or crash-reporting backend.
 
+## Page URLs and navigation
+
+ChronoAge supports direct links and browser Back/Forward navigation with public page-only fragments such as `#/profiles`, `#/settings`, and `#/milestones`.
+
+The routing layer does **not** intentionally serialize calculator dates, times, timezone values, profile names, saved birth dates, search text, backup contents, or calculation results into the URL. A saved-profile handoff to the Age calculator therefore changes the route only to `#/calculate`; the selected birth date remains local React state.
+
+Unknown app-style `#/...` fragments are treated as invalid application routes and fall back to the Age page. Ordinary document anchors such as `#main-content` are not treated as application routes so the accessibility skip link continues to work normally.
+
 ## When browser storage is unavailable
 
 Browsers can block local storage because of privacy settings, security policy, quota limits, or environment restrictions.
@@ -36,11 +44,17 @@ The logger is designed to minimize accidental exposure by redacting likely sensi
 
 If a React render fails, ChronoAge shows a local recovery screen. That screen does not submit a crash report and does not upload profile data or calculator inputs.
 
-## Import validation
+## Import validation and replacement
 
 Imported profile backups are treated as untrusted local files. ChronoAge validates the backup schema, size/profile-count limits, profile ids and uniqueness, names, birth dates, and timestamps before committing the imported collection. Malformed JSON is converted to a stable user-safe import error rather than exposing parser internals. A failed import does not intentionally replace the current saved profile collection.
 
+When profiles are already saved, choosing an import file does not immediately overwrite them. ChronoAge asks for explicit confirmation before the imported collection is read and committed as a replacement. Cancelling that confirmation keeps the existing collection unchanged.
+
 If browser storage itself contains a mixture of valid and corrupted profile records, invalid records are ignored while valid independently verifiable records can still be loaded. Diagnostic logs contain aggregate corruption counts rather than profile names or birth dates.
+
+## Profile search and sorting
+
+Profile search, sorting, and progressive rendering are presentation operations over the local in-memory collection. Name/birth-date sorting works on a copied array and does not rewrite the persisted profile order merely because the user changes the visible sort option.
 
 ## Sharing and printing
 
