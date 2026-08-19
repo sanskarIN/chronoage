@@ -1,6 +1,20 @@
-import { expect, test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
 
-test.describe('accessibility smoke checks', () => {
+async function expectNoWcagViolations(page: Page): Promise<void> {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+
+  expect(
+    results.violations,
+    results.violations
+      .map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} nodes)`)
+      .join('\n'),
+  ).toEqual([]);
+}
+
+test.describe('accessibility checks', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
@@ -62,5 +76,15 @@ test.describe('accessibility smoke checks', () => {
       images.filter((image) => !image.hasAttribute('alt')).map((image) => image.outerHTML),
     );
     expect(missingAlt).toEqual([]);
+  });
+
+  test('passes automated WCAG audits on every core page', async ({ page }) => {
+    await expectNoWcagViolations(page);
+
+    for (const name of ['Difference', 'Interval', 'Milestones', 'Profiles', 'Settings', 'About']) {
+      await page.getByRole('button', { name }).click();
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expectNoWcagViolations(page);
+    }
   });
 });
