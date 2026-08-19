@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProfilesPage } from '../src/pages/ProfilesPage';
@@ -6,6 +6,10 @@ import { clearProfiles, loadProfiles, saveProfile } from '../src/storage/profile
 
 describe('ProfilesPage', () => {
   beforeEach(() => clearProfiles());
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('filters saved profiles by name without deleting hidden entries', async () => {
     saveProfile({ name: 'Alex', birthDate: '2000-01-01' });
@@ -34,5 +38,22 @@ describe('ProfilesPage', () => {
 
     expect(screen.getByText('After')).toBeInTheDocument();
     expect(loadProfiles()[0]?.name).toBe('After');
+  });
+
+  it('shows a safe error when deleting cannot write browser storage', async () => {
+    saveProfile({ name: 'Blocked', birthDate: '2000-01-01' });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    render(<ProfilesPage />);
+
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota reached', 'QuotaExceededError');
+    });
+    await user.click(screen.getByRole('button', { name: 'Delete Blocked' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Browser storage is unavailable. Changes could not be saved.',
+    );
+    expect(screen.getByText('Blocked')).toBeInTheDocument();
   });
 });
