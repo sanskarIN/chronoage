@@ -16,13 +16,10 @@ import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useSettings } from './hooks/useSettings';
 import { en } from './i18n/en';
 import { sharedText } from './i18n/shared';
-
-type Page = keyof typeof en.nav;
-
-const pageOrder: Page[] = ['calculate', 'difference', 'interval', 'milestones', 'profiles', 'settings', 'about'];
+import { hashForPage, PAGE_IDS, pageFromHash, type PageId } from './utils/navigation';
 
 export default function App(): React.JSX.Element {
-  const [page, setPage] = useState<Page>('calculate');
+  const [page, setPage] = useState<PageId>(() => pageFromHash(window.location.hash) ?? 'calculate');
   const [profileBirthDate, setProfileBirthDate] = useState<string | undefined>();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -33,15 +30,23 @@ export default function App(): React.JSX.Element {
   const blockingModalOpen = !settings.onboardingComplete || searchOpen;
   const contentBlocked = blockingModalOpen || mobileNavOpen;
 
+  const commitPage = useCallback((next: PageId): void => {
+    const nextHash = hashForPage(next);
+    if (window.location.hash !== nextHash) {
+      window.history.pushState(null, '', nextHash);
+    }
+    setPage(next);
+  }, []);
+
   const useProfile = useCallback(
     (profile: SavedProfile): void => {
       setProfileBirthDate(profile.birthDate);
-      setPage('calculate');
+      commitPage('calculate');
       setMobileNavOpen(false);
       setSearchOpen(false);
       window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
     },
-    [settings.reducedMotion],
+    [commitPage, settings.reducedMotion],
   );
 
   const pageContent = useMemo(() => {
@@ -77,6 +82,23 @@ export default function App(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
+    const syncPageFromLocation = (): void => {
+      const next = pageFromHash(window.location.hash);
+      if (!next) return;
+      setPage(next);
+      setMobileNavOpen(false);
+      setSearchOpen(false);
+    };
+
+    window.addEventListener('popstate', syncPageFromLocation);
+    window.addEventListener('hashchange', syncPageFromLocation);
+    return () => {
+      window.removeEventListener('popstate', syncPageFromLocation);
+      window.removeEventListener('hashchange', syncPageFromLocation);
+    };
+  }, []);
+
+  useEffect(() => {
     if (searchOpen) {
       firstCommandRef.current?.focus();
       return;
@@ -106,8 +128,8 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [closeSearch, openSearch, searchOpen, settings.onboardingComplete]);
 
-  const navigate = (next: Page): void => {
-    setPage(next);
+  const navigate = (next: PageId): void => {
+    commitPage(next);
     setMobileNavOpen(false);
     closeSearch();
     window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
@@ -155,7 +177,7 @@ export default function App(): React.JSX.Element {
           </button>
         </div>
         <nav aria-label={sharedText.primaryNavigation}>
-          {pageOrder.map((item) => (
+          {PAGE_IDS.map((item) => (
             <button
               key={item}
               type="button"
@@ -227,7 +249,7 @@ export default function App(): React.JSX.Element {
               <strong>{en.app.quickActions}</strong>
               <kbd>Esc</kbd>
             </div>
-            {pageOrder.map((item, index) => (
+            {PAGE_IDS.map((item, index) => (
               <button
                 ref={index === 0 ? firstCommandRef : undefined}
                 type="button"
