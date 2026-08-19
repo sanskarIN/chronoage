@@ -47,6 +47,16 @@ test.describe('accessibility checks', () => {
     await expect(page.getByRole('heading', { name: 'Date interval' })).toBeVisible();
   });
 
+  test('moves focus after mobile drawer navigation has closed', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await navigateTo(page, 'Interval');
+
+    await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+    await expect(page.locator('.content-shell')).not.toHaveAttribute('inert', '');
+    await expect(page.locator('#main-content')).toBeFocused();
+    await expect(page).toHaveTitle('Interval · ChronoAge');
+  });
+
   test('interactive controls expose accessible names', async ({ page }) => {
     const unnamedButtons = await page.locator('button').evaluateAll((buttons) =>
       buttons
