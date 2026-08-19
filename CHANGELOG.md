@@ -6,10 +6,14 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ### Added
 - Search/filter controls for saved profiles by name or birth date.
+- Deterministic saved-profile sorting by recent storage order, name, or birth date without mutating persisted ordering.
 - Accessible profile editing UI backed by the existing validated `updateProfile` storage operation.
 - One-step undo for the most recently deleted saved profile while preserving its original identity, timestamps, and list position.
+- Confirmation before importing a backup over an existing saved-profile collection.
 - Direct saved-profile handoff to the Age calculator with birth-date prefill.
 - Progressive saved-profile rendering in batches of 20 for bounded DOM work at the 100-profile cap.
+- Privacy-safe page hash deep links and browser Back/Forward navigation using public page identifiers only.
+- Route-change document-title updates and main-content focus transfer for SPA navigation.
 - PWA install availability detection and a browser-native install action in Settings.
 - Explicit service-worker update checks with a controlled waiting-worker apply flow.
 - Custom milestone calculations for positive whole-number day counts or birthday years.
@@ -19,7 +23,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Free-form browser-supported IANA timezone inputs with common suggestions and inline validation.
 - DST overlap/gap regression coverage using IANA timezone data.
 - Maintained `@axe-core/playwright` WCAG A/AA audits across every core page plus dark-theme and mobile states.
-- Product-specific Playwright accessibility smoke checks for landmarks, accessible names, labels, and image alternatives.
+- Product-specific Playwright accessibility smoke checks for landmarks, accessible names, labels, route focus/title behavior, and image alternatives.
 - Responsive E2E navigation helpers so the same browser journeys operate through desktop and mobile navigation.
 - Keyboard focus entry, containment, and restoration for the quick-actions modal.
 - First-run onboarding focus containment and background-shortcut isolation.
@@ -43,10 +47,15 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support until a native-only requirement exists.
 - Internationalization contributor documentation and expanded externalized English UI strings.
 - PWA manifest identity metadata including stable id/scope/language/direction/category fields.
-- Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, optional clock precision units, profile recovery, ordered undo, progressive profile rendering, and profile-to-calculator navigation.
+- Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, optional clock precision units, profile recovery, ordered undo, sorting, progressive profile rendering, import replacement safety, page routing/history, and profile-to-calculator navigation.
 
 ### Changed
 - Permanent CI and release verification now run the exact project Node.js `22.13.0` pin instead of the moving Node 22 channel.
+- Core page navigation uses a dependency-free hash/history layer so direct links are stable without introducing a router dependency or server rewrite requirement.
+- Page route fragments contain only public page ids; calculator dates, times, profile names, saved birth dates, and other calculation values remain transient/local state rather than URL state.
+- Invalid app-style `#/...` route fragments fall back to the canonical Age route while ordinary accessibility anchors such as `#main-content` remain untouched.
+- Saved-profile name sorting uses an explicit English collator for deterministic behavior across current English-only CI/browser environments.
+- Shared select helper text is programmatically associated with the control through `aria-describedby` while preserving any caller-supplied description ids.
 - Service-worker activation waits for explicit update application instead of always taking control immediately after installation.
 - Offline document fallback is restricted to navigation requests; failed scripts/styles/images no longer receive cached HTML.
 - Service-worker cache generation advanced to invalidate the previous app-shell cache after offline-behavior changes.
@@ -80,11 +89,14 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - README, architecture, date-semantics, testing, development, accessibility, performance, privacy, security, release, PWA, internationalization, and troubleshooting documentation were expanded to match implemented behavior.
 
 ### Fixed
+- Backup import can no longer silently replace an existing local profile collection after file selection; the user must confirm replacement first.
 - Profile edit actions use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
 - Profile delete/clear actions no longer allow storage exceptions to escape from click handlers.
 - Missing-profile deletion can no longer appear to succeed while leaving storage unchanged.
 - Undoing a deletion no longer moves an older profile to the top of the saved-profile list.
 - Stale delete undo is no longer offered after a successful replacement profile is created.
+- Route navigation no longer leaves keyboard focus behind on the navigation trigger after changing the main SPA view.
+- Route navigation now gives each core page a descriptive document title instead of leaving one static app title.
 - Milestone screenshot assertions no longer fail Playwright strict mode when built-in and custom 10,000-day labels are both visible.
 - Mobile Playwright projects no longer attempt to click hidden desktop-sidebar navigation controls.
 - Missing non-navigation resources no longer receive `index.html` as an offline fallback.
