@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProfilesPage } from '../src/pages/ProfilesPage';
 import { clearProfiles, loadProfiles, saveProfile } from '../src/storage/profiles';
@@ -78,6 +78,27 @@ describe('ProfilesPage', () => {
 
     expect(screen.getAllByRole('article')).toHaveLength(20);
     expect(screen.getByRole('button', { name: 'Show more profiles' })).toBeInTheDocument();
+  });
+
+  it('requires confirmation before an import replaces existing profiles', async () => {
+    const existing = saveProfile({ name: 'Keep me', birthDate: '2000-01-01' });
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<ProfilesPage />);
+
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+    const backup = new File(
+      [JSON.stringify({ schemaVersion: 1, profiles: [] })],
+      'chronoage-backup.json',
+      { type: 'application/json' },
+    );
+    fireEvent.change(fileInput!, { target: { files: [backup] } });
+
+    expect(confirm).toHaveBeenCalledWith(
+      'Importing this backup will replace all currently saved profiles on this device. Continue?',
+    );
+    expect(await screen.findByText('Import cancelled. Existing profiles were kept unchanged.')).toBeInTheDocument();
+    expect(loadProfiles()).toEqual([existing]);
   });
 
   it('passes a saved profile to the calculator action', async () => {
