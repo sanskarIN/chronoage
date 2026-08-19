@@ -191,6 +191,24 @@ describe('local profiles', () => {
     expect(() => importProfiles(backup)).toThrow('Backup contains an invalid profile.');
   });
 
+  it('rejects imported profiles updated before they were created', () => {
+    const backup = JSON.stringify({
+      schemaVersion: 1,
+      profiles: [
+        {
+          id: 'profile-id',
+          name: 'Example',
+          birthDate: '2000-01-01',
+          createdAt: '2026-08-19T01:00:00.000Z',
+          updatedAt: '2026-08-19T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(() => importProfiles(backup)).toThrow('Backup contains an invalid profile.');
+    expect(loadProfiles()).toEqual([]);
+  });
+
   it('loads an empty profile list when browser storage cannot be read', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
