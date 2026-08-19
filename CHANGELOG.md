@@ -20,6 +20,11 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Explicit earlier/later selection for repeated daylight-saving fall-back local times.
 - DST overlap/gap regression coverage using IANA timezone data.
 - Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support.
+- Central runtime project metadata for version, repository/funding links, contacts, license, and visible credit.
+- Internationalization contributor documentation and expanded externalized English UI strings.
+- Focused calculator and difference-page component regression tests for advanced date behavior.
+- Advanced-tool accessibility checks and screenshot captures for difference/milestone screens.
+- Storage regression tests for corrupted local profiles, duplicate backup ids, malformed timestamps, and malformed boolean preferences.
 
 ### Changed
 - Service-worker activation now waits for explicit update application instead of always taking control immediately after installation.
@@ -27,6 +32,15 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Timezone-aware calculations apply one persisted DST-overlap policy consistently to birth, reference, and anchor instants.
 - Calendar year/month arithmetic rejects results outside the supported civil-year range.
 - README and date-semantics documentation now describe advanced milestone, visualization, and DST behavior.
+- Major application-shell, calculator, result, comparison, interval, milestone, profile, settings, onboarding, and About copy now comes from the English locale module.
+- About/Settings/application shell reuse centralized project metadata rather than repeating runtime version/contact/link values.
+- Saved-profile loading validates content rather than trusting structurally shaped local JSON.
+- Settings loading accepts only real booleans for boolean preferences instead of JavaScript truthiness coercion.
+- Accessibility E2E setup now deterministically seeds first-run settings instead of depending on onboarding text matching.
+
+### Fixed
+- Profile edit actions now use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
+- Milestone screenshot assertions no longer fail Playwright strict mode when built-in and custom 10,000-day labels are both visible.
 
 ### Planned
 - Additional locale packs after translation review.
