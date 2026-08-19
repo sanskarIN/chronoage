@@ -28,6 +28,17 @@ test.describe('accessibility checks', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   });
 
+  test('skip navigation focuses main content without replacing the current route', async ({ page }) => {
+    await navigateTo(page, 'Interval');
+    const routeBeforeSkip = page.url();
+
+    await page.getByRole('link', { name: 'Skip to main content' }).click();
+
+    await expect(page.locator('#main-content')).toBeFocused();
+    expect(page.url()).toBe(routeBeforeSkip);
+    await expect(page).toHaveURL(/#\/interval$/);
+  });
+
   test('moves focus into main content and updates the document title after page navigation', async ({ page }) => {
     await navigateTo(page, 'Interval');
 
