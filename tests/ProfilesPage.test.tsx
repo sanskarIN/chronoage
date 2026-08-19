@@ -56,4 +56,22 @@ describe('ProfilesPage', () => {
     );
     expect(screen.getByText('Blocked')).toBeInTheDocument();
   });
+
+  it('shows a safe error when clearing cannot remove browser storage', async () => {
+    saveProfile({ name: 'Blocked', birthDate: '2000-01-01' });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<ProfilesPage />);
+
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'SecurityError');
+    });
+    await user.click(screen.getByRole('button', { name: 'Delete all profiles' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Browser storage is unavailable. Changes could not be saved.',
+    );
+    expect(screen.getByText('Blocked')).toBeInTheDocument();
+  });
 });
