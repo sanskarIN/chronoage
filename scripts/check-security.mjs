@@ -25,6 +25,8 @@ const forbiddenSourcePatterns = [
   ['Function constructor', /\bnew\s+Function\s*\(/],
   ['document.write()', /\bdocument\.write\s*\(/],
 ];
+const directConsolePattern = /\bconsole\.(?:log|info|warn|error|debug)\s*\(/;
+const directConsoleAllowlist = new Set(['src/utils/logger.ts']);
 
 async function scan(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -35,13 +37,18 @@ async function scan(directory) {
     }
     if (!entry.isFile() || !['.ts', '.tsx', '.js', '.mjs'].includes(extname(entry.name))) continue;
     const content = await readFile(path, 'utf8');
+    const repositoryPath = relative(root, path).replaceAll('\\', '/');
     for (const [label, pattern] of forbiddenSourcePatterns) {
-      if (pattern.test(content)) failures.push(`${relative(root, path)}: contains forbidden ${label}`);
+      if (pattern.test(content)) failures.push(`${repositoryPath}: contains forbidden ${label}`);
+    }
+    if (directConsolePattern.test(content) && !directConsoleAllowlist.has(repositoryPath)) {
+      failures.push(`${repositoryPath}: bypasses the privacy-safe structured logger with direct console output`);
     }
   }
 }
 
 await scan(join(root, 'src'));
+await scan(join(root, 'public'));
 
 if (failures.length > 0) {
   console.error('Static security invariant check failed:');
