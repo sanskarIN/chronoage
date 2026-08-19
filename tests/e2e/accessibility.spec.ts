@@ -2,12 +2,13 @@ import { expect, test } from '@playwright/test';
 
 test.describe('accessibility smoke checks', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'chronoage.settings.v1',
+        JSON.stringify({ onboardingComplete: true, theme: 'system' }),
+      );
+    });
     await page.goto('/');
-    const onboarding = page.getByRole('dialog', { name: /welcome|onboarding/i });
-    if (await onboarding.isVisible().catch(() => false)) {
-      const finish = page.getByRole('button', { name: /get started|finish|continue/i }).last();
-      if (await finish.isVisible().catch(() => false)) await finish.click();
-    }
   });
 
   test('provides landmarks, a skip link, and one main heading', async ({ page }) => {
@@ -42,6 +43,18 @@ test.describe('accessibility smoke checks', () => {
         .map((input) => input.outerHTML),
     );
     expect(unlabeledInputs).toEqual([]);
+  });
+
+  test('advanced date tools retain accessible controls and visualization names', async ({ page }) => {
+    await page.getByRole('button', { name: 'Difference' }).click();
+    await expect(page.getByLabel('First date')).toBeVisible();
+    await expect(page.getByLabel('Second date')).toBeVisible();
+    await expect(page.getByRole('img', { name: /years, .* months, and .* days between/ })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Milestones' }).click();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByLabel('Milestone unit')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Build your own milestone' })).toBeVisible();
   });
 
   test('content images provide alternative text', async ({ page }) => {
