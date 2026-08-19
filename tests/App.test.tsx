@@ -59,4 +59,14 @@ describe('App', () => {
     await user.keyboard('{Control>}k{/Control}');
     expect(screen.queryByRole('dialog', { name: 'Quick actions' })).not.toBeInTheDocument();
   });
+
+  it('does not open background quick actions while onboarding is active', async () => {
+    const user = userEvent.setup();
+    localStorage.clear();
+    render(<App />);
+
+    expect(screen.getByRole('dialog', { name: /time is personal/i })).toBeInTheDocument();
+    await user.keyboard('{Control>}k{/Control}');
+    expect(screen.queryByRole('dialog', { name: 'Quick actions' })).not.toBeInTheDocument();
+  });
 });
