@@ -24,6 +24,23 @@ describe('ProfilesPage', () => {
     expect(loadProfiles()).toHaveLength(2);
   });
 
+  it('reveals large profile collections in bounded batches', async () => {
+    for (let index = 0; index < 21; index += 1) {
+      saveProfile({ name: `Profile ${index}`, birthDate: '2000-01-01' });
+    }
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+
+    expect(screen.getAllByRole('article')).toHaveLength(20);
+    expect(screen.getByText('Rendered 20 of 21 matching profiles.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show more profiles' }));
+
+    expect(screen.getAllByRole('article')).toHaveLength(21);
+    expect(screen.queryByRole('button', { name: 'Show more profiles' })).not.toBeInTheDocument();
+  });
+
   it('edits a saved profile through the UI', async () => {
     saveProfile({ name: 'Before', birthDate: '2000-01-01' });
     const user = userEvent.setup();
