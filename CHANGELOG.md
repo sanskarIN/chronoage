@@ -7,45 +7,63 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 ### Added
 - Search/filter controls for saved profiles by name or birth date.
 - Accessible profile editing UI backed by the existing validated `updateProfile` storage operation.
-- Regression tests covering profile updates and missing-profile errors.
 - PWA install availability detection and a browser-native install action in Settings.
 - Explicit service-worker update checks with a controlled waiting-worker apply flow.
-- Playwright accessibility smoke checks for landmarks, accessible names, form labels, and image alternative text.
-- Desktop and mobile release-candidate screenshot capture in the Playwright suite.
-- CI upload of generated release-candidate screenshots.
-- PWA lifecycle documentation.
 - Custom milestone calculations for positive whole-number day counts or birthday years.
 - Accessible custom milestone builder UI with leap-day-policy support.
-- Calendar-duration visualization for the age-difference tool.
+- Calendar-duration visualization for the age-difference tool with an exact screen-reader summary.
 - Explicit earlier/later selection for repeated daylight-saving fall-back local times.
 - DST overlap/gap regression coverage using IANA timezone data.
-- Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support.
+- Maintained `@axe-core/playwright` WCAG A/AA audits across every core page plus dark-theme and mobile states.
+- Product-specific Playwright accessibility smoke checks for landmarks, accessible names, labels, and image alternatives.
+- Responsive E2E navigation helpers so the same browser journeys operate through desktop and mobile navigation.
+- Desktop and mobile release-candidate screenshot capture for the calculator, difference visualization, and custom milestone builder.
+- Offline PWA browser coverage that verifies controlled reload and navigation-only document fallback.
 - Central runtime project metadata for version, repository/funding links, contacts, license, and visible credit.
+- Project metadata consistency checker integrated with the quality suite and CI.
+- Static browser-security invariant checker integrated with the quality suite and CI.
+- Release-tag identity checker requiring `vMAJOR.MINOR.PATCH` to match `package.json` exactly.
+- Restrictive browser Content Security Policy and `no-referrer` metadata in the application document.
+- Production security-header deployment guidance.
+- GitHub repository operations guidance for branch protection, labels, milestones, Discussions, releases, and secret handling.
+- Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support until a native-only requirement exists.
 - Internationalization contributor documentation and expanded externalized English UI strings.
-- Focused calculator and difference-page component regression tests for advanced date behavior.
-- Advanced-tool accessibility checks and screenshot captures for difference/milestone screens.
-- Storage regression tests for corrupted local profiles, duplicate backup ids, malformed timestamps, and malformed boolean preferences.
+- PWA manifest identity metadata including stable id/scope/language/direction/category fields.
+- Focused unit/component regression tests for DST policy, custom milestones, duration visualization, profile validation, storage corruption, UTF-8 backup limits, and malformed settings.
 
 ### Changed
-- Service-worker activation now waits for explicit update application instead of always taking control immediately after installation.
-- Profile data controls now describe editing as part of the local-only workflow.
+- Service-worker activation waits for explicit update application instead of always taking control immediately after installation.
+- Offline document fallback is restricted to navigation requests; failed scripts/styles/images no longer receive cached HTML.
+- Service-worker cache generation advanced to invalidate the previous app-shell cache after offline-behavior changes.
+- Profile data controls describe editing as part of the local-only workflow.
+- Profile backup selection rejects files over 1 MB before reading them, and storage independently validates the UTF-8 byte size before parsing.
+- Saved-profile loading validates ids, uniqueness, timestamps, names, and calendar dates instead of trusting structurally shaped local JSON.
+- Settings loading accepts only real booleans for boolean preferences instead of JavaScript truthiness coercion.
+- Profile names reject unsupported control characters after whitespace normalization.
 - Timezone-aware calculations apply one persisted DST-overlap policy consistently to birth, reference, and anchor instants.
 - Calendar year/month arithmetic rejects results outside the supported civil-year range.
-- README and date-semantics documentation now describe advanced milestone, visualization, and DST behavior.
 - Major application-shell, calculator, result, comparison, interval, milestone, profile, settings, onboarding, and About copy now comes from the English locale module.
-- About/Settings/application shell reuse centralized project metadata rather than repeating runtime version/contact/link values.
-- Saved-profile loading validates content rather than trusting structurally shaped local JSON.
-- Settings loading accepts only real booleans for boolean preferences instead of JavaScript truthiness coercion.
-- Accessibility E2E setup now deterministically seeds first-run settings instead of depending on onboarding text matching.
+- About, Settings, and the application shell reuse centralized project metadata rather than repeating runtime version/contact/link values.
+- Playwright application, accessibility, and screenshot journeys now navigate correctly in both desktop and mobile projects.
+- Accessibility E2E setup deterministically seeds first-run settings instead of depending on onboarding text matching.
+- Release tags rerun non-E2E quality checks, runtime dependency audit, Chromium journeys, offline PWA tests, and automated accessibility audits before publishing an artifact.
+- Release tags must match the embedded package/runtime version before a GitHub Release can be created.
+- Direct TypeScript tooling is pinned to TypeScript 6.0.3 to remain inside the supported typescript-eslint compatibility range instead of using the unsupported TypeScript 7 line.
+- Package metadata now includes repository, homepage, bugs, and funding fields.
+- README, architecture, date-semantics, testing, development, accessibility, performance, privacy, security, release, PWA, and troubleshooting documentation were expanded to match implemented behavior.
 
 ### Fixed
-- Profile edit actions now use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
+- Profile edit actions use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
 - Milestone screenshot assertions no longer fail Playwright strict mode when built-in and custom 10,000-day labels are both visible.
+- Mobile Playwright projects no longer attempt to click hidden desktop-sidebar navigation controls.
+- Missing non-navigation resources no longer receive `index.html` as an offline fallback.
+- Backup limits are measured in UTF-8 bytes rather than JavaScript character count.
+- Malformed stored strings such as `"true"` no longer enable boolean accessibility/onboarding preferences.
+- Application and manifest theme metadata use the same primary design token.
 
 ### Planned
-- Additional locale packs after translation review.
-- A maintained full accessibility-engine audit in CI.
-- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, and security surface.
+- Additional locale packs after complete human translation review.
+- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, permission, and security surface.
 
 ## [1.0.0] - 2026-08-19
 
