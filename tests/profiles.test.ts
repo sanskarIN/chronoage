@@ -4,6 +4,7 @@ import {
   exportProfiles,
   importProfiles,
   loadProfiles,
+  MAX_BACKUP_FILE_BYTES,
   saveProfile,
   updateProfile,
 } from '../src/storage/profiles';
@@ -49,6 +50,12 @@ describe('local profiles', () => {
   it('rejects invalid backup data', () => {
     expect(() => importProfiles('{"schemaVersion":9,"profiles":[]}')).toThrow(
       'Unsupported backup format',
+    );
+  });
+
+  it('rejects backups larger than the configured preflight limit', () => {
+    expect(() => importProfiles('x'.repeat(MAX_BACKUP_FILE_BYTES + 1))).toThrow(
+      'Backup file is too large.',
     );
   });
 
