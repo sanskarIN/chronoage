@@ -10,9 +10,11 @@ Example: January 31 plus one calendar month becomes the last valid day of Februa
 
 ## Time-of-day precision
 
-When time-of-day is disabled, dates are treated as civil dates and the displayed hours/minutes are zero.
+When time-of-day is disabled, dates are treated as civil dates. The exact-age card shows years/months/days only; elapsed totals remain available separately.
 
-When enabled, the selected IANA timezone maps each civil date/time to a real instant. If the reference clock time is earlier than the birth clock time, ChronoAge borrows a calendar day before decomposing the remaining hours/minutes.
+When enabled, the entered IANA timezone maps each civil date/time to a real instant and the exact-age card also shows hours/minutes. If the reference clock time is earlier than the birth clock time, ChronoAge borrows a calendar day before decomposing the remaining hours/minutes.
+
+Timezone fields are free-form inputs with common suggestions rather than a closed preset list. Any IANA identifier supported by the browser's current `Intl` timezone database may be used, such as `Pacific/Auckland`. Unsupported identifiers are rejected inline and are not persisted as the default timezone.
 
 ## DST gaps
 
