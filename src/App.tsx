@@ -99,9 +99,15 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     const syncPageFromLocation = (): void => {
-      const next = pageFromHash(window.location.hash);
-      if (!next) return;
-      setPage(next);
+      const currentHash = window.location.hash;
+      const next = pageFromHash(currentHash);
+      if (!next) {
+        if (!currentHash.startsWith('#/')) return;
+        window.history.replaceState(null, '', hashForPage('calculate'));
+        setPage('calculate');
+      } else {
+        setPage(next);
+      }
       setMobileNavOpen(false);
       setSearchOpen(false);
       previousFocusRef.current = null;
