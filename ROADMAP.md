@@ -25,9 +25,9 @@
 
 ## v1.2 — Advanced date tooling
 
-- [ ] Optional custom milestone builder
-- [ ] Calendar-duration comparison visualization
-- [ ] More explicit DST ambiguity choice for fall-back hours
+- [x] Optional custom milestone builder
+- [x] Calendar-duration comparison visualization
+- [x] Explicit DST ambiguity choice for repeated fall-back hours
 
 ## v2.0 — Optional desktop packaging
 
