@@ -86,6 +86,25 @@ describe('ProfilesPage', () => {
     expect(screen.getByText('Deleted profile restored.')).toHaveAttribute('role', 'status');
   });
 
+  it('expires stale delete undo after a new profile is saved', async () => {
+    saveProfile({ name: 'Old profile', birthDate: '2000-01-01' });
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+    await user.click(screen.getByRole('button', { name: 'Delete Old profile' }));
+    expect(screen.getByRole('button', { name: 'Undo delete' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Name'), 'Replacement');
+    const birthDate = screen.getByLabelText('Birth date');
+    await user.clear(birthDate);
+    await user.type(birthDate, '2002-03-04');
+    await user.click(screen.getByRole('button', { name: 'Save profile' }));
+
+    expect(screen.queryByRole('button', { name: 'Undo delete' })).not.toBeInTheDocument();
+    expect(loadProfiles()).toHaveLength(1);
+    expect(loadProfiles()[0]?.name).toBe('Replacement');
+  });
+
   it('shows a safe error when deleting cannot write browser storage', async () => {
     saveProfile({ name: 'Blocked', birthDate: '2000-01-01' });
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
