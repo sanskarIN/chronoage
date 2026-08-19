@@ -38,15 +38,23 @@ export default function App(): React.JSX.Element {
     setPage(next);
   }, []);
 
+  const focusMainContent = useCallback((): void => {
+    window.requestAnimationFrame(() => {
+      document.getElementById('main-content')?.focus();
+    });
+  }, []);
+
   const useProfile = useCallback(
     (profile: SavedProfile): void => {
       setProfileBirthDate(profile.birthDate);
+      previousFocusRef.current = null;
       commitPage('calculate');
       setMobileNavOpen(false);
       setSearchOpen(false);
       window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+      focusMainContent();
     },
-    [commitPage, settings.reducedMotion],
+    [commitPage, focusMainContent, settings.reducedMotion],
   );
 
   const pageContent = useMemo(() => {
@@ -82,12 +90,18 @@ export default function App(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
+    document.title = `${en.nav[page]} · ${project.name}`;
+  }, [page]);
+
+  useEffect(() => {
     const syncPageFromLocation = (): void => {
       const next = pageFromHash(window.location.hash);
       if (!next) return;
       setPage(next);
       setMobileNavOpen(false);
       setSearchOpen(false);
+      previousFocusRef.current = null;
+      focusMainContent();
     };
 
     window.addEventListener('popstate', syncPageFromLocation);
@@ -96,7 +110,7 @@ export default function App(): React.JSX.Element {
       window.removeEventListener('popstate', syncPageFromLocation);
       window.removeEventListener('hashchange', syncPageFromLocation);
     };
-  }, []);
+  }, [focusMainContent]);
 
   useEffect(() => {
     if (searchOpen) {
@@ -129,10 +143,12 @@ export default function App(): React.JSX.Element {
   }, [closeSearch, openSearch, searchOpen, settings.onboardingComplete]);
 
   const navigate = (next: PageId): void => {
+    previousFocusRef.current = null;
     commitPage(next);
     setMobileNavOpen(false);
     closeSearch();
     window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+    focusMainContent();
   };
 
   const trapCommandFocus = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
