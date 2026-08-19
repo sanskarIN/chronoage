@@ -2,8 +2,8 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: string | undefined;
+  error?: string | undefined;
 }
 
 export function Field({ label, hint, error, id, ...props }: FieldProps): React.JSX.Element {
@@ -29,7 +29,7 @@ export function Field({ label, hint, error, id, ...props }: FieldProps): React.J
 
 interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
-  hint?: string;
+  hint?: string | undefined;
   children: ReactNode;
 }
 
