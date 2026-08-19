@@ -25,11 +25,22 @@ ChronoAge is a static client-side PWA. It has no built-in server, authentication
 The application:
 
 - does not use `dangerouslySetInnerHTML`,
-- validates imported profile data and applies a size/profile count limit,
+- validates imported profile data before persistence,
+- limits backup input size and profile count,
+- rejects duplicate imported profile ids and malformed profile timestamps,
+- validates and normalizes profile names and calendar dates at the storage boundary,
+- ignores independently corrupted local profile entries rather than trusting their shape,
+- does not coerce malformed JSON strings into enabled boolean settings,
 - redacts likely PII/secret keys from structured logging,
+- logs only aggregate counts when reporting ignored local profile corruption,
 - limits the service worker cache to same-origin GET requests,
+- requires explicit user action before applying a waiting service-worker update,
 - commits no credentials and provides only placeholder `.env.example` values,
 - runs dependency review/CodeQL/security checks in GitHub Actions.
+
+## Native desktop boundary
+
+ChronoAge currently uses PWA installation for Windows, macOS, and Linux rather than shipping an unsigned native wrapper. Any future native wrapper must receive a separate permissions, signing, updater, and CI-secret review before release. See `docs/adr/0006-pwa-first-desktop-delivery.md`.
 
 ## Disclosure
 
