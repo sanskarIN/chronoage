@@ -3,7 +3,7 @@
 ## Release checklist
 
 1. Pull the latest `main` from a clean checkout.
-2. Verify Node version matches `package.json`.
+2. Verify Node.js is `22.13.0`, matching `.nvmrc` and the pinned CI/release runtime, and satisfies `package.json`.
 3. Run `npm install` while the repository has no generated lockfile; after a reviewed `package-lock.json` is committed, use `npm ci` instead.
 4. Run `npm run check`, including project-metadata, static-security, tests, production build, and bundle-budget verification.
 5. Run `npx playwright install --with-deps chromium` and `npm run test:e2e`.
@@ -26,16 +26,17 @@ The CI workflow also supports manual dispatch, so maintainers can run both quali
 
 Pushing a tag matching `v*.*.*` runs `.github/workflows/release.yml`. The tag workflow:
 
-1. installs dependencies;
-2. verifies the tag exactly matches `v${package.json version}`;
-3. runs the complete non-E2E quality suite, including metadata, static-security, unit/component tests, production build, and bundle-budget invariants;
-4. audits high-severity runtime dependency vulnerabilities;
-5. installs Chromium;
-6. reruns browser journeys, offline PWA coverage, and automated accessibility verification on the tagged commit;
-7. archives the verified `dist/` web build;
-8. creates the GitHub Release from the verified tag.
+1. runs under the same pinned Node.js `22.13.0` runtime used by permanent CI;
+2. installs dependencies;
+3. verifies the tag exactly matches `v${package.json version}`;
+4. runs the complete non-E2E quality suite, including metadata, static-security, unit/component tests, production build, and bundle-budget invariants;
+5. audits high-severity runtime dependency vulnerabilities;
+6. installs Chromium;
+7. reruns browser journeys, offline PWA coverage, and automated accessibility verification on the tagged commit;
+8. archives the verified `dist/` web build and generates a SHA-256 checksum;
+9. creates the GitHub Release from the verified tag only after the verification job succeeds.
 
-A release therefore cannot be produced from a mismatched version tag and does not rely only on an earlier branch build for browser/accessibility confidence.
+A release therefore cannot be produced from a mismatched version tag and does not rely only on an earlier branch build for browser/accessibility confidence. Pinning the Node runtime also prevents a moving Node 22 patch/minor selection from silently changing between otherwise identical release attempts.
 
 ## Reproducible dependency installation
 
