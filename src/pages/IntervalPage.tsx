@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { intervalDays, parseDateInput, weekdayName } from '../domain/dateMath';
+import { getUserSafeErrorMessage } from '../errors';
 import { todayInputValue } from '../utils/dateDefaults';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
@@ -25,7 +26,7 @@ export function IntervalPage(): React.JSX.Element {
         days: null,
         startWeekday: '',
         endWeekday: '',
-        error: error instanceof Error ? error.message : en.interval.unable,
+        error: getUserSafeErrorMessage(error, en.interval.unable),
       };
     }
   }, [end, inclusive, start]);
