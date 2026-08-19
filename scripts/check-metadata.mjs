@@ -9,10 +9,20 @@ function readProjectString(key) {
   return match[1];
 }
 
+const projectName = readProjectString('name');
+const projectVersion = readProjectString('version');
+const projectLicense = readProjectString('license');
+const repositoryUrl = readProjectString('repositoryUrl');
+const fundingUrl = readProjectString('fundingUrl');
+
 const checks = [
-  ['name', packageJson.name, readProjectString('name').toLowerCase()],
-  ['version', packageJson.version, readProjectString('version')],
-  ['license', packageJson.license, readProjectString('license')],
+  ['name', packageJson.name, projectName.toLowerCase()],
+  ['version', packageJson.version, projectVersion],
+  ['license', packageJson.license, projectLicense],
+  ['repository', packageJson.repository?.url, `git+${repositoryUrl}.git`],
+  ['homepage', packageJson.homepage, `${repositoryUrl}#readme`],
+  ['bugs', packageJson.bugs?.url, `${repositoryUrl}/issues`],
+  ['funding', packageJson.funding, fundingUrl],
 ];
 
 const failures = checks
