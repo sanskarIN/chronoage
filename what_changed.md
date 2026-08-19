@@ -2,201 +2,243 @@
 
 ## Current milestone
 
-ChronoAge is in **v1.1 polish + release hardening** on top of the existing `1.0.0` production-PWA baseline.
+ChronoAge remains in **v1.1 polish + release hardening** on top of the existing `1.0.0` production-PWA baseline.
 
-The feature roadmap is now substantially complete. The primary remaining release blocker is reproducible dependency installation: the repository still needs a real registry-resolved `package-lock.json`, followed by `npm ci` migration and a recorded clean-checkout full quality/E2E pass. Additional locale packs remain intentionally gated on human translation review, and a native desktop wrapper remains intentionally deferred by ADR until a concrete native-only requirement exists.
+The implemented feature roadmap is substantially complete. Remaining release-hardening work is now explicit and evidence-gated:
 
-## Repository state reviewed
+1. generate and review a real registry-resolved `package-lock.json`;
+2. migrate permanent CI/release installs to `npm ci` only after that lockfile is verified;
+3. record a passing clean-checkout quality + E2E release gate;
+4. enable and verify the documented `main` branch protection/ruleset in GitHub repository settings.
+
+Additional locale packs remain intentionally gated on human translation review. A native desktop wrapper remains intentionally deferred by ADR until a concrete native-only requirement exists.
+
+## Repository state verified in this continuation
 
 - Repository: `https://github.com/sanskarIN/chronoage`
 - Default branch: `main`
 - Package version: `1.0.0`
 - Source model: public/open source under MIT
 - Primary stack: React + TypeScript + Vite + native PWA/service worker
-- Commit identity requested by the project: `sanskarin@outlook.in`
-- Existing core functionality was preserved rather than rewritten.
+- Exact project Node runtime pin: `22.13.0`
+- Package engine floor: `>=22.13.0`
+- Commit identity observed on GitHub: `Sanskar <sanskarin@outlook.in>`
 - No open GitHub issues were found during this continuation.
 - Repository TODO/FIXME/HACK search did not expose unfinished source placeholders requiring implementation.
-- The existing roadmap already marked the core calculator, advanced date tools, PWA, accessibility automation, screenshot automation, runtime hardening, bundle budgets, release-tag checks, and desktop-delivery decision as complete.
+- Existing core calculator, advanced date tools, PWA, accessibility automation, screenshot automation, runtime hardening, bundle budgets, release-tag checks, and desktop-delivery decisions were preserved rather than rewritten.
+- GitHub's branch API reported `main` as **unprotected** on 2026-08-19 with required-status-check enforcement off. The repository documentation now distinguishes the intended ruleset from the actual verified setting.
 
-## Completed in this continuation
+## Saved-profile work completed
 
-### 1. Reversible saved-profile deletion
+### Reversible individual deletion
 
-Implemented practical single-delete undo for locally saved profiles.
+Implemented practical one-step undo for locally saved profiles.
 
-Behavior now includes:
+- A successful individual deletion stores a validated recovery snapshot in UI state.
+- The record is removed from browser storage immediately.
+- An accessible **Undo delete** action is displayed.
+- Undo preserves id, name, birth date, creation timestamp, update timestamp, and original list position.
+- Duplicate restoration is rejected.
+- The existing 100-profile capacity remains enforced.
+- Import/delete-all invalidate the snapshot because they replace collection state.
+- A successful new profile save invalidates an older deletion snapshot, preventing a stale undo from exceeding the 100-profile limit after a replacement record is created.
 
-- deleting one profile stores a validated recovery snapshot in UI state;
-- the profile is removed from browser storage immediately;
-- an **Undo delete** action is exposed after successful deletion;
-- undo restores the same profile id, name, birth date, creation timestamp, and update timestamp;
-- undo restores the profile to its original saved-list position rather than moving an older record to the top;
-- the recovery operation rejects duplicate identities and respects the existing 100-profile capacity limit;
-- a successful new profile save invalidates a previous delete snapshot so the UI cannot offer an unsafe stale undo after capacity changes;
-- import and delete-all operations also invalidate the delete snapshot because they replace the collection state.
+Storage remains `schemaVersion: 1`; no migration was introduced.
 
-Storage behavior was deliberately kept inside schema version `1`; no migration is required.
+### Restoration and mutation hardening
 
-### 2. Saved-profile restoration hardening
+`restoreProfile(profile, position?)` now reuses the profile validation path used by persisted/imported data and safely clamps an optional restoration index.
 
-Added `restoreProfile(profile, position?)` to the local profile storage module.
+`deleteProfile(id)` now rejects a missing identity with `Profile not found.` instead of silently persisting an unchanged list and appearing successful.
 
-The operation:
+### Bounded large-list rendering
 
-- reuses the same profile validation pipeline as import/loading;
-- rejects invalid profile payloads;
-- rejects duplicate ids;
-- enforces the profile limit;
-- preserves identity and timestamps;
-- clamps a requested restoration position safely into the current list bounds;
-- persists the resulting collection through the existing guarded storage write path.
+Saved-profile storage is already capped at 100 records. UI rendering is now additionally bounded:
 
-Deletion was also hardened so attempting to delete a missing profile now raises the stable user-visible `Profile not found.` error rather than rewriting unchanged storage and appearing successful.
-
-### 3. Large saved-profile collection rendering
-
-The Profiles page already had a hard storage cap of 100 profiles. Rendering is now additionally bounded:
-
-- initial matching cards: 20;
+- first matching batch: 20 cards;
 - **Show more profiles** reveals the next 20;
-- searching resets the visible window to the first 20 matches;
-- backup import and delete-all reset the reveal window;
-- filtering still evaluates the intentionally bounded local collection, while DOM work remains smaller.
+- a search change resets the reveal window;
+- import and delete-all reset the reveal window;
+- search still evaluates the intentionally small, capped local collection while DOM work remains bounded.
 
-This directly addresses the master prompt's requirement to avoid unbounded large-list rendering without introducing an unnecessary virtualization dependency for a collection capped at only 100 records.
+This satisfies the large-list performance requirement without adding a virtualization dependency for a collection that can never exceed 100 records.
 
-### 4. Saved-profile → Age calculator workflow
+### Saved profile → Age calculator
 
-Saved profiles are now actionable rather than being only storage records.
+Saved profiles can now directly seed the Age calculator.
 
-Implemented flow:
+Flow:
 
 1. Open **Profiles**.
-2. Use the accessible Age action on a saved profile.
-3. Application navigation moves to **Age**.
-4. The selected profile's birth date is prefilled in the calculator.
-5. The normal calculator reference date, time, timezone, leap-day, and DST policies remain in control.
+2. Activate the profile's Age action.
+3. App navigates to **Age**.
+4. The profile birth date is prefilled.
+5. Calculator reference date/time, timezone, leap-day policy, and DST policy remain normal calculator state.
 
-Implementation details:
+Implementation:
 
-- `CalculatorPage` accepts an optional `initialBirthDate`;
-- `ProfilesPage` accepts an optional `onUseProfile` callback;
-- `App` owns the selected profile birth-date handoff and performs navigation;
-- the profile action has a deterministic accessible name such as `Age: Saved person`.
+- `CalculatorPage` accepts optional `initialBirthDate`.
+- `ProfilesPage` accepts optional `onUseProfile`.
+- `App` owns the selected profile birth-date handoff and navigation.
+- Profile action gets an accessible name such as `Age: Saved person`.
+- Profile names are not added to print/share result text.
 
-No profile name is copied into printable/shareable result text by this workflow, preserving the existing privacy-first behavior.
+## Regression coverage added
 
-### 5. Profile undo edge-case fixes
+### `tests/profiles.test.ts`
 
-Two follow-up edge cases were found during the continuation and fixed rather than left as known defects:
+Added/expanded coverage for:
 
-- **Ordering bug:** undoing an older profile originally restored it at list index `0`; restoration now preserves the original card position.
-- **Stale-capacity bug:** after deleting one profile, creating a replacement could leave an undo control that might fail at the 100-profile cap; successful creation now expires that stale undo snapshot.
-
-### 6. Regression coverage added/expanded
-
-#### Storage tests
-
-`tests/profiles.test.ts` now additionally covers:
-
-- exact profile restoration;
+- exact restoration;
 - duplicate restoration rejection;
-- deletion of a missing identity without rewriting storage;
-- restoration at a requested original list position;
-- preservation of original profile identity/timestamps.
+- original-position restoration;
+- missing-profile deletion without storage rewrite;
+- identity/timestamp preservation;
+- existing malformed backup, UTF-8 byte-size, duplicate-id, timestamp, corrupted-local-data, and blocked-storage behavior remains covered.
 
-#### Profiles page component tests
+### `tests/ProfilesPage.test.tsx`
 
-`tests/ProfilesPage.test.tsx` now additionally covers:
+Added/expanded coverage for:
 
-- bounded 20-card rendering and progressive reveal;
-- profile-to-calculator callback behavior;
+- 20-card bounded rendering;
+- progressive reveal;
+- profile-to-calculator callback;
 - delete undo;
-- ordered card restoration after undo;
-- expiration of stale undo after successful profile creation;
-- existing blocked-storage delete/clear feedback remains covered.
+- ordered card restoration;
+- stale undo expiration after a replacement save;
+- existing safe delete/clear feedback under blocked storage.
 
-#### Calculator component tests
+### `tests/CalculatorPage.test.tsx`
 
-`tests/CalculatorPage.test.tsx` now covers saved-profile birth-date prefill in addition to its existing timezone/DST behavior tests.
+Added saved-profile birth-date prefill coverage while retaining timezone/DST tests.
 
-#### App integration tests
+### `tests/App.test.tsx`
 
-`tests/App.test.tsx` now exercises the complete application-level Profiles → Age navigation and verifies the calculator receives the saved birth date.
+Added application-level Profiles → Age navigation/prefill coverage while retaining modal/focus/onboarding tests.
 
-#### Playwright E2E tests
+### `tests/e2e/app.spec.ts`
 
-`tests/e2e/app.spec.ts` now includes browser journeys for:
+Added browser journeys for:
 
-- saved-profile deletion undo;
-- saved-profile calculator handoff/prefill.
+- profile deletion undo;
+- saved-profile Age-calculator handoff/prefill.
 
-These complement the existing desktop/mobile calculator, local-profile, PWA, accessibility, and screenshot browser coverage.
+These complement existing desktop/mobile calculator, profile, PWA, accessibility, and release-candidate screenshot scenarios.
 
-### 7. Documentation synchronized
+## Runtime/release reproducibility hardening completed
 
-Updated documentation to match implemented behavior:
+### Exact Node runtime pin in permanent automation
 
-- `README.md`
-  - profile feature overview now includes validation, search, edit, undo, progressive rendering, calculator handoff, backup/import, and deletion controls.
-- `CHANGELOG.md`
-  - records delete undo, original-position restoration, progressive rendering, calculator handoff, missing-delete hardening, stale-undo expiration, and regression coverage.
-- `ROADMAP.md`
-  - marks single-delete undo, direct calculator handoff, and progressive profile rendering complete.
-- `docs/performance.md`
-  - documents the 100-profile cap and 20-card progressive DOM strategy.
-- `docs/testing.md`
-  - documents new storage, component, application, and browser regressions.
+Permanent CI and release verification no longer use the moving `22` Node channel.
 
-## Release-hardening work started
+- `.github/workflows/ci.yml` quality job: `22.13.0`
+- `.github/workflows/ci.yml` E2E job: `22.13.0`
+- `.github/workflows/release.yml`: `22.13.0`
+- `.nvmrc`: `22.13.0`
 
-### Real npm lockfile verification branch
+### Metadata gate now prevents runtime drift
 
-A dedicated branch was created from the repository for the network-dependent lockfile task:
+`scripts/check-metadata.mjs` now checks:
+
+- package/project name;
+- package/project version;
+- license;
+- repository URL;
+- homepage;
+- issues URL;
+- funding URL;
+- author/business-email consistency;
+- package Node engine equals `>=` the `.nvmrc` version;
+- every permanent CI `node-version` equals `.nvmrc`;
+- every release-workflow `node-version` equals `.nvmrc`.
+
+A future change that moves only one of those runtime declarations will therefore fail `npm run metadata:check` instead of silently producing environment drift.
+
+## GitHub default-branch protection gap verified
+
+GitHub repository data currently reports:
+
+- default branch: `main`;
+- branch protected: `false`;
+- required status-check enforcement: off.
+
+The following files now accurately track that state:
+
+- `docs/github.md` explains the verified current state and the intended protection/ruleset;
+- `ROADMAP.md` contains a separate unchecked release-hardening item to enable and verify it;
+- `docs/release.md` requires maintainers to verify the effective GitHub ruleset before release rather than assuming repository documentation equals enforcement.
+
+The available GitHub connector exposes repository/file/PR/workflow operations but no branch-protection/ruleset write action, so this repository-setting task cannot be truthfully marked complete from this environment.
+
+## Real npm lockfile verification branch
+
+A dedicated network-dependent verification branch exists:
 
 - branch: `chore/release-lockfile`
-- pull request: **#16 — `chore: verify reproducible npm lockfile`**
+- PR: **#16 — `chore: verify reproducible npm lockfile`**
 
-Branch-only workflow:
+Temporary branch workflow:
 
 - `.github/workflows/release-lockfile.yml`
 
-Its intended network-enabled sequence is:
+Intended verification sequence:
 
 ```bash
 npm install --package-lock-only --ignore-scripts --no-fund --no-audit
 npm ci --no-fund --no-audit
 npm run check
+git diff --exit-code -- package.json
 ```
 
-It then verifies that `package.json` was not rewritten and, only after those checks succeed, commits the generated `package-lock.json` using:
+If all checks succeed and a lockfile changed, the workflow is designed to commit only the generated lockfile using:
 
-- name: `Sanskar`
-- email: `sanskarin@outlook.in`
-- commit message: `build: add reproducible npm lockfile`
+- author name: `Sanskar`
+- author email: `sanskarin@outlook.in`
+- message: `build: add reproducible npm lockfile`
 
-The workflow was first added for the verification branch and then extended to the same-repository pull request so its run can be inspected through GitHub Actions.
-
-### Current lockfile verification status
-
-At the latest inspection in this continuation:
+### Latest observed lockfile job state
 
 - workflow run: `32237121294`
 - job: `96019473421`
 - workflow: `Generate verified npm lockfile`
-- job name: `Resolve, verify, and commit lockfile`
-- status: **queued**
-- conclusion: **none yet**
+- job: `Resolve, verify, and commit lockfile`
 - head SHA: `c208b73e7cac322b960d02b837231914fad0b5f3`
+- status at the latest check: **queued**
+- conclusion: **none**
+- no job steps/logs are available while it remains queued.
 
-The associated CI, CodeQL, and Dependency Review runs were also queued when inspected.
+There is still no verified `package-lock.json` to copy to `main`.
 
-**Do not mark the lockfile/reproducible-install roadmap items complete until the workflow actually finishes successfully and the generated dependency graph is reviewed.**
+**Do not check the lockfile, `npm ci`, or clean-release-gate roadmap items until actual successful evidence exists.**
 
-The verification workflow is intentionally branch-specific tooling. Once a verified lockfile exists, prefer copying/committing the verified `package-lock.json` onto current `main`, migrating the permanent CI/release workflows to `npm ci`, rerunning the full gates, and then closing/removing the temporary verification branch rather than merging unnecessary temporary workflow machinery into `main`.
+The verification workflow is intentionally temporary branch tooling. After a verified lockfile exists, prefer bringing the reviewed lockfile onto the current `main`, converting permanent CI/release installation commands in separate atomic commits, rerunning all gates, and then closing/removing the temporary branch rather than merging temporary workflow machinery unnecessarily.
 
-## Files changed in this continuation
+## Documentation synchronized
+
+Updated during this continuation:
+
+- `README.md`
+  - complete saved-profile workflow overview;
+  - exact Node runtime pin and metadata invariant description.
+- `CHANGELOG.md`
+  - saved-profile undo/order/performance/handoff fixes;
+  - exact CI/release Node pin;
+  - runtime-pin consistency invariant.
+- `ROADMAP.md`
+  - marks saved-profile undo, calculator handoff, progressive rendering, and runtime pin hardening complete;
+  - tracks real lockfile/`npm ci`/clean-release verification and actual branch protection as unfinished.
+- `docs/performance.md`
+  - documents the 100-profile cap and 20-card rendering strategy.
+- `docs/testing.md`
+  - documents new profile regressions and runtime-pin invariant checking.
+- `docs/release.md`
+  - documents exact Node runtime and requires effective branch-protection verification.
+- `docs/github.md`
+  - distinguishes intended branch rules from GitHub's currently verified unprotected `main` state.
+- `what_changed.md`
+  - this complete continuation checkpoint.
+
+## Files changed on `main` in this continuation
 
 ### Runtime/source
 
@@ -214,6 +256,12 @@ The verification workflow is intentionally branch-specific tooling. Once a verif
 - `tests/App.test.tsx`
 - `tests/e2e/app.spec.ts`
 
+### Build/CI/release automation
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
+- `scripts/check-metadata.mjs`
+
 ### Documentation
 
 - `README.md`
@@ -221,92 +269,102 @@ The verification workflow is intentionally branch-specific tooling. Once a verif
 - `ROADMAP.md`
 - `docs/performance.md`
 - `docs/testing.md`
+- `docs/release.md`
+- `docs/github.md`
 - `what_changed.md`
 
 ### Temporary verification branch only
 
 - `.github/workflows/release-lockfile.yml`
 
-## Verification performed and evidence
+## Verification evidence and constraints
 
 ### Repository inspection
 
-Authenticated GitHub repository data was used to inspect:
+Authenticated GitHub repository data was used throughout this continuation to inspect source files, tests, docs, branch metadata, commit identity, repository state, issues/PRs, workflows, and workflow-job state.
 
-- current repository metadata/default branch;
-- recent commits;
-- `what_changed.md`;
-- `ROADMAP.md`;
-- `CHANGELOG.md`;
-- `README.md`;
-- source/storage/profile/calculator/application files;
-- unit/component/E2E tests;
-- package metadata;
-- CI workflow;
-- open issues and recent pull requests;
-- workflow runs/jobs for the lockfile verification PR.
+### Commit identity
 
-### Local clean-clone constraint
+GitHub branch/commit data verified repository commits authored/committed as:
 
-A clean local clone was attempted with a shallow GitHub clone, but the execution container failed DNS resolution with:
+```text
+Sanskar <sanskarin@outlook.in>
+```
+
+### Local clean-checkout limitation
+
+A shallow GitHub clone attempted in the execution container failed DNS resolution:
 
 ```text
 Could not resolve host: github.com
 ```
 
-Because of that environment limitation, this continuation does **not** claim that local `npm install`, `npm run check`, or Playwright completed in the container.
+Therefore this handoff does **not** claim that local `npm install`, `npm run check`, or Playwright completed in that container.
 
-### GitHub Actions status constraint
+### GitHub Actions limitation
 
-The network-enabled lockfile verification job and associated PR checks were still queued at the last inspection. Therefore this handoff makes **no false passing-CI claim** for the newest commits.
+The network-enabled lockfile verification job remained queued at the latest inspection. No false passing-CI claim is made for it or for a clean reproducible install.
 
-The code changes were accompanied by focused regression tests, but final executable verification remains dependent on the queued GitHub runners or another network-enabled clean environment.
+Focused regression tests were added with the implementation, but executable release evidence remains dependent on an available GitHub runner or another network-enabled clean environment.
 
-## Known limitations / intentionally deferred work
+## Remaining release blockers / repository-setting gaps
 
-### Release blockers
+1. Generate and review a real `package-lock.json` from a successful npm registry resolution.
+2. Convert permanent CI installs from `npm install` to `npm ci` after the lockfile lands.
+3. Convert release installation from `npm install` to `npm ci` in a separate commit.
+4. Record a passing clean-checkout `npm ci` + quality + browser E2E + accessibility + offline PWA + bundle-budget run.
+5. Enable and verify the documented `main` branch ruleset/protection in GitHub settings.
 
-1. `package-lock.json` has not yet been generated/verified from a successful real npm resolution.
-2. Permanent CI/release workflows still use `npm install`; migrate them to `npm ci` only after the verified lockfile lands.
-3. A complete clean-checkout install + non-E2E quality suite + browser E2E run still needs a recorded passing result.
+## Intentional non-blocking deferrals
 
-### Non-blocking intentional deferrals
+- Additional locale packs require complete human translation review; do not machine-fill them merely to mark the roadmap complete.
+- Native/Tauri packaging remains deferred by ADR until a concrete native-only requirement justifies signing, updater, permissions, platform packaging, security surface, and CI secret handling.
 
-- Additional locale packs require complete human translation review; do not machine-fill them merely to mark a checkbox.
-- Native/Tauri packaging remains intentionally deferred by the desktop-delivery ADR until a concrete native-only requirement justifies its signing, update, permissions, and security surface.
+## Open issues
 
-## Open issues found during this continuation
-
-No open GitHub issues were found. The remaining items are tracked through `ROADMAP.md` and this handoff.
+No open GitHub issues were found during this continuation. Remaining work is explicitly tracked in `ROADMAP.md`, PR #16, and this handoff.
 
 ## Next exact tasks
 
-1. Re-check GitHub Actions run `32237121294`.
-2. If the lockfile workflow fails, fetch the failing step/job logs, fix only the verified failure on `chore/release-lockfile`, and rerun.
-3. If it succeeds, inspect the generated `package-lock.json` on `chore/release-lockfile`.
-4. Commit the verified lockfile to the **current** `main` branch without bringing the temporary branch workflow into main.
-5. Change permanent CI install commands from `npm install` to `npm ci` in small atomic commits.
-6. Change release workflow install commands from `npm install` to `npm ci` in a separate atomic commit.
-7. Update setup/testing/release documentation where clean/reproducible install semantics change.
-8. Run/observe `npm run check`, runtime dependency audit, Chromium desktop/mobile E2E, offline PWA coverage, accessibility audits, and bundle-budget verification from a clean checkout.
-9. Only after successful evidence, check the three remaining release-hardening boxes in `ROADMAP.md` and remove the corresponding Planned changelog items.
-10. Close PR #16/remove the temporary verification branch once its lockfile purpose is complete.
-11. Review queued CI for the latest `main` profile commits and fix any deterministic failure before tagging another release.
+1. Re-check workflow run `32237121294` / job `96019473421`.
+2. If it fails, fetch the failed step/logs, fix only the verified failure on `chore/release-lockfile`, and rerun.
+3. If it succeeds, inspect the generated `package-lock.json` rather than assuming it is valid because it exists.
+4. Bring the reviewed lockfile onto the **current** `main` without merging unnecessary temporary branch-only workflow machinery.
+5. Change permanent CI install commands from `npm install` to `npm ci` in a small atomic commit.
+6. Change release install commands from `npm install` to `npm ci` in a separate atomic commit.
+7. Update README/setup/testing/release documentation for reproducible clean-install semantics.
+8. Run/observe `npm run check`, runtime dependency audit, Chromium desktop/mobile E2E, offline PWA tests, axe accessibility audits, screenshots, and bundle-budget checks from a clean checkout.
+9. Only after successful evidence, check the three dependency/release-installation items in `ROADMAP.md` and remove their Planned changelog text.
+10. Close PR #16 and remove the temporary lockfile verification branch after its purpose is complete.
+11. In GitHub repository settings, enable the documented `main` branch ruleset/protection; then verify through GitHub that protection is actually effective before checking the roadmap item.
+12. Review the latest permanent CI runs for all new `main` commits and fix any deterministic failure before creating another release tag.
 
 ## Migration notes
 
-- Saved-profile storage schema remains `schemaVersion: 1`.
+- Saved-profile storage remains `schemaVersion: 1`.
 - No localStorage migration is required.
-- Existing saved profile objects remain compatible.
-- Undo restoration reuses the same existing validated object shape.
-- Progressive rendering changes only UI rendering behavior; it does not change stored data or export format.
-- Calculator profile prefill is an internal application-navigation handoff; backup/export data format is unchanged.
-- No backend/database migration exists or is required because ChronoAge remains local-first and client-only.
+- Existing saved-profile data remains compatible.
+- Undo restoration reuses the existing validated profile object shape.
+- Progressive rendering changes UI rendering only; stored/exported data format is unchanged.
+- Calculator prefill is an internal application-state handoff; backup format is unchanged.
+- Node pin hardening changes development/CI environment consistency only; application persisted data is unchanged.
+- No backend/database migration exists because ChronoAge remains local-first and client-only.
 
 ## Main-branch commits created in this continuation
 
-Newest first:
+This handoff update brings the continuation to **42 meaningful `main` commits**. Prior commits, newest first before this handoff commit:
 
+- `a46ca949` — `docs: require branch protection release verification`
+- `afa5801a` — `docs: track unprotected main branch as release gap`
+- `32ce7253` — `docs: record actual main branch protection state`
+- `006e6661` — `docs: record reproducible Node workflow pins`
+- `0e8f5fbd` — `docs: document exact project Node runtime`
+- `22cb60be` — `docs: document runtime pin invariant checks`
+- `d69953a7` — `build: enforce Node runtime metadata consistency`
+- `2bc8a3f6` — `docs: align release guide with pinned Node runtime`
+- `f441c47a` — `release: pin Node runtime to project version`
+- `723ccc67` — `ci: pin Node runtime to project version`
+- `3cb14bcc` — `docs: refresh complete project handoff`
 - `d5cf85c2` — `docs: record ordered profile undo fixes`
 - `243d658f` — `test: cover ordered profile undo in UI`
 - `5bdab45c` — `test: cover ordered profile restoration`
@@ -345,4 +403,4 @@ Newest first:
 
 ## Release notes draft
 
-The next ChronoAge release strengthens its local-first saved-profile workflow with reversible deletion, exact ordered restoration, stale-undo protection, progressive large-list rendering, and direct saved-profile prefill into the Age calculator. Regression coverage now spans storage, components, application navigation, and real browser journeys for these flows. Documentation and performance guidance are synchronized with the implementation. Release hardening is also progressing through a dedicated network-enabled lockfile verification PR, but reproducible `npm ci` installation is not considered complete until that queued workflow produces and verifies a real lockfile and the full clean-checkout quality/E2E gates pass.
+The next ChronoAge release strengthens the local-first saved-profile workflow with reversible deletion, original-order restoration, stale-undo protection, bounded progressive rendering, and direct saved-profile prefill into the Age calculator. Regression coverage now spans storage, components, application navigation, and browser journeys. Release reproducibility is stronger because permanent CI/release jobs use the exact `.nvmrc` Node runtime and the metadata gate prevents runtime-pin drift. Repository governance documentation now also records the actual unprotected `main` state and requires effective branch protection before release. Reproducible `npm ci` installation is intentionally not considered complete until PR #16 produces and verifies a real lockfile and the clean-checkout quality/E2E gates pass.
