@@ -35,7 +35,9 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - Inclusive and exclusive date interval calculator.
 - 1,000/5,000/10,000+ day milestones and major birthday anniversaries.
 - Custom positive-whole-number milestones in days or birthday years.
-- Local-only saved profiles with validation, search, editing, one-step delete undo, progressive rendering, calculator handoff, export, import, and deletion controls.
+- Local-only saved profiles with validation, search, deterministic sorting, editing, one-step delete undo, progressive rendering, calculator handoff, export, import-replacement confirmation, and deletion controls.
+- Privacy-safe page deep links such as `#/profiles` plus browser Back/Forward navigation; calculator dates, times, profile names, and saved birth dates are not serialized into route URLs.
+- SPA page navigation updates the document title and moves focus into main content for keyboard and assistive-technology users.
 - Print/share result cards that omit private profile names by default.
 - Light, dark, and system themes; reduced-motion and high-contrast settings.
 - Keyboard-first navigation, visible focus states, semantic labels, and quick actions (`Ctrl/Cmd + K`).
@@ -67,6 +69,7 @@ See [docs/desktop.md](docs/desktop.md) for desktop installation, signing, packag
 - Native `Intl.DateTimeFormat` + Gregorian calendar domain logic
 - Browser `localStorage` for optional profiles/settings
 - Native Service Worker + Web App Manifest
+- Dependency-free hash/history page routing
 - Vitest + Testing Library
 - Playwright end-to-end, accessibility-regression, and screenshot tests
 - ESLint + Prettier
@@ -86,6 +89,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+Core pages can also be opened with public page-only fragments such as `http://localhost:5173/#/milestones`. ChronoAge deliberately does not put personal calculation values into those fragments.
 
 ## Quality commands
 
@@ -130,14 +135,16 @@ ChronoAge is a modular client-side application:
 - `src/hooks/` — browser/application state integration, including the PWA lifecycle.
 - `src/i18n/` — externalized English UI/recovery copy and interpolation helpers.
 - `src/config/` — locale-independent project identity/runtime metadata.
-- `src/utils/` — privacy-safe logging, PWA registration, sharing, defaults.
+- `src/utils/` — privacy-safe navigation, profile sorting, logging, PWA registration, sharing, and defaults.
 - `tests/` — unit, property, integration, component, and E2E coverage.
 
 Business rules do not depend on React. See [docs/architecture.md](docs/architecture.md), [docs/internationalization.md](docs/internationalization.md), and [docs/adr/](docs/adr/).
 
 ## Security and privacy
 
-ChronoAge has no backend, authentication, payments, analytics, or required network API. User-entered profile data remains in local browser storage unless the user explicitly exports it. Export files are plain JSON and are **not encrypted**.
+ChronoAge has no backend, authentication, payments, analytics, or required network API. User-entered profile data remains in local browser storage unless the user explicitly exports it. Export files are plain JSON and are **not encrypted**. Importing a backup over an existing profile collection requires confirmation before replacement.
+
+Page URLs contain only public page identifiers. ChronoAge does not intentionally serialize calculator dates/times, profile names, saved birth dates, or other calculation inputs into its page-routing fragments.
 
 Expected validation/product errors use curated user-visible messages. Unexpected implementation exceptions use generic UI fallbacks, and runtime diagnostics stay in the local browser console through a redacting structured logger rather than being uploaded.
 
@@ -148,7 +155,7 @@ Expected validation/product errors use curated user-visible messages. Unexpected
 
 ## Accessibility
 
-The UI targets WCAG-oriented practices: keyboard operation, skip links, focus visibility, semantic labels, non-color-only status, reduced-motion support, scalable layouts, screen-reader-friendly status regions, and browser regression checks for common accessibility failures. See [docs/accessibility.md](docs/accessibility.md).
+The UI targets WCAG-oriented practices: keyboard operation, skip links, focus visibility, semantic labels, non-color-only status, reduced-motion support, scalable layouts, screen-reader-friendly status regions, route-change title/focus updates, and browser regression checks for common accessibility failures. See [docs/accessibility.md](docs/accessibility.md).
 
 ## Contributing
 
