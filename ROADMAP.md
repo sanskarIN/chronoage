@@ -29,10 +29,13 @@
 - [x] Calendar-duration comparison visualization
 - [x] Explicit DST ambiguity choice for repeated fall-back hours
 
-## v2.0 — Optional desktop packaging
+## Desktop delivery decision
 
-- [ ] Evaluate Tauri wrapper in a separate ADR
-- [ ] Windows/macOS/Linux signed packaging documentation
-- [ ] Native update strategy without changing the local-first privacy model
+- [x] Evaluate Tauri/native wrapper in a dedicated ADR
+- [x] Document Windows/macOS/Linux delivery, signing, and packaging requirements
+- [x] Define the desktop update strategy without changing the local-first privacy model
+- [ ] Add a native wrapper only after a justified native-only requirement exists
+
+The current supported desktop delivery is the installable PWA. Native-wrapper work is intentionally deferred by [ADR 0006](docs/adr/0006-pwa-first-desktop-delivery.md), not blocked by missing implementation.
 
 Roadmap items are not promises and may change based on quality, security, and maintainability.
