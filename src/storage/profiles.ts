@@ -157,7 +157,7 @@ export function deleteProfile(id: string): SavedProfile[] {
   return next;
 }
 
-export function restoreProfile(profile: SavedProfile): SavedProfile[] {
+export function restoreProfile(profile: SavedProfile, position = 0): SavedProfile[] {
   const profiles = loadProfiles();
   if (profiles.length >= MAX_PROFILES) {
     throw new UserVisibleError(`Profile limit of ${MAX_PROFILES} reached.`);
@@ -172,8 +172,13 @@ export function restoreProfile(profile: SavedProfile): SavedProfile[] {
   } catch {
     throw new UserVisibleError('Profile could not be restored.');
   }
-  persist([restored, ...profiles]);
-  return [restored, ...profiles];
+  const normalizedPosition = Number.isFinite(position)
+    ? Math.min(Math.max(0, Math.trunc(position)), profiles.length)
+    : 0;
+  const next = [...profiles];
+  next.splice(normalizedPosition, 0, restored);
+  persist(next);
+  return next;
 }
 
 export function clearProfiles(): void {
