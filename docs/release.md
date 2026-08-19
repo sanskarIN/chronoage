@@ -1,5 +1,11 @@
 # Release Guide
 
+## Current release candidate
+
+The repository source version is `2.0.12`. The matching release tag is `v2.0.12`.
+
+Do **not** create or push that tag merely because the version metadata has been updated. The release remains evidence-gated until the repository has a reviewed registry-generated `package-lock.json`, permanent CI/release installs have migrated to `npm ci`, a clean full quality/E2E release gate has passed, and the documented `main` branch protection/ruleset has been verified as effective.
+
 ## Release checklist
 
 1. Pull the latest `main` from a clean checkout.
@@ -15,11 +21,11 @@
 11. Review the generated calculator, difference, milestone, and mobile screenshots for layout regressions.
 12. Confirm `npm run performance:check` reports JavaScript and CSS gzip totals within the release budgets.
 13. Verify GitHub reports the documented `main` branch protection/ruleset as effective, including required automated checks and force-push/deletion protection. Do not rely only on the repository documentation; confirm the actual setting in GitHub.
-14. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, and `what_changed.md`.
+14. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, release notes, and `what_changed.md`.
 15. Run `npm run metadata:check` again after changing version metadata.
-16. Verify the intended tag before pushing it with `npm run release:check -- vX.Y.Z`.
+16. Verify the intended tag before pushing it. For this source version, run `npm run release:check -- v2.0.12`.
 17. Confirm no real credentials, private data, debug exports, local profile backups, or browser-storage dumps are staged.
-18. Create and push a signed/annotated version tag where available.
+18. Create and push a signed/annotated version tag where available only after every required release gate is actually satisfied.
 
 The CI workflow also supports manual dispatch, so maintainers can run both quality and browser jobs explicitly on the release candidate before tagging. Repository settings are a separate release boundary: automated workflows cannot compensate for an unprotected default branch if direct force pushes or deletion remain possible.
 
@@ -62,7 +68,7 @@ Use semantic versioning:
 
 `package.json` and `src/config/project.ts` must carry the same version. `npm run metadata:check` enforces this relationship along with project name, license, repository/funding links, primary author-email consistency, and the permanent Node runtime pins.
 
-The release tag must then match the package version exactly. For example, package version `1.2.0` requires tag `v1.2.0`. `npm run release:check -- v1.2.0` performs the same gate used by the GitHub release workflow.
+The release tag must match the package version exactly. For the current source version, package version `2.0.12` requires tag `v2.0.12`; `npm run release:check -- v2.0.12` performs the same identity gate used by the GitHub release workflow.
 
 ## Desktop packaging
 
