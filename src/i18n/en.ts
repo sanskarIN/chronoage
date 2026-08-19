@@ -163,6 +163,7 @@ export const en = {
     import: 'Import',
     backupDescription: 'Export creates a plain JSON backup. Treat it like any file containing personal dates.',
     backupWarning: 'Encrypted storage is not implied: keep exported backup files private.',
+    backupTooLarge: 'Backup file is too large. Choose a file smaller than 1 MB.',
     restored: 'Backup restored successfully.',
     unableImport: 'Unable to import backup.',
     search: 'Search saved profiles',
