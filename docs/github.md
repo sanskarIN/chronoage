@@ -1,10 +1,16 @@
 # GitHub Repository Operations
 
-ChronoAge keeps repository settings conservative so the public project stays reviewable, secure, and easy to contribute to. Some controls live in GitHub settings rather than version-controlled files, so this document records the intended configuration.
+ChronoAge keeps repository settings conservative so the public project stays reviewable, secure, and easy to contribute to. Some controls live in GitHub settings rather than version-controlled files, so this document records the intended configuration and distinguishes recommendations from settings that have actually been verified.
 
 ## Default branch
 
 Use `main` as the default branch.
+
+### Current protection status
+
+As verified through the GitHub repository API on 2026-08-19, `main` is the default branch but is currently reported as **unprotected**, with required status-check enforcement off. The rules below are therefore the intended production configuration, not a claim that GitHub is already enforcing them.
+
+Before treating `main` as a protected release branch, enable an equivalent branch ruleset/protection policy in repository settings and verify the effective rule state from GitHub. Once enabled, normal feature work should flow through pull requests rather than relying on direct pushes.
 
 Recommended branch protection/ruleset for `main`:
 
