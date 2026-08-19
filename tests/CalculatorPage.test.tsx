@@ -4,6 +4,17 @@ import { CalculatorPage } from '../src/pages/CalculatorPage';
 import { DEFAULT_SETTINGS } from '../src/storage/settings';
 
 describe('CalculatorPage', () => {
+  it('prefills the birth date when opened from a saved profile', () => {
+    render(
+      <CalculatorPage
+        settings={{ ...DEFAULT_SETTINGS, defaultTimeZone: 'UTC' }}
+        initialBirthDate="2004-05-06"
+      />,
+    );
+
+    expect(screen.getByLabelText('Birth date')).toHaveValue('2004-05-06');
+  });
+
   it('shows the configured DST overlap policy when time precision is enabled', () => {
     render(
       <CalculatorPage
