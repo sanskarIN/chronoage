@@ -14,15 +14,24 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Desktop and mobile release-candidate screenshot capture in the Playwright suite.
 - CI upload of generated release-candidate screenshots.
 - PWA lifecycle documentation.
+- Custom milestone calculations for positive whole-number day counts or birthday years.
+- Accessible custom milestone builder UI with leap-day-policy support.
+- Calendar-duration visualization for the age-difference tool.
+- Explicit earlier/later selection for repeated daylight-saving fall-back local times.
+- DST overlap/gap regression coverage using IANA timezone data.
+- Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support.
 
 ### Changed
 - Service-worker activation now waits for explicit update application instead of always taking control immediately after installation.
 - Profile data controls now describe editing as part of the local-only workflow.
+- Timezone-aware calculations apply one persisted DST-overlap policy consistently to birth, reference, and anchor instants.
+- Calendar year/month arithmetic rejects results outside the supported civil-year range.
+- README and date-semantics documentation now describe advanced milestone, visualization, and DST behavior.
 
 ### Planned
 - Additional locale packs after translation review.
 - A maintained full accessibility-engine audit in CI.
-- Optional Tauri desktop wrapper after the PWA release is stable.
+- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, and security surface.
 
 ## [1.0.0] - 2026-08-19
 
