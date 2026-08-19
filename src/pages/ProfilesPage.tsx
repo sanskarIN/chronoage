@@ -6,6 +6,7 @@ import {
   exportProfiles,
   importProfiles,
   loadProfiles,
+  MAX_BACKUP_FILE_BYTES,
   saveProfile,
   updateProfile,
 } from '../storage/profiles';
@@ -89,6 +90,7 @@ export function ProfilesPage(): React.JSX.Element {
 
   const restoreBackup = async (file: File): Promise<void> => {
     try {
+      if (file.size > MAX_BACKUP_FILE_BYTES) throw new Error(en.profiles.backupTooLarge);
       const text = await file.text();
       setProfiles(importProfiles(text));
       setEditingId(null);
