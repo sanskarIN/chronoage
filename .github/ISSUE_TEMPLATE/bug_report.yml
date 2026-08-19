@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve ChronoAge. Please use fictional dates if your real dates are private.
+        Thanks for helping improve ChronoAge. Use fictional dates/names and never attach a real profile backup or browser-storage dump to a public issue.
   - type: textarea
     id: summary
     attributes:
@@ -18,13 +18,20 @@ body:
     id: reproduce
     attributes:
       label: Reproduction steps
+      description: Use the smallest fictional reproduction that still demonstrates the problem.
       placeholder: |
-        1. Open ...
-        2. Enter ...
+        1. Open #/difference
+        2. Enter fictional dates ...
         3. Select ...
         4. Observe ...
     validations:
       required: true
+  - type: input
+    id: route
+    attributes:
+      label: Public page route
+      description: Include only the ChronoAge page route when useful; do not add personal values to the URL.
+      placeholder: "#/profiles"
   - type: input
     id: version
     attributes:
@@ -35,6 +42,27 @@ body:
     attributes:
       label: Browser and operating system
       placeholder: Chrome on Windows 11
+    validations:
+      required: true
+  - type: dropdown
+    id: display-mode
+    attributes:
+      label: How are you running ChronoAge?
+      options:
+        - Browser tab
+        - Installed PWA
+        - Unsure
+    validations:
+      required: true
+  - type: dropdown
+    id: connectivity
+    attributes:
+      label: Connectivity when the problem occurs
+      options:
+        - Online
+        - Offline
+        - Both
+        - Unsure
     validations:
       required: true
   - type: dropdown
@@ -49,7 +77,7 @@ body:
     id: extra
     attributes:
       label: Additional context
-      description: Screenshots are welcome if they do not expose private information.
+      description: Screenshots are welcome only after private names, dates, backups, tokens, and unrelated personal information are removed.
   - type: checkboxes
     id: checks
     attributes:
@@ -57,5 +85,7 @@ body:
       options:
         - label: I searched existing issues for duplicates.
           required: true
-        - label: I removed or replaced private personal data where possible.
+        - label: I replaced private personal data with fictional/minimal values where possible.
+          required: true
+        - label: I did not attach a real ChronoAge profile backup, localStorage dump, credential, or other private data.
           required: true
