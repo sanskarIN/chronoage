@@ -19,9 +19,9 @@
 - [x] Editable saved profiles using the validated local storage model
 - [x] Install/update prompt UX using browser capabilities
 - [x] Baseline automated browser accessibility regression checks
+- [x] Release-candidate screenshot automation
 - [ ] Additional locale packs after translation review
 - [ ] Full maintained accessibility-engine audit in CI
-- [ ] Release-candidate screenshot automation
 
 ## v1.2 — Advanced date tooling
 
