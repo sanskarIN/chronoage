@@ -47,6 +47,11 @@ describe('local profiles', () => {
     expect(importProfiles(backup)).toHaveLength(1);
   });
 
+  it('rejects malformed backup JSON with a stable user-safe error', () => {
+    expect(() => importProfiles('{"schemaVersion":1,"profiles":[')).toThrow('Invalid backup file.');
+    expect(loadProfiles()).toEqual([]);
+  });
+
   it('rejects invalid backup data', () => {
     expect(() => importProfiles('{"schemaVersion":9,"profiles":[]}')).toThrow(
       'Unsupported backup format',
