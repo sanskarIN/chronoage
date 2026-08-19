@@ -2,7 +2,7 @@ import type { SavedProfile } from '../types/models';
 
 export type ProfileSort = 'recent' | 'name-asc' | 'name-desc' | 'birth-asc' | 'birth-desc';
 
-const nameCollator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+const nameCollator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
 function compareNames(left: SavedProfile, right: SavedProfile): number {
   return nameCollator.compare(left.name, right.name) || left.birthDate.localeCompare(right.birthDate) || left.id.localeCompare(right.id);
