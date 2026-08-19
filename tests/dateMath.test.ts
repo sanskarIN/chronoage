@@ -33,6 +33,20 @@ describe('date math', () => {
     expect(addYearsClamped(leapDay, 1, 'mar1')).toEqual({ year: 2001, month: 3, day: 1 });
   });
 
+  it('keeps the month component below twelve before a March 1 leap-day anniversary', () => {
+    const result = calculateAge({
+      birth: { year: 2000, month: 2, day: 29, hour: 0, minute: 0 },
+      reference: { year: 2001, month: 2, day: 28, hour: 0, minute: 0 },
+      timeZone: 'UTC',
+      includeTime: false,
+      leapDayPolicy: 'mar1',
+    });
+
+    expect(result.years).toBe(0);
+    expect(result.months).toBe(11);
+    expect(result.days).toBe(30);
+  });
+
   it('rejects year arithmetic outside the supported calendar range', () => {
     expect(() => addYearsClamped({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
       'outside the supported range',
