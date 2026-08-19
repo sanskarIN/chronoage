@@ -1,0 +1,14 @@
+{
+  "name": "ChronoAge — Age Calculator",
+  "short_name": "ChronoAge",
+  "description": "Privacy-first age, birthday, interval, and milestone calculator.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f6fb",
+  "theme_color": "#6657e8",
+  "orientation": "any",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
