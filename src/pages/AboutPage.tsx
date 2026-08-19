@@ -2,6 +2,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Logo } from '../components/Logo';
 import { mailto, project } from '../config/project';
 import { en } from '../i18n/en';
+import { sharedText } from '../i18n/shared';
 
 export function AboutPage(): React.JSX.Element {
   return (
@@ -14,7 +15,7 @@ export function AboutPage(): React.JSX.Element {
       <section className="panel about-hero">
         <Logo />
         <p>{en.about.heroDescription}</p>
-        <div className="version-chip">Version {project.version}</div>
+        <div className="version-chip">{sharedText.versionLabel(project.version)}</div>
       </section>
       <section className="about-grid">
         <article className="panel">
