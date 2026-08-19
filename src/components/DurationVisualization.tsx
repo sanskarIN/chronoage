@@ -1,4 +1,5 @@
 import type { AgeBreakdown } from '../types/models';
+import { en } from '../i18n/en';
 import './DurationVisualization.css';
 
 interface Props {
@@ -18,43 +19,49 @@ export function DurationVisualization({ result, startLabel, endLabel }: Props): 
   const segments: Segment[] = [
     {
       key: 'years',
-      label: 'Years',
+      label: en.duration.years,
       value: result.years,
       weight: result.years * 365.2425,
     },
     {
       key: 'months',
-      label: 'Months',
+      label: en.duration.months,
       value: result.months,
       weight: result.months * 30.436875,
     },
     {
       key: 'days',
-      label: 'Days',
+      label: en.duration.days,
       value: result.days,
       weight: result.days,
     },
   ];
   const visibleSegments = segments.filter((segment) => segment.value > 0);
-  const accessibleSummary = `${result.years} years, ${result.months} months, and ${result.days} days between ${startLabel} and ${endLabel}.`;
+  const accessibleSummary = en.duration.summary(
+    result.years,
+    result.months,
+    result.days,
+    startLabel,
+    endLabel,
+  );
 
   return (
     <section className="panel duration-visualization" aria-labelledby="duration-visualization-title">
       <div>
-        <p className="eyebrow">Visual breakdown</p>
-        <h2 id="duration-visualization-title">Calendar duration timeline</h2>
+        <p className="eyebrow">{en.duration.eyebrow}</p>
+        <h2 id="duration-visualization-title">{en.duration.title}</h2>
       </div>
 
       <div className="duration-endpoints">
         <div className="duration-endpoint">
-          <span>Earlier date</span>
+          <span>{en.duration.earlierDate}</span>
           <strong>{startLabel}</strong>
         </div>
         <span className="duration-arrow" aria-hidden="true">
           →
         </span>
         <div className="duration-endpoint">
-          <span>Later date</span>
+          <span>{en.duration.laterDate}</span>
           <strong>{endLabel}</strong>
         </div>
       </div>
@@ -74,7 +81,7 @@ export function DurationVisualization({ result, startLabel, endLabel }: Props): 
         )}
       </div>
 
-      <div className="duration-legend" aria-label="Exact calendar components">
+      <div className="duration-legend" aria-label={en.duration.exactComponents}>
         {segments.map((segment) => (
           <div key={segment.key}>
             <span>{segment.label}</span>
@@ -83,10 +90,7 @@ export function DurationVisualization({ result, startLabel, endLabel }: Props): 
         ))}
       </div>
 
-      <p className="muted">
-        The numbers are exact calendar components. Segment widths are only a visual approximation using
-        average year and month lengths; total elapsed days remain exact.
-      </p>
+      <p className="muted">{en.duration.approximationNote}</p>
     </section>
   );
 }
