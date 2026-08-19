@@ -14,13 +14,14 @@
 10. Trigger one controlled render failure in a development/release-candidate environment and verify the local crash-recovery screen appears without uploading diagnostics or exposing private values.
 11. Review the generated calculator, difference, milestone, and mobile screenshots for layout regressions.
 12. Confirm `npm run performance:check` reports JavaScript and CSS gzip totals within the release budgets.
-13. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, and `what_changed.md`.
-14. Run `npm run metadata:check` again after changing version metadata.
-15. Verify the intended tag before pushing it with `npm run release:check -- vX.Y.Z`.
-16. Confirm no real credentials, private data, debug exports, local profile backups, or browser-storage dumps are staged.
-17. Create and push a signed/annotated version tag where available.
+13. Verify GitHub reports the documented `main` branch protection/ruleset as effective, including required automated checks and force-push/deletion protection. Do not rely only on the repository documentation; confirm the actual setting in GitHub.
+14. Update `CHANGELOG.md`, `ROADMAP.md`, package/runtime version numbers, and `what_changed.md`.
+15. Run `npm run metadata:check` again after changing version metadata.
+16. Verify the intended tag before pushing it with `npm run release:check -- vX.Y.Z`.
+17. Confirm no real credentials, private data, debug exports, local profile backups, or browser-storage dumps are staged.
+18. Create and push a signed/annotated version tag where available.
 
-The CI workflow also supports manual dispatch, so maintainers can run both quality and browser jobs explicitly on the release candidate before tagging.
+The CI workflow also supports manual dispatch, so maintainers can run both quality and browser jobs explicitly on the release candidate before tagging. Repository settings are a separate release boundary: automated workflows cannot compensate for an unprotected default branch if direct force pushes or deletion remain possible.
 
 ## GitHub release workflow
 
@@ -59,7 +60,7 @@ Use semantic versioning:
 - MINOR — compatible features,
 - MAJOR — intentional breaking changes to public behavior or persisted schema.
 
-`package.json` and `src/config/project.ts` must carry the same version. `npm run metadata:check` enforces this relationship along with project name, license, repository/funding links, and primary author-email consistency.
+`package.json` and `src/config/project.ts` must carry the same version. `npm run metadata:check` enforces this relationship along with project name, license, repository/funding links, primary author-email consistency, and the permanent Node runtime pins.
 
 The release tag must then match the package version exactly. For example, package version `1.2.0` requires tag `v1.2.0`. `npm run release:check -- v1.2.0` performs the same gate used by the GitHub release workflow.
 
