@@ -32,7 +32,9 @@ describe('web app manifest', () => {
 
     for (const shortcut of manifest.shortcuts ?? []) {
       expect(shortcut.name).toBeTruthy();
-      expect(shortcut.url && allowedShortcutUrls.has(shortcut.url)).toBe(true);
+      expect(shortcut.url).toBeTruthy();
+      if (!shortcut.url) continue;
+      expect(allowedShortcutUrls.has(shortcut.url)).toBe(true);
       expect(shortcut.url).not.toMatch(/[?&=]/);
     }
   });
