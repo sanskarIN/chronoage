@@ -59,6 +59,12 @@ describe('local profiles', () => {
     );
   });
 
+  it('measures the backup limit in UTF-8 bytes rather than JavaScript characters', () => {
+    const multibyteText = 'é'.repeat(Math.floor(MAX_BACKUP_FILE_BYTES / 2) + 1);
+    expect(multibyteText.length).toBeLessThan(MAX_BACKUP_FILE_BYTES);
+    expect(() => importProfiles(multibyteText)).toThrow('Backup file is too large.');
+  });
+
   it('rejects duplicate ids during import', () => {
     const timestamp = '2026-08-19T00:00:00.000Z';
     const backup = JSON.stringify({
