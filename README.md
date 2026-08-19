@@ -54,7 +54,9 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 | Windows | PWA install | Supported |
 | macOS | PWA/browser | Supported |
 | Linux | PWA/browser | Supported |
-| Tauri desktop wrapper | Native wrapper | Roadmap evaluation |
+| Tauri desktop wrapper | Native wrapper | Deferred pending a native-only requirement |
+
+See [docs/desktop.md](docs/desktop.md) for desktop installation, signing, packaging, and update strategy.
 
 ## Tech stack
 
@@ -121,10 +123,12 @@ ChronoAge is a modular client-side application:
 - `src/pages/` — feature-oriented UI pages.
 - `src/components/` — reusable UI building blocks and visualizations.
 - `src/hooks/` — browser/application state integration, including the PWA lifecycle.
+- `src/i18n/` — externalized English UI copy and interpolation helpers.
+- `src/config/` — locale-independent project identity/runtime metadata.
 - `src/utils/` — safe logging, PWA registration, sharing, defaults.
 - `tests/` — unit, property, integration, component, and E2E coverage.
 
-Business rules do not depend on React. See [docs/architecture.md](docs/architecture.md) and [docs/adr/](docs/adr/).
+Business rules do not depend on React. See [docs/architecture.md](docs/architecture.md), [docs/internationalization.md](docs/internationalization.md), and [docs/adr/](docs/adr/).
 
 ## Security and privacy
 
