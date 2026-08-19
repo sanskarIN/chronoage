@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   highContrast: false,
   defaultTimeZone: systemTimeZone(),
   leapDayPolicy: 'feb28',
+  dstAmbiguityPolicy: 'earlier',
   onboardingComplete: false,
 };
 
@@ -25,6 +26,7 @@ export function loadSettings(): AppSettings {
           ? parsed.defaultTimeZone
           : DEFAULT_SETTINGS.defaultTimeZone,
       leapDayPolicy: parsed.leapDayPolicy === 'mar1' ? 'mar1' : 'feb28',
+      dstAmbiguityPolicy: parsed.dstAmbiguityPolicy === 'later' ? 'later' : 'earlier',
       onboardingComplete: Boolean(parsed.onboardingComplete),
     };
   } catch {
