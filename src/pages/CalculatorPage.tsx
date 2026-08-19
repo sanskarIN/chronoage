@@ -28,6 +28,7 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
         timeZone,
         includeTime,
         leapDayPolicy: settings.leapDayPolicy,
+        dstAmbiguityPolicy: settings.dstAmbiguityPolicy,
       });
       return {
         result,
@@ -41,7 +42,16 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
         error: error instanceof Error ? error.message : 'Unable to calculate age.',
       };
     }
-  }, [birthDate, birthTime, includeTime, referenceDate, referenceTime, settings.leapDayPolicy, timeZone]);
+  }, [
+    birthDate,
+    birthTime,
+    includeTime,
+    referenceDate,
+    referenceTime,
+    settings.dstAmbiguityPolicy,
+    settings.leapDayPolicy,
+    timeZone,
+  ]);
 
   const handleShare = async (): Promise<void> => {
     if (!calculation.result) return;
@@ -72,26 +82,77 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
             <span className="privacy-chip">Local only</span>
           </div>
           <div className="form-grid two-columns">
-            <Field label="Birth date" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} max="9999-12-31" />
-            {includeTime && <Field label="Birth time" type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />}
-            <Field label="Reference date" type="date" value={referenceDate} onChange={(event) => setReferenceDate(event.target.value)} max="9999-12-31" />
-            {includeTime && <Field label="Reference time" type="time" value={referenceTime} onChange={(event) => setReferenceTime(event.target.value)} />}
+            <Field
+              label="Birth date"
+              type="date"
+              value={birthDate}
+              onChange={(event) => setBirthDate(event.target.value)}
+              max="9999-12-31"
+            />
+            {includeTime && (
+              <Field
+                label="Birth time"
+                type="time"
+                value={birthTime}
+                onChange={(event) => setBirthTime(event.target.value)}
+              />
+            )}
+            <Field
+              label="Reference date"
+              type="date"
+              value={referenceDate}
+              onChange={(event) => setReferenceDate(event.target.value)}
+              max="9999-12-31"
+            />
+            {includeTime && (
+              <Field
+                label="Reference time"
+                type="time"
+                value={referenceTime}
+                onChange={(event) => setReferenceTime(event.target.value)}
+              />
+            )}
           </div>
           <label className="switch-row">
             <span>
               <strong>Include time of day</strong>
               <small>Enables hour/minute precision and timezone-aware instant calculations.</small>
             </span>
-            <input type="checkbox" checked={includeTime} onChange={(event) => setIncludeTime(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeTime}
+              onChange={(event) => setIncludeTime(event.target.checked)}
+            />
           </label>
           {includeTime && (
-            <SelectField label="Timezone" value={timeZone} onChange={(event) => setTimeZone(event.target.value)} hint="Uses your browser's IANA timezone database.">
-              {Array.from(new Set([settings.defaultTimeZone, 'UTC', 'Asia/Kolkata', 'America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney'])).map((zone) => (
-                <option key={zone} value={zone}>{zone}</option>
+            <SelectField
+              label="Timezone"
+              value={timeZone}
+              onChange={(event) => setTimeZone(event.target.value)}
+              hint={`Uses your browser's IANA timezone database. Repeated fall-back times use the ${settings.dstAmbiguityPolicy} occurrence.`}
+            >
+              {Array.from(
+                new Set([
+                  settings.defaultTimeZone,
+                  'UTC',
+                  'Asia/Kolkata',
+                  'America/New_York',
+                  'Europe/London',
+                  'Asia/Tokyo',
+                  'Australia/Sydney',
+                ]),
+              ).map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
               ))}
             </SelectField>
           )}
-          {calculation.error && <div className="alert error" role="alert">{calculation.error}</div>}
+          {calculation.error && (
+            <div className="alert error" role="alert">
+              {calculation.error}
+            </div>
+          )}
         </section>
 
         {calculation.result ? (
@@ -111,8 +172,12 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
         )}
       </div>
       <div className="info-strip">
-        <strong>Leap-day birthdays:</strong>
-        <span>Non-leap anniversaries currently use {settings.leapDayPolicy === 'mar1' ? 'March 1' : 'February 28'}, configurable in Settings.</span>
+        <strong>Calendar rules:</strong>
+        <span>
+          Leap-day anniversaries use {settings.leapDayPolicy === 'mar1' ? 'March 1' : 'February 28'};
+          repeated fall-back times use the {settings.dstAmbiguityPolicy} occurrence. Both are configurable
+          in Settings.
+        </span>
       </div>
     </div>
   );
