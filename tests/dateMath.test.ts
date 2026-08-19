@@ -87,6 +87,21 @@ describe('date math', () => {
     );
   });
 
+  it('applies the DST overlap policy to elapsed age totals', () => {
+    const baseInput = {
+      birth: { year: 2026, month: 11, day: 1, hour: 0, minute: 30 },
+      reference: { year: 2026, month: 11, day: 1, hour: 1, minute: 30 },
+      timeZone: 'America/New_York',
+      includeTime: true,
+      leapDayPolicy: 'feb28' as const,
+    };
+    const earlier = calculateAge({ ...baseInput, dstAmbiguityPolicy: 'earlier' });
+    const later = calculateAge({ ...baseInput, dstAmbiguityPolicy: 'later' });
+
+    expect(earlier.totalMinutes).toBe(60);
+    expect(later.totalMinutes).toBe(120);
+  });
+
   it('rejects nonexistent DST spring-forward times', () => {
     expect(() =>
       zonedLocalToUtc(
