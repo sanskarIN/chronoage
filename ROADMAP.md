@@ -22,6 +22,8 @@
 - [x] Maintained axe-core WCAG A/AA audits across core pages, dark theme, and mobile viewport
 - [x] Release-candidate screenshot automation
 - [x] Externalized English UI strings and centralized runtime project metadata
+- [x] Keyboard focus containment/restoration for blocking onboarding and quick-action dialogs
+- [x] User-visible warning when settings persistence degrades to session-only state
 - [ ] Additional locale packs after translation review
 
 ## v1.2 — Advanced date tooling
@@ -29,6 +31,27 @@
 - [x] Optional custom milestone builder
 - [x] Calendar-duration comparison visualization
 - [x] Explicit DST ambiguity choice for repeated fall-back hours
+- [x] Free-form browser-supported IANA timezone entry with suggestions and inline validation
+- [x] Exact-age clock units shown only when time-of-day precision is enabled
+
+## Release hardening
+
+- [x] Central user-safe error classification so unexpected implementation errors are not rendered directly
+- [x] Root React crash-recovery boundary
+- [x] Global browser error and unhandled-rejection logging through a privacy-safe logger
+- [x] Structured diagnostic redaction for sensitive keys, emails, bearer credentials, dates, times, circular data, and excessive nesting
+- [x] Static invariant preventing runtime code from bypassing the structured logger with direct console output
+- [x] Graceful settings/profile behavior when browser storage is blocked or quota-limited
+- [x] Stable malformed-backup errors without exposing JSON parser details
+- [x] Contained PWA install/update promise failures
+- [x] Automated first-party JavaScript/CSS gzip budgets in local checks, CI, and release tags
+- [x] Manual GitHub Actions CI dispatch option for release-candidate verification
+- [x] Release tag/package-version identity gate
+- [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
+- [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
+- [ ] Execute the complete clean-checkout install/check/E2E release gate in a network-enabled environment and record the passing run
+
+The remaining unchecked release-hardening items depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred.
 
 ## Desktop delivery decision
 
