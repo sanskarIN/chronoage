@@ -5,6 +5,7 @@ import {
   type CustomMilestoneUnit,
 } from '../domain/milestones';
 import { formatDateInput, parseDateInput } from '../domain/dateMath';
+import { getUserSafeErrorMessage } from '../errors';
 import type { AppSettings } from '../types/models';
 import { defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
 import { Field, SelectField } from '../components/Field';
@@ -36,7 +37,7 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
       return {
         milestones: [],
         custom: null,
-        error: error instanceof Error ? error.message : en.milestones.unable,
+        error: getUserSafeErrorMessage(error, en.milestones.unable),
       };
     }
   }, [birthDate, customAmount, customUnit, referenceDate, settings.leapDayPolicy]);
