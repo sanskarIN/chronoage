@@ -14,6 +14,7 @@ export function Icon({ name }: { name: string }): ReactNode {
     close: <path d="M6 6l12 12M18 6 6 18" />,
     print: <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12-4h12v8H6v-8Z" />,
     share: <path d="M4 12v8h16v-8M12 3v12m-5-7 5-5 5 5" />,
+    edit: <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4L16.5 3.5Z" />,
     trash: <path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6m5 4v7m4-7v7" />,
     download: <path d="M12 3v12m-5-5 5 5 5-5M4 21h16" />,
     upload: <path d="M12 21V9m-5 5 5-5 5 5M4 3h16" />,
