@@ -1,6 +1,6 @@
 # Testing
 
-ChronoAge uses layered automated tests because calendar, timezone, persistence, accessibility, and offline behavior are edge-heavy.
+ChronoAge uses layered automated tests because calendar, timezone, persistence, accessibility, offline behavior, and privacy boundaries are edge-heavy.
 
 ## Unit tests
 
@@ -12,15 +12,20 @@ ChronoAge uses layered automated tests because calendar, timezone, persistence, 
 
 `tests/validation.test.ts` covers profile-name normalization, control-character rejection, length/non-empty limits, and birth-date validation.
 
+`tests/errors.test.ts` protects the user-safe error boundary: expected calculation/product errors may expose their curated text, while unexpected implementation exceptions must resolve to the caller-supplied generic fallback.
+
+`tests/logger.test.ts` protects structured privacy-safe logging, including sensitive-key redaction, email/bearer/date/time text redaction, circular-object handling, and global browser-error routing.
+
 ## Storage integration tests
 
-`tests/profiles.test.ts` verifies local save/load, edits, backup round trips, invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, and safe recovery when corrupted local entries are mixed with valid records.
+`tests/profiles.test.ts` verifies local save/load, edits, backup round trips, malformed-JSON and invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, and safe recovery when corrupted local entries are mixed with valid records.
 
 `tests/settings.test.ts` validates defaults, DST-setting migration, malformed-storage recovery, and prevention of truthy-string coercion for boolean preferences.
 
 ## Component tests
 
 - `tests/App.test.tsx` verifies application rendering, navigation, and quick actions.
+- `tests/AppErrorBoundary.test.tsx` verifies that render crashes produce a local recovery screen and pass diagnostics through the redacting logger.
 - `tests/ProfilesPage.test.tsx` verifies local profile filtering and editing.
 - `tests/CalculatorPage.test.tsx` verifies the visible DST-overlap preference and spring-forward error feedback.
 - `tests/MilestonesPage.test.tsx` verifies the custom milestone builder and validation feedback.
@@ -80,8 +85,9 @@ Vitest V8 coverage thresholds are configured in `vite.config.ts`. Coverage is a 
 The quality suite also contains non-test executable checks:
 
 - `npm run metadata:check` — keeps package and runtime project identity/version/link metadata consistent;
-- `npm run security:check` — verifies the expected static browser policy and rejects selected dangerous source primitives;
+- `npm run security:check` — verifies the expected static browser policy, scans runtime/public JavaScript for selected dangerous primitives, and rejects direct runtime `console.*` output outside the privacy-safe logger;
 - `npm run docs:links` — verifies local documentation links;
+- `npm run performance:check` — measures built JavaScript/CSS gzip totals against the release budgets documented in `docs/performance.md`;
 - `npm run release:check -- vX.Y.Z` — verifies a candidate release tag matches the package version.
 
 ## Benchmarks
@@ -96,8 +102,8 @@ Benchmarks are comparative engineering signals; do not claim a universal runtime
 
 ## Regression policy
 
-Every fixed calculation, persistence, accessibility, PWA, security, or release-automation bug should add a focused test or executable invariant when the behavior can be reproduced deterministically.
+Every fixed calculation, persistence, accessibility, PWA, security, privacy, runtime-recovery, or release-automation bug should add a focused test or executable invariant when the behavior can be reproduced deterministically.
 
 ## CI
 
-CI fails on repository formatting conventions, metadata/security invariants, lint, type errors, unit/component tests, documentation links, production build errors, runtime dependency-audit failures, and E2E failures. CodeQL and dependency-review workflows remain separate so their permissions stay explicit and least-privilege.
+CI can run on pushes, pull requests, or an explicit manual dispatch. It fails on repository formatting conventions, metadata/security invariants, lint, type errors, unit/component tests, documentation links, production build errors, bundle-budget failures, runtime dependency-audit failures, and E2E failures. CodeQL and dependency-review workflows remain separate so their permissions stay explicit and least-privilege.
