@@ -43,6 +43,23 @@ describe('settings storage', () => {
     expect(loadSettings().dstAmbiguityPolicy).toBe('earlier');
   });
 
+  it('does not coerce malformed stored strings into enabled boolean settings', () => {
+    localStorage.setItem(
+      'chronoage.settings.v1',
+      JSON.stringify({
+        reducedMotion: 'false',
+        highContrast: 'true',
+        onboardingComplete: 'true',
+      }),
+    );
+
+    expect(loadSettings()).toMatchObject({
+      reducedMotion: false,
+      highContrast: false,
+      onboardingComplete: false,
+    });
+  });
+
   it('falls back from malformed settings', () => {
     localStorage.setItem('chronoage.settings.v1', '{bad json');
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
