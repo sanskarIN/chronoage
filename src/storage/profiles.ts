@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 const STORAGE_KEY = 'chronoage.profiles.v1';
 const MAX_PROFILES = 100;
 const MAX_PROFILE_ID_LENGTH = 128;
+export const MAX_BACKUP_FILE_BYTES = 1_000_000;
 
 interface ProfileEnvelope {
   schemaVersion: 1;
@@ -143,7 +144,7 @@ export function exportProfiles(): string {
 }
 
 export function importProfiles(raw: string): SavedProfile[] {
-  if (raw.length > 1_000_000) throw new Error('Backup file is too large.');
+  if (raw.length > MAX_BACKUP_FILE_BYTES) throw new Error('Backup file is too large.');
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
