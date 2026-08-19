@@ -19,9 +19,10 @@
 - [x] Editable saved profiles using the validated local storage model
 - [x] Install/update prompt UX using browser capabilities
 - [x] Baseline automated browser accessibility regression checks
+- [x] Maintained axe-core WCAG A/AA audits across core pages, dark theme, and mobile viewport
 - [x] Release-candidate screenshot automation
+- [x] Externalized English UI strings and centralized runtime project metadata
 - [ ] Additional locale packs after translation review
-- [ ] Full maintained accessibility-engine audit in CI
 
 ## v1.2 — Advanced date tooling
 
@@ -37,5 +38,7 @@
 - [ ] Add a native wrapper only after a justified native-only requirement exists
 
 The current supported desktop delivery is the installable PWA. Native-wrapper work is intentionally deferred by [ADR 0006](docs/adr/0006-pwa-first-desktop-delivery.md), not blocked by missing implementation.
+
+Additional locale packs are intentionally gated on complete human translation review; the English-first architecture is already externalized and documented.
 
 Roadmap items are not promises and may change based on quality, security, and maintainability.
