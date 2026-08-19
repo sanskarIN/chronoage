@@ -1,8 +1,17 @@
-import { addDays, addYearsClamped, compareLocalDate, weekdayName } from './dateMath';
+import {
+  addDays,
+  addYearsClamped,
+  compareLocalDate,
+  DateCalculationError,
+  isValidLocalDate,
+  weekdayName,
+} from './dateMath';
 import type { LeapDayPolicy, LocalDate, Milestone } from '../types/models';
 
 const DAY_MILESTONES = [1_000, 5_000, 10_000, 15_000, 20_000, 25_000, 30_000];
 const YEAR_MILESTONES = [1, 5, 10, 13, 16, 18, 21, 25, 30, 40, 50, 60, 75, 100];
+
+export type CustomMilestoneUnit = 'days' | 'years';
 
 export function calculateMilestones(
   birth: LocalDate,
@@ -31,6 +40,39 @@ export function calculateMilestones(
   });
 
   return [...byDays, ...byYears].sort((a, b) => compareLocalDate(a.date, b.date));
+}
+
+export function calculateCustomMilestone(
+  birth: LocalDate,
+  reference: LocalDate,
+  amount: number,
+  unit: CustomMilestoneUnit,
+  leapDayPolicy: LeapDayPolicy = 'feb28',
+  locale = 'en-US',
+): Milestone {
+  if (!Number.isInteger(amount) || amount < 1) {
+    throw new DateCalculationError('Milestone amount must be a positive whole number.');
+  }
+  if (!isValidLocalDate(birth) || !isValidLocalDate(reference)) {
+    throw new DateCalculationError('Enter valid milestone dates.');
+  }
+
+  const date = unit === 'days' ? addDays(birth, amount) : addYearsClamped(birth, amount, leapDayPolicy);
+  if (!isValidLocalDate(date)) {
+    throw new DateCalculationError('Milestone falls outside the supported calendar range.');
+  }
+
+  const label =
+    unit === 'days'
+      ? `${amount.toLocaleString(locale)} days`
+      : `${amount}${ordinalSuffix(amount)} birthday`;
+
+  return {
+    label,
+    date,
+    weekday: weekdayName(date, locale),
+    reached: compareLocalDate(date, reference) <= 0,
+  };
 }
 
 function ordinalSuffix(value: number): string {
