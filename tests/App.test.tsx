@@ -1,24 +1,62 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../src/App';
 import { saveProfile } from '../src/storage/profiles';
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/');
   localStorage.clear();
   localStorage.setItem('chronoage.settings.v1', JSON.stringify({ onboardingComplete: true, theme: 'system' }));
 });
 
 describe('App', () => {
-  it('renders the calculator and navigates to date interval', async () => {
+  it('renders the calculator and navigates to date interval with a public page hash', async () => {
     const user = userEvent.setup();
     render(<App />);
     expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Interval' }));
     expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/interval');
   });
 
-  it('opens a saved profile directly in the calculator', async () => {
+  it('opens a valid page deep link on initial render', () => {
+    window.history.replaceState(null, '', '#/milestones');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Life milestones' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Milestones' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('responds to browser history navigation without exposing calculation inputs in the URL', async () => {
+    render(<App />);
+
+    await act(async () => {
+      window.history.replaceState(null, '', '#/difference');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(screen.getByRole('heading', { name: 'Age difference' })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/difference');
+    expect(window.location.href).not.toContain('birthDate');
+  });
+
+  it('ignores accessibility anchor fragments as page routes', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Interval' }));
+    expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+
+    await act(async () => {
+      window.history.replaceState(null, '', '#main-content');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+
+    expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+  });
+
+  it('opens a saved profile directly in the calculator without serializing private dates', async () => {
     saveProfile({ name: 'Saved person', birthDate: '2004-05-06' });
     const user = userEvent.setup();
     render(<App />);
@@ -28,6 +66,8 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
     expect(screen.getByLabelText('Birth date')).toHaveValue('2004-05-06');
+    expect(window.location.hash).toBe('#/calculate');
+    expect(window.location.href).not.toContain('2004-05-06');
   });
 
   it('opens quick actions with the toolbar button, isolates background content, and restores focus on Escape', async () => {
