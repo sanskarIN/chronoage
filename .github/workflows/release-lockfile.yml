@@ -2,7 +2,7 @@ name: Generate verified npm lockfile
 
 on:
   push:
-    branches: [chore/release-lockfile]
+    branches: [chore/release-lockfile-final]
     paths:
       - package.json
       - .github/workflows/release-lockfile.yml
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout verification branch
         uses: actions/checkout@v6
         with:
-          ref: chore/release-lockfile
+          ref: chore/release-lockfile-final
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -54,4 +54,4 @@ jobs:
           git config user.email "sanskarin@outlook.in"
           git add package-lock.json
           git commit -m "build: add reproducible npm lockfile"
-          git push origin HEAD:chore/release-lockfile
+          git push origin HEAD:chore/release-lockfile-final
