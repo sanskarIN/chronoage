@@ -35,7 +35,7 @@ test('captures the custom milestone builder', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Milestones' }).click();
   await page.getByLabel('Birth date').fill('2000-01-01');
   await page.getByLabel('Amount').fill('10000');
-  await expect(page.getByText('10,000 days')).toBeVisible();
+  await expect(page.getByText('10,000 days').first()).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('chronoage-milestones.png'),
     fullPage: true,
