@@ -16,9 +16,3 @@ export function validateBirthDateString(value: string): string {
   parseDateInput(value);
   return value;
 }
-
-export function safeText(value: unknown): string {
-  return typeof value === 'string'
-    ? value.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 500)
-    : '';
-}
