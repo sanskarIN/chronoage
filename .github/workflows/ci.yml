@@ -29,6 +29,8 @@ jobs:
         run: npm install --no-fund --no-audit
       - name: Check formatting
         run: npm run format:check
+      - name: Verify project metadata
+        run: npm run metadata:check
       - name: Lint
         run: npm run lint
       - name: Type check
