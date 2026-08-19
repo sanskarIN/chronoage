@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import type { AppSettings } from '../types/models';
 import { loadSettings, saveSettings } from '../storage/settings';
 
-export function useSettings(): [AppSettings, (next: AppSettings) => void] {
+export type SettingsUpdater = (next: AppSettings) => boolean;
+
+export function useSettings(): [AppSettings, SettingsUpdater] {
   const [settings, setSettingsState] = useState<AppSettings>(() => loadSettings());
 
-  const setSettings = (next: AppSettings): void => {
-    saveSettings(next);
+  const setSettings = (next: AppSettings): boolean => {
+    const persisted = saveSettings(next);
     setSettingsState(next);
+    return persisted;
   };
 
   useEffect(() => {
