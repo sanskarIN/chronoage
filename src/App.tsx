@@ -28,6 +28,8 @@ export default function App(): React.JSX.Element {
   const online = useOnlineStatus();
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const firstCommandRef = useRef<HTMLButtonElement>(null);
+  const blockingModalOpen = !settings.onboardingComplete || searchOpen;
+  const contentBlocked = blockingModalOpen || mobileNavOpen;
 
   const pageContent = useMemo(() => {
     switch (page) {
@@ -120,10 +122,14 @@ export default function App(): React.JSX.Element {
       {!settings.onboardingComplete && (
         <Onboarding onComplete={() => setSettings({ ...settings, onboardingComplete: true })} />
       )}
-      <a className="skip-link" href="#main-content">
+      <a
+        className="skip-link"
+        href="#main-content"
+        tabIndex={contentBlocked ? -1 : undefined}
+      >
         {en.app.skipToContent}
       </a>
-      <aside className={`sidebar ${mobileNavOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${mobileNavOpen ? 'open' : ''}`} inert={blockingModalOpen}>
         <div className="sidebar-top">
           <Logo />
           <button
@@ -164,7 +170,7 @@ export default function App(): React.JSX.Element {
           aria-label={en.app.closeNavigationOverlay}
         />
       )}
-      <div className="content-shell">
+      <div className="content-shell" inert={contentBlocked}>
         <header className="topbar">
           <button
             className="mobile-menu icon-button"
