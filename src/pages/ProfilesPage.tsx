@@ -1,6 +1,14 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { SavedProfile } from '../types/models';
-import { clearProfiles, deleteProfile, exportProfiles, importProfiles, loadProfiles, saveProfile } from '../storage/profiles';
+import {
+  clearProfiles,
+  deleteProfile,
+  exportProfiles,
+  importProfiles,
+  loadProfiles,
+  saveProfile,
+  updateProfile,
+} from '../storage/profiles';
 import { defaultBirthInputValue } from '../utils/dateDefaults';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
@@ -11,9 +19,22 @@ export function ProfilesPage(): React.JSX.Element {
   const [profiles, setProfiles] = useState<SavedProfile[]>(() => loadProfiles());
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
+  const [query, setQuery] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const filteredProfiles = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return profiles;
+    return profiles.filter(
+      (profile) =>
+        profile.name.toLocaleLowerCase().includes(normalized) || profile.birthDate.includes(normalized),
+    );
+  }, [profiles, query]);
 
   const addProfile = (): void => {
     try {
@@ -29,7 +50,29 @@ export function ProfilesPage(): React.JSX.Element {
 
   const removeProfile = (id: string): void => {
     setProfiles(deleteProfile(id));
+    if (editingId === id) setEditingId(null);
     setMessage('Profile deleted.');
+  };
+
+  const beginEdit = (profile: SavedProfile): void => {
+    setEditingId(profile.id);
+    setEditName(profile.name);
+    setEditBirthDate(profile.birthDate);
+    setError('');
+    setMessage('');
+  };
+
+  const saveEdit = (): void => {
+    if (!editingId) return;
+    try {
+      updateProfile(editingId, { name: editName, birthDate: editBirthDate });
+      setProfiles(loadProfiles());
+      setEditingId(null);
+      setError('');
+      setMessage('Profile updated.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to update profile.');
+    }
   };
 
   const downloadBackup = (): void => {
@@ -47,6 +90,7 @@ export function ProfilesPage(): React.JSX.Element {
     try {
       const text = await file.text();
       setProfiles(importProfiles(text));
+      setEditingId(null);
       setError('');
       setMessage('Backup restored successfully.');
     } catch (caught) {
@@ -63,48 +107,183 @@ export function ProfilesPage(): React.JSX.Element {
         action={<span className="privacy-chip">{profiles.length}/100 profiles</span>}
       />
       <section className="panel">
-        <div className="section-heading"><h2>Add profile</h2><span className="muted">Local storage only</span></div>
-        <div className="form-grid profile-form">
-          <Field label="Name" value={name} maxLength={80} autoComplete="off" onChange={(event) => setName(event.target.value)} placeholder="e.g. Alex" />
-          <Field label="Birth date" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
-          <button type="button" className="primary-button align-end" onClick={addProfile}>Save profile</button>
+        <div className="section-heading">
+          <h2>Add profile</h2>
+          <span className="muted">Local storage only</span>
         </div>
-        {error && <div className="alert error" role="alert">{error}</div>}
-        {message && <p className="status-line" role="status">{message}</p>}
+        <div className="form-grid profile-form">
+          <Field
+            label="Name"
+            value={name}
+            maxLength={80}
+            autoComplete="off"
+            onChange={(event) => setName(event.target.value)}
+            placeholder="e.g. Alex"
+          />
+          <Field
+            label="Birth date"
+            type="date"
+            value={birthDate}
+            onChange={(event) => setBirthDate(event.target.value)}
+          />
+          <button type="button" className="primary-button align-end" onClick={addProfile}>
+            Save profile
+          </button>
+        </div>
+        {error && (
+          <div className="alert error" role="alert">
+            {error}
+          </div>
+        )}
+        {message && (
+          <p className="status-line" role="status">
+            {message}
+          </p>
+        )}
       </section>
       <section className="panel">
         <div className="section-heading">
-          <div><p className="eyebrow">Backup</p><h2>Data controls</h2></div>
+          <div>
+            <p className="eyebrow">Backup</p>
+            <h2>Data controls</h2>
+          </div>
           <div className="button-row">
-            <button type="button" className="secondary-button" onClick={downloadBackup}><Icon name="download" /> Export</button>
-            <button type="button" className="secondary-button" onClick={() => fileRef.current?.click()}><Icon name="upload" /> Import</button>
-            <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void restoreBackup(file);
-              event.currentTarget.value = '';
-            }} />
+            <button type="button" className="secondary-button" onClick={downloadBackup}>
+              <Icon name="download" /> Export
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => fileRef.current?.click()}
+            >
+              <Icon name="upload" /> Import
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void restoreBackup(file);
+                event.currentTarget.value = '';
+              }}
+            />
           </div>
         </div>
-        <p className="muted">Export creates a plain JSON backup. Treat it like any file containing personal dates.</p>
+        <p className="muted">
+          Export creates a plain JSON backup. Treat it like any file containing personal dates.
+        </p>
       </section>
+      {profiles.length > 0 && (
+        <section className="panel">
+          <Field
+            label="Search saved profiles"
+            type="search"
+            value={query}
+            autoComplete="off"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name or YYYY-MM-DD"
+          />
+          <p className="muted" role="status">
+            Showing {filteredProfiles.length} of {profiles.length} profiles.
+          </p>
+        </section>
+      )}
       {profiles.length === 0 ? (
-        <section className="panel"><EmptyState icon="profiles" title="No profiles saved" description="Add a profile above when you want a reusable local birth date." /></section>
+        <section className="panel">
+          <EmptyState
+            icon="profiles"
+            title="No profiles saved"
+            description="Add a profile above when you want a reusable local birth date."
+          />
+        </section>
+      ) : filteredProfiles.length === 0 ? (
+        <section className="panel">
+          <EmptyState
+            icon="profiles"
+            title="No matching profiles"
+            description="Try a different name or birth-date search."
+          />
+        </section>
       ) : (
         <section className="profile-list" aria-label="Saved profiles">
-          {profiles.map((profile) => (
+          {filteredProfiles.map((profile) => (
             <article className="profile-card" key={profile.id}>
-              <div className="avatar" aria-hidden="true">{profile.name.slice(0, 1).toUpperCase()}</div>
-              <div className="profile-copy"><strong>{profile.name}</strong><span>{profile.birthDate}</span></div>
-              <button type="button" className="icon-button danger" onClick={() => removeProfile(profile.id)} aria-label={`Delete ${profile.name}`}><Icon name="trash" /></button>
+              {editingId === profile.id ? (
+                <div className="profile-edit-form">
+                  <Field
+                    label={`Name for ${profile.name}`}
+                    value={editName}
+                    maxLength={80}
+                    autoComplete="off"
+                    onChange={(event) => setEditName(event.target.value)}
+                  />
+                  <Field
+                    label={`Birth date for ${profile.name}`}
+                    type="date"
+                    value={editBirthDate}
+                    onChange={(event) => setEditBirthDate(event.target.value)}
+                  />
+                  <div className="button-row">
+                    <button type="button" className="primary-button" onClick={saveEdit}>
+                      Save changes
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="avatar" aria-hidden="true">
+                    {profile.name.slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="profile-copy">
+                    <strong>{profile.name}</strong>
+                    <span>{profile.birthDate}</span>
+                  </div>
+                  <div className="button-row">
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => beginEdit(profile)}
+                      aria-label={`Edit ${profile.name}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button danger"
+                      onClick={() => removeProfile(profile.id)}
+                      aria-label={`Delete ${profile.name}`}
+                    >
+                      <Icon name="trash" />
+                    </button>
+                  </div>
+                </>
+              )}
             </article>
           ))}
-          <button type="button" className="text-button danger-text" onClick={() => {
-            if (window.confirm('Delete all locally saved profiles?')) {
-              clearProfiles();
-              setProfiles([]);
-              setMessage('All profiles deleted.');
-            }
-          }}>Delete all profiles</button>
+          <button
+            type="button"
+            className="text-button danger-text"
+            onClick={() => {
+              if (window.confirm('Delete all locally saved profiles?')) {
+                clearProfiles();
+                setProfiles([]);
+                setEditingId(null);
+                setQuery('');
+                setMessage('All profiles deleted.');
+              }
+            }}
+          >
+            Delete all profiles
+          </button>
         </section>
       )}
     </div>
