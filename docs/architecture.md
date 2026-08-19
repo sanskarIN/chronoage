@@ -8,9 +8,19 @@ ChronoAge is a static modular monolith delivered as a React PWA. There is no bac
 
 Pure TypeScript calendar rules, timezone conversion, milestones, and validation. The domain layer does not import React or browser storage. This keeps the most error-prone logic easy to test.
 
+Expected calendar/input failures use `DateCalculationError`, which is one of the explicitly user-visible error classes recognized by the presentation boundary.
+
 ### Storage (`src/storage`)
 
 Versioned browser-local persistence adapters for settings and saved profiles. Storage functions validate imported data, cap profile counts, reject duplicate backup identities, ignore corrupted local profile entries safely, and never assume cloud availability.
+
+Expected product-level failures that originate outside date calculation, such as an invalid backup format or reaching the profile cap, use `UserVisibleError`. Raw JSON parser/storage implementation errors are not intended to cross into UI text.
+
+### Error boundary (`src/errors.ts`, `src/components/AppErrorBoundary.tsx`)
+
+`src/errors.ts` centralizes which exception classes may expose their messages to users. `getUserSafeErrorMessage` reveals only curated `DateCalculationError`/`UserVisibleError` text and maps unexpected exceptions to the feature's generic fallback.
+
+The React root is wrapped in `AppErrorBoundary`. A render failure is contained by a local recovery screen instead of leaving a blank application. The boundary records only sanitized local diagnostics and does not send a crash report.
 
 ### Presentation (`src/pages`, `src/components`)
 
@@ -18,22 +28,26 @@ Feature pages compose reusable components. Pages own transient form state. Share
 
 ### Internationalization (`src/i18n`)
 
-English is the shipped locale. Normal user-facing interface copy is externalized in `src/i18n/en.ts`, including interpolation helpers for dynamic sentences. Locale-independent product identity and contact metadata live in `src/config/project.ts` rather than being duplicated across pages.
+English is the shipped locale. Normal user-facing interface copy is externalized in `src/i18n/en.ts`, including interpolation helpers for dynamic sentences. Crash-recovery copy is externalized in `src/i18n/errors.ts`. Locale-independent product identity and contact metadata live in `src/config/project.ts` rather than being duplicated across pages.
 
-See [internationalization.md](internationalization.md) for the locale extension rules.
+See [internationalization.md](internationalization.md) for the locale extension rules. When locale selection is introduced, recovery copy must join the same selected-locale contract.
 
 ### Browser integration (`src/hooks`, `src/utils`)
 
-Online status, print/share, PWA registration, safe logging, and system defaults are isolated from domain logic. PWA installation and updates are exposed through a dedicated lifecycle hook rather than being mixed into Settings page business logic.
+Online status, print/share, PWA registration, privacy-safe logging, and system defaults are isolated from domain logic. PWA installation and updates are exposed through a dedicated lifecycle hook rather than being mixed into Settings page business logic.
+
+`src/utils/logger.ts` is the single runtime logging boundary. It sanitizes structured context and common sensitive text patterns, handles circular/deep object graphs, and receives global browser `error` and `unhandledrejection` events. Static security checks reject direct runtime console output outside this logger.
 
 ## Data flow
 
 1. A user enters a date/time in a semantic form control.
 2. Page code parses and validates the input.
 3. Domain functions calculate results using Gregorian civil-date math and, when requested, `Intl` timezone conversion.
-4. React renders derived results. Calculator input itself is not persisted.
-5. Saved profiles are persisted only after an explicit Save action.
-6. Settings are persisted through a typed adapter with safe defaults for missing or malformed values.
+4. Expected calculation/product exceptions can provide curated user-visible text; unexpected exceptions resolve to generic feature fallbacks.
+5. React renders derived results. Calculator input itself is not persisted.
+6. Saved profiles are persisted only after an explicit Save action.
+7. Settings are persisted through a typed adapter with safe defaults for missing or malformed values.
+8. Unexpected runtime failures are contained by the root error boundary and sanitized local diagnostic logging.
 
 ## Timezone approach
 
@@ -75,11 +89,17 @@ Profile load/import boundaries validate ids, uniqueness, normalized names, calen
 
 New incompatible schemas must use a migration or a new key; do not silently reinterpret existing records.
 
+## Performance boundary
+
+Production JavaScript and CSS gzip budgets are executable quality gates. `scripts/check-bundle-size.mjs` measures built `dist/` assets and fails when the configured first-party totals exceed the documented limits. `npm run check`, CI, and the tag-release workflow therefore share the same budget contract.
+
 ## Security boundaries
 
 Because v1 is client-only, the main boundaries are:
 
 - untrusted date/profile/import inputs,
+- user-visible versus internal exception text,
+- privacy-safe local diagnostics,
 - HTML rendering (React escaping by default),
 - local persistence corruption,
 - service worker cache scope,
