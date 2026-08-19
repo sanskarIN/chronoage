@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings=0",
-    "format:check": "prettier --check .",
+    "format:check": "node scripts/check-format.mjs",
     "format": "prettier --write .",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
