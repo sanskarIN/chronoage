@@ -3,10 +3,16 @@ type LogLevel = 'info' | 'warn' | 'error';
 const REDACTED_KEYS = /name|birth|profile|email|token|secret|password|authorization|date|time/i;
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi;
+const ISO_DATE_PATTERN = /\b\d{4}-\d{2}-\d{2}\b/g;
+const CLOCK_TIME_PATTERN = /\b(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?\b/g;
 const MAX_DEPTH = 5;
 
 function sanitizeText(value: string): string {
-  return value.replace(EMAIL_PATTERN, '[redacted-email]').replace(BEARER_PATTERN, 'Bearer [redacted]');
+  return value
+    .replace(EMAIL_PATTERN, '[redacted-email]')
+    .replace(BEARER_PATTERN, 'Bearer [redacted]')
+    .replace(ISO_DATE_PATTERN, '[redacted-date]')
+    .replace(CLOCK_TIME_PATTERN, '[redacted-time]');
 }
 
 function sanitize(value: unknown, seen: WeakSet<object>, depth: number): unknown {
