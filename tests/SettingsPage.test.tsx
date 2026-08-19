@@ -30,4 +30,15 @@ describe('SettingsPage', () => {
       defaultTimeZone: 'Pacific/Auckland',
     });
   });
+
+  it('warns when a preference can only be kept for the current session', () => {
+    const onChange = vi.fn().mockReturnValue(false);
+    render(<SettingsPage settings={DEFAULT_SETTINGS} onChange={onChange} />);
+
+    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'dark' } });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Browser storage is unavailable. Preference changes will last only for this session.',
+    );
+  });
 });
