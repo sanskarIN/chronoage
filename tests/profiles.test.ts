@@ -8,6 +8,8 @@ import {
   updateProfile,
 } from '../src/storage/profiles';
 
+const STORAGE_KEY = 'chronoage.profiles.v1';
+
 describe('local profiles', () => {
   beforeEach(() => clearProfiles());
 
@@ -48,5 +50,84 @@ describe('local profiles', () => {
     expect(() => importProfiles('{"schemaVersion":9,"profiles":[]}')).toThrow(
       'Unsupported backup format',
     );
+  });
+
+  it('rejects duplicate ids during import', () => {
+    const timestamp = '2026-08-19T00:00:00.000Z';
+    const backup = JSON.stringify({
+      schemaVersion: 1,
+      profiles: [
+        {
+          id: 'same-id',
+          name: 'One',
+          birthDate: '2000-01-01',
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+        {
+          id: 'same-id',
+          name: 'Two',
+          birthDate: '2001-01-01',
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+    });
+
+    expect(() => importProfiles(backup)).toThrow('Backup contains an invalid profile.');
+    expect(loadProfiles()).toEqual([]);
+  });
+
+  it('ignores corrupted local entries while keeping valid profiles', () => {
+    const timestamp = '2026-08-19T00:00:00.000Z';
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        profiles: [
+          {
+            id: 'valid-id',
+            name: 'Valid',
+            birthDate: '2000-01-01',
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          },
+          {
+            id: 'invalid-id',
+            name: 'Invalid',
+            birthDate: 'not-a-date',
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          },
+        ],
+      }),
+    );
+
+    expect(loadProfiles()).toEqual([
+      {
+        id: 'valid-id',
+        name: 'Valid',
+        birthDate: '2000-01-01',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      },
+    ]);
+  });
+
+  it('rejects malformed timestamps in imported profiles', () => {
+    const backup = JSON.stringify({
+      schemaVersion: 1,
+      profiles: [
+        {
+          id: 'profile-id',
+          name: 'Example',
+          birthDate: '2000-01-01',
+          createdAt: 'not-a-timestamp',
+          updatedAt: 'not-a-timestamp',
+        },
+      ],
+    });
+
+    expect(() => importProfiles(backup)).toThrow('Backup contains an invalid profile.');
   });
 });
