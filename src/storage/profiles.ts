@@ -4,22 +4,54 @@ import { logger } from '../utils/logger';
 
 const STORAGE_KEY = 'chronoage.profiles.v1';
 const MAX_PROFILES = 100;
+const MAX_PROFILE_ID_LENGTH = 128;
 
 interface ProfileEnvelope {
   schemaVersion: 1;
   profiles: SavedProfile[];
 }
 
-function isSavedProfile(value: unknown): value is SavedProfile {
-  if (!value || typeof value !== 'object') return false;
+function isIsoTimestamp(value: string): boolean {
+  try {
+    return new Date(value).toISOString() === value;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
+  if (!value || typeof value !== 'object') throw new Error('Profile must be an object.');
   const profile = value as Record<string, unknown>;
-  return (
-    typeof profile.id === 'string' &&
-    typeof profile.name === 'string' &&
-    typeof profile.birthDate === 'string' &&
-    typeof profile.createdAt === 'string' &&
-    typeof profile.updatedAt === 'string'
-  );
+  if (
+    typeof profile.id !== 'string' ||
+    profile.id.length < 1 ||
+    profile.id.length > MAX_PROFILE_ID_LENGTH ||
+    /[\u0000-\u001F\u007F]/.test(profile.id)
+  ) {
+    throw new Error('Profile has an invalid id.');
+  }
+  if (seenIds.has(profile.id)) throw new Error('Profile ids must be unique.');
+  if (typeof profile.name !== 'string' || typeof profile.birthDate !== 'string') {
+    throw new Error('Profile has invalid fields.');
+  }
+  if (
+    typeof profile.createdAt !== 'string' ||
+    typeof profile.updatedAt !== 'string' ||
+    !isIsoTimestamp(profile.createdAt) ||
+    !isIsoTimestamp(profile.updatedAt)
+  ) {
+    throw new Error('Profile has invalid timestamps.');
+  }
+
+  const normalized: SavedProfile = {
+    id: profile.id,
+    name: validateProfileName(profile.name),
+    birthDate: validateBirthDateString(profile.birthDate),
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+  };
+  seenIds.add(normalized.id);
+  return normalized;
 }
 
 function parseEnvelope(raw: string | null): ProfileEnvelope {
@@ -31,7 +63,20 @@ function parseEnvelope(raw: string | null): ProfileEnvelope {
     if (candidate.schemaVersion !== 1 || !Array.isArray(candidate.profiles)) {
       throw new Error('Unsupported profile schema');
     }
-    const profiles = candidate.profiles.filter(isSavedProfile).slice(0, MAX_PROFILES);
+
+    const seenIds = new Set<string>();
+    const profiles: SavedProfile[] = [];
+    let ignoredCount = 0;
+    for (const entry of candidate.profiles.slice(0, MAX_PROFILES)) {
+      try {
+        profiles.push(normalizeProfile(entry, seenIds));
+      } catch {
+        ignoredCount += 1;
+      }
+    }
+    if (ignoredCount > 0) {
+      logger.warn('Invalid saved profile entries were ignored.', { ignoredCount });
+    }
     return { schemaVersion: 1, profiles };
   } catch (error) {
     logger.warn('Saved profile data was invalid and was ignored.', {
@@ -90,7 +135,11 @@ export function clearProfiles(): void {
 }
 
 export function exportProfiles(): string {
-  return JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), profiles: loadProfiles() }, null, 2);
+  return JSON.stringify(
+    { schemaVersion: 1, exportedAt: new Date().toISOString(), profiles: loadProfiles() },
+    null,
+    2,
+  );
 }
 
 export function importProfiles(raw: string): SavedProfile[] {
@@ -98,18 +147,21 @@ export function importProfiles(raw: string): SavedProfile[] {
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
-  if (value.schemaVersion !== 1 || !Array.isArray(value.profiles)) throw new Error('Unsupported backup format.');
+  if (value.schemaVersion !== 1 || !Array.isArray(value.profiles)) {
+    throw new Error('Unsupported backup format.');
+  }
+  if (value.profiles.length > MAX_PROFILES) {
+    throw new Error(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
+  }
 
+  const seenIds = new Set<string>();
   const imported = value.profiles.map((entry) => {
-    if (!isSavedProfile(entry)) throw new Error('Backup contains an invalid profile.');
-    return {
-      ...entry,
-      id: typeof entry.id === 'string' && entry.id ? entry.id : crypto.randomUUID(),
-      name: validateProfileName(entry.name),
-      birthDate: validateBirthDateString(entry.birthDate),
-    };
+    try {
+      return normalizeProfile(entry, seenIds);
+    } catch {
+      throw new Error('Backup contains an invalid profile.');
+    }
   });
-  if (imported.length > MAX_PROFILES) throw new Error(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
   persist(imported);
   return imported;
 }
