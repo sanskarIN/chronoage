@@ -144,7 +144,9 @@ export function exportProfiles(): string {
 }
 
 export function importProfiles(raw: string): SavedProfile[] {
-  if (raw.length > MAX_BACKUP_FILE_BYTES) throw new Error('Backup file is too large.');
+  if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_FILE_BYTES) {
+    throw new Error('Backup file is too large.');
+  }
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
