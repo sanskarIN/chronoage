@@ -21,6 +21,11 @@ import { en } from '../i18n/en';
 
 const PROFILE_PAGE_SIZE = 20;
 
+type DeletedProfileSnapshot = {
+  profile: SavedProfile;
+  position: number;
+};
+
 export function ProfilesPage({
   onUseProfile,
 }: {
@@ -34,7 +39,7 @@ export function ProfilesPage({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
-  const [recentlyDeleted, setRecentlyDeleted] = useState<SavedProfile | null>(null);
+  const [recentlyDeleted, setRecentlyDeleted] = useState<DeletedProfileSnapshot | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -63,11 +68,12 @@ export function ProfilesPage({
   };
 
   const removeProfile = (id: string): void => {
-    const profile = profiles.find((entry) => entry.id === id);
-    if (!profile) return;
+    const position = profiles.findIndex((entry) => entry.id === id);
+    const profile = profiles[position];
+    if (!profile || position < 0) return;
     try {
       setProfiles(deleteProfile(id));
-      setRecentlyDeleted(profile);
+      setRecentlyDeleted({ profile, position });
       if (editingId === id) setEditingId(null);
       setError('');
       setMessage(en.profiles.deleted);
@@ -79,7 +85,7 @@ export function ProfilesPage({
   const undoDelete = (): void => {
     if (!recentlyDeleted) return;
     try {
-      setProfiles(restoreProfile(recentlyDeleted));
+      setProfiles(restoreProfile(recentlyDeleted.profile, recentlyDeleted.position));
       setRecentlyDeleted(null);
       setError('');
       setMessage(en.profiles.restoredDeleted);
