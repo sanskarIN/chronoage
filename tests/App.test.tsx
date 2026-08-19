@@ -6,6 +6,7 @@ import { saveProfile } from '../src/storage/profiles';
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/');
+  document.title = 'ChronoAge';
   localStorage.clear();
   localStorage.setItem('chronoage.settings.v1', JSON.stringify({ onboardingComplete: true, theme: 'system' }));
 });
@@ -18,6 +19,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Interval' }));
     expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
     expect(window.location.hash).toBe('#/interval');
+    expect(document.title).toBe('Interval · ChronoAge');
+    expect(document.getElementById('main-content')).toHaveFocus();
   });
 
   it('opens a valid page deep link on initial render', () => {
@@ -27,6 +30,7 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'Life milestones' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Milestones' })).toHaveAttribute('aria-current', 'page');
+    expect(document.title).toBe('Milestones · ChronoAge');
   });
 
   it('responds to browser history navigation without exposing calculation inputs in the URL', async () => {
@@ -40,6 +44,8 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Age difference' })).toBeInTheDocument();
     expect(window.location.hash).toBe('#/difference');
     expect(window.location.href).not.toContain('birthDate');
+    expect(document.title).toBe('Difference · ChronoAge');
+    expect(document.getElementById('main-content')).toHaveFocus();
   });
 
   it('ignores accessibility anchor fragments as page routes', async () => {
@@ -54,6 +60,7 @@ describe('App', () => {
     });
 
     expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+    expect(document.title).toBe('Interval · ChronoAge');
   });
 
   it('opens a saved profile directly in the calculator without serializing private dates', async () => {
@@ -68,6 +75,8 @@ describe('App', () => {
     expect(screen.getByLabelText('Birth date')).toHaveValue('2004-05-06');
     expect(window.location.hash).toBe('#/calculate');
     expect(window.location.href).not.toContain('2004-05-06');
+    expect(document.title).toBe('Age · ChronoAge');
+    expect(document.getElementById('main-content')).toHaveFocus();
   });
 
   it('opens quick actions with the toolbar button, isolates background content, and restores focus on Escape', async () => {
