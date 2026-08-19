@@ -37,9 +37,11 @@ npx playwright install --with-deps chromium
 npm run test:e2e
 ```
 
-## Accessibility regression checks
+## Accessibility automation
 
-The Playwright accessibility smoke suite verifies:
+The accessibility E2E suite uses two complementary layers.
+
+The product-specific smoke layer verifies:
 
 - primary navigation and main landmarks;
 - skip-link target wiring;
@@ -50,7 +52,9 @@ The Playwright accessibility smoke suite verifies:
 - accessible labels for the duration visualization;
 - labels for custom milestone controls.
 
-These checks catch common regressions but do not replace manual assistive-technology review or a maintained standards engine.
+The standards-engine layer uses the pinned `@axe-core/playwright` package and fails on automated WCAG A/AA violations. It scans every core page plus dark-theme and mobile-breakpoint states. Rule-engine updates should be reviewed rather than silently bypassed when they surface a real product issue.
+
+Automated accessibility testing complements but does not replace manual keyboard, zoom, screen-reader, reduced-motion, and platform assistive-technology review.
 
 ## Coverage
 
