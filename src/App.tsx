@@ -39,9 +39,7 @@ export default function App(): React.JSX.Element {
   }, []);
 
   const focusMainContent = useCallback((): void => {
-    window.requestAnimationFrame(() => {
-      document.getElementById('main-content')?.focus();
-    });
+    document.getElementById('main-content')?.focus();
   }, []);
 
   const useProfile = useCallback(
