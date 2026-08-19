@@ -33,6 +33,16 @@ describe('App', () => {
     expect(document.title).toBe('Milestones · ChronoAge');
   });
 
+  it('canonicalizes an invalid application route without treating regular anchors as routes', () => {
+    window.history.replaceState(null, '', '#/not-a-page');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/calculate');
+    expect(document.title).toBe('Age · ChronoAge');
+  });
+
   it('responds to browser history navigation without exposing calculation inputs in the URL', async () => {
     render(<App />);
 
