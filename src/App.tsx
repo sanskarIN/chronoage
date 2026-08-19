@@ -73,6 +73,7 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (!settings.onboardingComplete) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         if (searchOpen) {
@@ -88,7 +89,7 @@ export default function App(): React.JSX.Element {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [closeSearch, openSearch, searchOpen]);
+  }, [closeSearch, openSearch, searchOpen, settings.onboardingComplete]);
 
   const navigate = (next: Page): void => {
     setPage(next);
