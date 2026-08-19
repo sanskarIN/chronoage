@@ -14,20 +14,30 @@ export const DEFAULT_SETTINGS: AppSettings = {
   onboardingComplete: false,
 };
 
+function storedBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
 export function loadSettings(): AppSettings {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<AppSettings>;
     return {
-      theme: parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system' ? parsed.theme : 'system',
-      reducedMotion: Boolean(parsed.reducedMotion),
-      highContrast: Boolean(parsed.highContrast),
+      theme:
+        parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system'
+          ? parsed.theme
+          : DEFAULT_SETTINGS.theme,
+      reducedMotion: storedBoolean(parsed.reducedMotion, DEFAULT_SETTINGS.reducedMotion),
+      highContrast: storedBoolean(parsed.highContrast, DEFAULT_SETTINGS.highContrast),
       defaultTimeZone:
         typeof parsed.defaultTimeZone === 'string' && isValidTimeZone(parsed.defaultTimeZone)
           ? parsed.defaultTimeZone
           : DEFAULT_SETTINGS.defaultTimeZone,
       leapDayPolicy: parsed.leapDayPolicy === 'mar1' ? 'mar1' : 'feb28',
       dstAmbiguityPolicy: parsed.dstAmbiguityPolicy === 'later' ? 'later' : 'earlier',
-      onboardingComplete: Boolean(parsed.onboardingComplete),
+      onboardingComplete: storedBoolean(
+        parsed.onboardingComplete,
+        DEFAULT_SETTINGS.onboardingComplete,
+      ),
     };
   } catch {
     return DEFAULT_SETTINGS;
