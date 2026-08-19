@@ -18,17 +18,17 @@ ChronoAge uses layered automated tests because calendar, timezone, persistence, 
 
 ## Storage integration tests
 
-`tests/profiles.test.ts` verifies local save/load, edits, backup round trips, malformed-JSON and invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, safe recovery when corrupted local entries are mixed with valid records, and stable behavior when browser storage reads/writes/clears are blocked.
+`tests/profiles.test.ts` verifies local save/load, edits, exact profile restoration for deletion undo, missing-profile mutation rejection, backup round trips, malformed-JSON and invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, safe recovery when corrupted local entries are mixed with valid records, and stable behavior when browser storage reads/writes/clears are blocked.
 
 `tests/settings.test.ts` validates defaults, DST-setting migration, malformed-storage recovery, prevention of truthy-string coercion for boolean preferences, blocked-storage fallback, and session-only behavior when settings writes fail.
 
 ## Component and hook tests
 
-- `tests/App.test.tsx` verifies application rendering/navigation, quick-action keyboard shortcuts, modal focus wrapping/restoration, onboarding shortcut isolation, and inert background regions while blocking overlays are active.
+- `tests/App.test.tsx` verifies application rendering/navigation, saved-profile handoff into the calculator, quick-action keyboard shortcuts, modal focus wrapping/restoration, onboarding shortcut isolation, and inert background regions while blocking overlays are active.
 - `tests/AppErrorBoundary.test.tsx` verifies that render crashes produce a local recovery screen and pass diagnostics through the redacting logger.
 - `tests/Onboarding.test.tsx` verifies first-run focus entry/containment and explicit completion.
-- `tests/ProfilesPage.test.tsx` verifies local profile filtering/editing and safe UI feedback when delete/clear persistence fails.
-- `tests/CalculatorPage.test.tsx` verifies the visible DST-overlap preference, arbitrary browser-supported IANA timezone entry, invalid timezone feedback, and spring-forward error feedback.
+- `tests/ProfilesPage.test.tsx` verifies local profile filtering/editing, bounded progressive rendering, delete undo, calculator-action callbacks, and safe UI feedback when delete/clear persistence fails.
+- `tests/CalculatorPage.test.tsx` verifies saved-profile birth-date prefill, the visible DST-overlap preference, arbitrary browser-supported IANA timezone entry, invalid timezone feedback, and spring-forward error feedback.
 - `tests/SettingsPage.test.tsx` verifies invalid timezone drafts are not persisted, arbitrary valid IANA defaults are accepted, and session-only persistence warnings are surfaced.
 - `tests/ResultCard.test.tsx` verifies exact clock units are hidden when time precision is disabled and shown when enabled.
 - `tests/MilestonesPage.test.tsx` verifies the custom milestone builder and validation feedback.
@@ -42,7 +42,7 @@ Playwright runs both desktop Chromium and a Pixel-class mobile Chromium project.
 
 Browser coverage includes:
 
-- `tests/e2e/app.spec.ts` — primary age calculation and local profile create/delete journeys;
+- `tests/e2e/app.spec.ts` — primary age calculation, local profile create/delete, deletion undo, and saved-profile calculator-prefill journeys;
 - `tests/e2e/accessibility.spec.ts` — structural accessibility checks and axe WCAG audits;
 - `tests/e2e/pwa.spec.ts` — service-worker control, offline reload, and non-navigation asset fallback behavior;
 - `tests/e2e/screenshots.spec.ts` — calculator, date-difference visualization, custom milestone builder, and mobile release-candidate captures.
