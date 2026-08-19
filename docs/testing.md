@@ -18,7 +18,7 @@ ChronoAge uses layered automated tests because calendar, timezone, persistence, 
 
 ## Storage integration tests
 
-`tests/profiles.test.ts` verifies local save/load, edits, exact profile restoration for deletion undo, missing-profile mutation rejection, backup round trips, malformed-JSON and invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, safe recovery when corrupted local entries are mixed with valid records, and stable behavior when browser storage reads/writes/clears are blocked.
+`tests/profiles.test.ts` verifies local save/load, edits, exact profile restoration for deletion undo, original-position restoration, missing-profile mutation rejection, backup round trips, malformed-JSON and invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, safe recovery when corrupted local entries are mixed with valid records, and stable behavior when browser storage reads/writes/clears are blocked.
 
 `tests/settings.test.ts` validates defaults, DST-setting migration, malformed-storage recovery, prevention of truthy-string coercion for boolean preferences, blocked-storage fallback, and session-only behavior when settings writes fail.
 
@@ -27,7 +27,7 @@ ChronoAge uses layered automated tests because calendar, timezone, persistence, 
 - `tests/App.test.tsx` verifies application rendering/navigation, saved-profile handoff into the calculator, quick-action keyboard shortcuts, modal focus wrapping/restoration, onboarding shortcut isolation, and inert background regions while blocking overlays are active.
 - `tests/AppErrorBoundary.test.tsx` verifies that render crashes produce a local recovery screen and pass diagnostics through the redacting logger.
 - `tests/Onboarding.test.tsx` verifies first-run focus entry/containment and explicit completion.
-- `tests/ProfilesPage.test.tsx` verifies local profile filtering/editing, bounded progressive rendering, delete undo, calculator-action callbacks, and safe UI feedback when delete/clear persistence fails.
+- `tests/ProfilesPage.test.tsx` verifies local profile filtering/editing, bounded progressive rendering, ordered delete undo, stale-undo expiration after replacement creation, calculator-action callbacks, and safe UI feedback when delete/clear persistence fails.
 - `tests/CalculatorPage.test.tsx` verifies saved-profile birth-date prefill, the visible DST-overlap preference, arbitrary browser-supported IANA timezone entry, invalid timezone feedback, and spring-forward error feedback.
 - `tests/SettingsPage.test.tsx` verifies invalid timezone drafts are not persisted, arbitrary valid IANA defaults are accepted, and session-only persistence warnings are surfaced.
 - `tests/ResultCard.test.tsx` verifies exact clock units are hidden when time precision is disabled and shown when enabled.
@@ -92,7 +92,7 @@ Vitest V8 coverage thresholds are configured in `vite.config.ts`. Coverage is a 
 
 The quality suite also contains non-test executable checks:
 
-- `npm run metadata:check` — keeps package and runtime project identity/version/link metadata consistent;
+- `npm run metadata:check` — keeps package/runtime project identity, version/link metadata, the `.nvmrc` Node pin, package engine floor, and permanent CI/release `node-version` values consistent;
 - `npm run security:check` — verifies the expected static browser policy, scans runtime/public JavaScript for selected dangerous primitives, and rejects direct runtime `console.*` output outside the privacy-safe logger;
 - `npm run docs:links` — verifies local documentation links;
 - `npm run performance:check` — measures built JavaScript/CSS gzip totals against the release budgets documented in `docs/performance.md`;
@@ -113,6 +113,8 @@ Benchmarks are comparative engineering signals; do not claim a universal runtime
 Every fixed calculation, persistence, accessibility, PWA, security, privacy, runtime-recovery, or release-automation bug should add a focused test or executable invariant when the behavior can be reproduced deterministically.
 
 ## CI
+
+Permanent CI and release verification use Node.js `22.13.0`, matching `.nvmrc`; the metadata gate rejects drift between that pin, the package engine floor, and workflow `node-version` declarations.
 
 CI can run on pushes, pull requests, or an explicit manual dispatch. It fails on repository formatting conventions, metadata/security invariants, lint, type errors, unit/component tests, documentation links, production build errors, bundle-budget failures, runtime dependency-audit failures, and E2E failures. CodeQL and dependency-review workflows remain separate so their permissions stay explicit and least-privilege.
 
