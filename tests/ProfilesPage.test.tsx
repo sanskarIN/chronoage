@@ -24,6 +24,29 @@ describe('ProfilesPage', () => {
     expect(loadProfiles()).toHaveLength(2);
   });
 
+  it('sorts visible profiles without mutating storage order', async () => {
+    saveProfile({ name: 'Charlie', birthDate: '2002-01-01' });
+    saveProfile({ name: 'Alpha', birthDate: '2005-01-01' });
+    saveProfile({ name: 'Bravo', birthDate: '1999-01-01' });
+    const storedOrder = loadProfiles().map((profile) => profile.name);
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+    await user.selectOptions(screen.getByLabelText('Sort profiles'), 'name-asc');
+
+    const names = screen
+      .getAllByRole('article')
+      .map((article) => article.querySelector('strong')?.textContent);
+    expect(names).toEqual(['Alpha', 'Bravo', 'Charlie']);
+    expect(loadProfiles().map((profile) => profile.name)).toEqual(storedOrder);
+
+    await user.selectOptions(screen.getByLabelText('Sort profiles'), 'birth-asc');
+    const birthDates = screen
+      .getAllByRole('article')
+      .map((article) => article.querySelector('.profile-copy span')?.textContent);
+    expect(birthDates).toEqual(['1999-01-01', '2002-01-01', '2005-01-01']);
+  });
+
   it('reveals large profile collections in bounded batches', async () => {
     for (let index = 0; index < 21; index += 1) {
       saveProfile({ name: `Profile ${index}`, birthDate: '2000-01-01' });
@@ -39,6 +62,22 @@ describe('ProfilesPage', () => {
 
     expect(screen.getAllByRole('article')).toHaveLength(21);
     expect(screen.queryByRole('button', { name: 'Show more profiles' })).not.toBeInTheDocument();
+  });
+
+  it('resets progressive rendering when sort order changes', async () => {
+    for (let index = 0; index < 25; index += 1) {
+      saveProfile({ name: `Profile ${index}`, birthDate: '2000-01-01' });
+    }
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+    await user.click(screen.getByRole('button', { name: 'Show more profiles' }));
+    expect(screen.getAllByRole('article')).toHaveLength(25);
+
+    await user.selectOptions(screen.getByLabelText('Sort profiles'), 'name-asc');
+
+    expect(screen.getAllByRole('article')).toHaveLength(20);
+    expect(screen.getByRole('button', { name: 'Show more profiles' })).toBeInTheDocument();
   });
 
   it('passes a saved profile to the calculator action', async () => {
