@@ -45,6 +45,9 @@ function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
   ) {
     throw new Error('Profile has invalid timestamps.');
   }
+  if (new Date(profile.updatedAt).getTime() < new Date(profile.createdAt).getTime()) {
+    throw new Error('Profile update timestamp cannot precede creation.');
+  }
 
   const normalized: SavedProfile = {
     id: profile.id,
