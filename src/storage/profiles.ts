@@ -153,6 +153,25 @@ export function deleteProfile(id: string): SavedProfile[] {
   return next;
 }
 
+export function restoreProfile(profile: SavedProfile): SavedProfile[] {
+  const profiles = loadProfiles();
+  if (profiles.length >= MAX_PROFILES) {
+    throw new UserVisibleError(`Profile limit of ${MAX_PROFILES} reached.`);
+  }
+  if (profiles.some((entry) => entry.id === profile.id)) {
+    throw new UserVisibleError('Profile already exists.');
+  }
+
+  let restored: SavedProfile;
+  try {
+    restored = normalizeProfile(profile, new Set<string>());
+  } catch {
+    throw new UserVisibleError('Profile could not be restored.');
+  }
+  persist([restored, ...profiles]);
+  return [restored, ...profiles];
+}
+
 export function clearProfiles(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
