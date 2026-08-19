@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AppSettings, ThemePreference } from '../types/models';
 import { SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { mailto, project } from '../config/project';
 import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
 import { en } from '../i18n/en';
 
@@ -220,17 +221,18 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
       <section className="settings-section panel" aria-labelledby="about-settings-title">
         <div>
           <p className="eyebrow">{en.settings.aboutEyebrow}</p>
-          <h2 id="about-settings-title">{en.settings.aboutTitle}</h2>
+          <h2 id="about-settings-title">
+            {project.name} {project.version}
+          </h2>
         </div>
         <p className="muted">
-          {en.settings.aboutMeta}{' '}
-          <a href="https://github.com/sanskarIN/chronoage" target="_blank" rel="noreferrer">
+          Open-source {project.license} project · {project.credit} ·{' '}
+          <a href={project.repositoryUrl} target="_blank" rel="noreferrer">
             {en.settings.githubRepository}
           </a>
         </p>
         <p className="muted">
-          {en.settings.support}{' '}
-          <a href="mailto:supportramsandesh@gmail.com">supportramsandesh@gmail.com</a>
+          {en.settings.support} <a href={mailto(project.supportEmail)}>{project.supportEmail}</a>
         </p>
       </section>
     </div>
