@@ -35,13 +35,19 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export function SelectField({ label, hint, id, children, ...props }: SelectFieldProps): React.JSX.Element {
   const inputId = id ?? `select-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const helpId = `${inputId}-help`;
+  const describedBy = [props['aria-describedby'], hint ? helpId : undefined].filter(Boolean).join(' ') || undefined;
   return (
     <label className="field" htmlFor={inputId}>
       <span className="field-label">{label}</span>
-      <select id={inputId} {...props}>
+      <select id={inputId} {...props} aria-describedby={describedBy}>
         {children}
       </select>
-      {hint && <span className="field-hint">{hint}</span>}
+      {hint && (
+        <span id={helpId} className="field-hint">
+          {hint}
+        </span>
+      )}
     </label>
   );
 }
