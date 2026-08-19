@@ -87,4 +87,17 @@ test.describe('accessibility checks', () => {
       await expectNoWcagViolations(page);
     }
   });
+
+  test('passes an automated WCAG audit in dark theme', async ({ page }) => {
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByLabel('Theme').selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expectNoWcagViolations(page);
+  });
+
+  test('passes an automated WCAG audit at the mobile breakpoint', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+    await expectNoWcagViolations(page);
+  });
 });
