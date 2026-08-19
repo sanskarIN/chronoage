@@ -35,7 +35,7 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - Inclusive and exclusive date interval calculator.
 - 1,000/5,000/10,000+ day milestones and major birthday anniversaries.
 - Custom positive-whole-number milestones in days or birthday years.
-- Local-only saved profiles with validation, search, editing, export, import, and deletion controls.
+- Local-only saved profiles with validation, search, editing, one-step delete undo, progressive rendering, calculator handoff, export, import, and deletion controls.
 - Print/share result cards that omit private profile names by default.
 - Light, dark, and system themes; reduced-motion and high-contrast settings.
 - Keyboard-first navigation, visible focus states, semantic labels, and quick actions (`Ctrl/Cmd + K`).
