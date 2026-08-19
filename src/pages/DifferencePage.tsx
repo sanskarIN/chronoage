@@ -5,6 +5,7 @@ import { todayInputValue } from '../utils/dateDefaults';
 import { DurationVisualization } from '../components/DurationVisualization';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { en } from '../i18n/en';
 
 export function DifferencePage({ settings }: { settings: AppSettings }): React.JSX.Element {
   const [first, setFirst] = useState('2000-01-01');
@@ -29,7 +30,7 @@ export function DifferencePage({ settings }: { settings: AppSettings }): React.J
         result: null,
         startLabel: '',
         endLabel: '',
-        error: error instanceof Error ? error.message : 'Unable to compare dates.',
+        error: error instanceof Error ? error.message : en.difference.unable,
       };
     }
   }, [first, second, settings.leapDayPolicy]);
@@ -37,20 +38,20 @@ export function DifferencePage({ settings }: { settings: AppSettings }): React.J
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Compare"
-        title="Age difference"
-        description="See the precise calendar distance between any two valid dates, regardless of order."
+        eyebrow={en.difference.eyebrow}
+        title={en.difference.title}
+        description={en.difference.description}
       />
       <section className="panel">
         <div className="form-grid two-columns">
           <Field
-            label="First date"
+            label={en.difference.firstDate}
             type="date"
             value={first}
             onChange={(event) => setFirst(event.target.value)}
           />
           <Field
-            label="Second date"
+            label={en.difference.secondDate}
             type="date"
             value={second}
             onChange={(event) => setSecond(event.target.value)}
@@ -60,20 +61,20 @@ export function DifferencePage({ settings }: { settings: AppSettings }): React.J
       {value.result ? (
         <>
           <section className="panel comparison-result" aria-live="polite">
-            <p className="eyebrow">Calendar distance</p>
+            <p className="eyebrow">{en.difference.calendarDistance}</p>
             <div className="hero-number">
               {value.result.years}
-              <span>years</span>
+              <span>{en.difference.years}</span>
             </div>
             <div className="comparison-units">
               <span>
-                <strong>{value.result.months}</strong> months
+                <strong>{value.result.months}</strong> {en.difference.months}
               </span>
               <span>
-                <strong>{value.result.days}</strong> days
+                <strong>{value.result.days}</strong> {en.difference.days}
               </span>
               <span>
-                <strong>{value.result.totalDays.toLocaleString()}</strong> total days
+                <strong>{value.result.totalDays.toLocaleString()}</strong> {en.difference.totalDays}
               </span>
             </div>
           </section>
