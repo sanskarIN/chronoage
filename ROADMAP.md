@@ -1,5 +1,9 @@
 # ChronoAge Roadmap
 
+## Current release — v2.0.12
+
+ChronoAge `2.0.12` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, and release-hardening work described below. Remaining unchecked items are deliberately evidence-gated or intentionally deferred; they are not silently treated as complete for the `2.0.12` source tree.
+
 ## v1.0 — Core production PWA
 
 - [x] Exact age calculator
@@ -55,6 +59,7 @@
 - [x] Manual GitHub Actions CI dispatch option for release-candidate verification
 - [x] Release tag/package-version identity gate
 - [x] Pin permanent CI/release Node runtime to `.nvmrc` and enforce runtime-pin consistency
+- [x] Reject saved-profile histories whose update timestamp precedes creation
 - [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
 - [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
 - [ ] Execute the complete clean-checkout install/check/E2E release gate in a network-enabled environment and record the passing run
