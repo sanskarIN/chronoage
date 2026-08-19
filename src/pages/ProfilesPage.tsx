@@ -253,7 +253,7 @@ export function ProfilesPage(): React.JSX.Element {
                       onClick={() => beginEdit(profile)}
                       aria-label={en.profiles.edit(profile.name)}
                     >
-                      {en.profiles.edit(profile.name)}
+                      <Icon name="edit" />
                     </button>
                     <button
                       type="button"
