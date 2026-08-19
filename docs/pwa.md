@@ -8,6 +8,18 @@ ChronoAge can be installed where the browser exposes Progressive Web App install
 
 Browsers that do not expose `beforeinstallprompt` may still provide their own menu-based installation flow. ChronoAge does not attempt to imitate or bypass browser installation policy.
 
+## Installed-app shortcuts
+
+The web app manifest exposes optional shortcuts for high-frequency public tools:
+
+- Age Calculator → `/#/calculate`
+- Age Difference → `/#/difference`
+- Life Milestones → `/#/milestones`
+
+Platforms decide whether and how to show manifest shortcuts. The shortcut URLs use the same finite public page-route namespace as normal ChronoAge navigation and contain no profile ids, names, dates, times, search text, or calculation results.
+
+`tests/manifest.test.ts` protects the stable root manifest identity/scope and verifies that every declared shortcut stays inside the allowed public page-route pattern without query-style data parameters.
+
 ## Updates
 
 The service worker uses a controlled worker-update lifecycle:
@@ -36,7 +48,7 @@ ChronoAge precaches the core shell and uses two same-origin GET strategies:
 - If navigation fails offline, an exact cached navigation response is preferred.
 - If no exact response exists, cached `index.html` is used as the app-shell fallback.
 
-This prevents a stale cached application document from winning over a reachable deployment during an ordinary reload.
+This prevents a stale cached application document from winning over a reachable deployment during an ordinary reload. Because feature routing uses hash fragments, direct public page shortcuts still request the same root document and resolve the selected page client-side after the shell loads.
 
 ### Non-navigation resources
 
@@ -53,13 +65,13 @@ Across both strategies:
 
 ## Privacy
 
-Installation and update checks use browser service-worker APIs against the same deployed ChronoAge origin. They do not transmit saved profiles or calculator inputs.
+Installation, manifest shortcuts, and update checks use browser APIs against the same deployed ChronoAge origin. Shortcut URLs identify only a public tool page. They do not transmit saved profiles or calculator inputs.
 
 ## Automated browser coverage
 
 `tests/e2e/pwa.spec.ts` waits for service-worker control, confirms the primary interface is usable, deliberately poisons the cached root document with a stale marker, and verifies an online navigation still loads the current network application. It then switches the browser context offline, reloads the application, and confirms the primary interface remains available. The same journey verifies that a deliberately missing non-navigation asset is rejected instead of being replaced by HTML.
 
-`tests/usePwaLifecycle.test.tsx` separately covers install-prompt consumption and failed install/update-application APIs.
+`tests/usePwaLifecycle.test.tsx` separately covers install-prompt consumption and failed install/update-application APIs. `tests/manifest.test.ts` verifies manifest identity and privacy-safe shortcut URLs.
 
 The PWA E2E journey runs in the normal desktop and mobile Chromium projects.
 
@@ -68,6 +80,7 @@ The PWA E2E journey runs in the normal desktop and mobile Chromium projects.
 - Verify normal browser use when installation is unavailable.
 - Verify install prompt acceptance and dismissal in a supported browser.
 - Verify an installed display-mode session is detected.
+- On a platform that exposes PWA shortcuts, verify Age, Difference, and Milestones open the expected public pages without personal data in their launch URLs.
 - Deploy two worker/cache generations and verify update discovery, waiting state, apply action, controller change, and reload.
 - Deploy changed application assets without changing the worker script and verify an online reload receives the current application document.
 - Verify offline fallback after the updated worker activates.
