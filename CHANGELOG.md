@@ -8,11 +8,20 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Search/filter controls for saved profiles by name or birth date.
 - Accessible profile editing UI backed by the existing validated `updateProfile` storage operation.
 - Regression tests covering profile updates and missing-profile errors.
+- PWA install availability detection and a browser-native install action in Settings.
+- Explicit service-worker update checks with a controlled waiting-worker apply flow.
+- Playwright accessibility smoke checks for landmarks, accessible names, form labels, and image alternative text.
+- Desktop and mobile release-candidate screenshot capture in the Playwright suite.
+- CI upload of generated release-candidate screenshots.
+- PWA lifecycle documentation.
+
+### Changed
+- Service-worker activation now waits for explicit update application instead of always taking control immediately after installation.
+- Profile data controls now describe editing as part of the local-only workflow.
 
 ### Planned
-- Install/update prompt UX using browser capabilities.
-- Automated accessibility audit in CI.
-- Release screenshots captured from CI/release candidate.
+- Additional locale packs after translation review.
+- A maintained full accessibility-engine audit in CI.
 - Optional Tauri desktop wrapper after the PWA release is stable.
 
 ## [1.0.0] - 2026-08-19
