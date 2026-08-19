@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { AppSettings, ThemePreference } from '../types/models';
 import { SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
 
 interface Props {
   settings: AppSettings;
@@ -9,6 +11,30 @@ interface Props {
 
 export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
   const patch = (next: Partial<AppSettings>): void => onChange({ ...settings, ...next });
+  const pwa = usePwaLifecycle();
+  const [installMessage, setInstallMessage] = useState('');
+
+  const installApp = async (): Promise<void> => {
+    const outcome = await pwa.install();
+    setInstallMessage(
+      outcome === 'accepted'
+        ? 'Installation accepted.'
+        : outcome === 'dismissed'
+          ? 'Installation was dismissed. You can try again later.'
+          : 'Your browser is not currently offering an install prompt.',
+    );
+  };
+
+  const updateMessage =
+    pwa.updateStatus === 'checking'
+      ? 'Checking for a newer app shell…'
+      : pwa.updateStatus === 'current'
+        ? 'ChronoAge is up to date.'
+        : pwa.updateStatus === 'update-ready'
+          ? 'A newer version is ready to apply.'
+          : pwa.updateStatus === 'error'
+            ? 'The update check could not be completed.'
+            : 'Check the service worker for a newer deployed version.';
 
   return (
     <div className="page-stack">
@@ -93,7 +119,9 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
         <SelectField
           label="Leap-day anniversary"
           value={settings.leapDayPolicy}
-          onChange={(event) => patch({ leapDayPolicy: event.target.value === 'mar1' ? 'mar1' : 'feb28' })}
+          onChange={(event) =>
+            patch({ leapDayPolicy: event.target.value === 'mar1' ? 'mar1' : 'feb28' })
+          }
           hint="Applied when a February 29 birthday lands in a non-leap year."
         >
           <option value="feb28">February 28</option>
@@ -109,7 +137,8 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
         <div className="privacy-box">
           <strong>Profiles stay in this browser unless you explicitly export them.</strong>
           <p>
-            Use the Profiles page to add, delete, export, or import local profile data. Export files are plain JSON and are not encrypted.
+            Use the Profiles page to add, edit, delete, export, or import local profile data. Export
+            files are plain JSON and are not encrypted.
           </p>
         </div>
       </section>
@@ -122,9 +151,39 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
         <div className="privacy-box">
           <strong>No analytics, account, advertising SDK, or cloud sync is built in.</strong>
           <p>
-            Calculator inputs are transient UI state. Saved profiles and preferences use browser localStorage only after user actions.
+            Calculator inputs are transient UI state. Saved profiles and preferences use browser
+            localStorage only after user actions.
           </p>
         </div>
+      </section>
+
+      <section className="settings-section panel" aria-labelledby="install-title">
+        <div>
+          <p className="eyebrow">Installation</p>
+          <h2 id="install-title">Install ChronoAge</h2>
+        </div>
+        <p className="muted">
+          {pwa.installed
+            ? 'ChronoAge is running in an installed standalone experience on this device.'
+            : pwa.canInstall
+              ? 'Your browser is ready to install ChronoAge as an app.'
+              : 'Installation availability depends on browser and platform support.'}
+        </p>
+        {!pwa.installed && (
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={!pwa.canInstall}
+            onClick={() => void installApp()}
+          >
+            Install app
+          </button>
+        )}
+        {installMessage && (
+          <p className="status-line" role="status">
+            {installMessage}
+          </p>
+        )}
       </section>
 
       <section className="settings-section panel" aria-labelledby="update-title">
@@ -132,12 +191,28 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           <p className="eyebrow">Updates</p>
           <h2 id="update-title">PWA update check</h2>
         </div>
-        <p className="muted">
-          ChronoAge uses the browser service-worker lifecycle. Reloading checks the deployed app shell for a newer version.
+        <p className="muted" role="status">
+          {updateMessage}
         </p>
-        <button type="button" className="secondary-button" onClick={() => window.location.reload()}>
-          Reload and check for updates
-        </button>
+        <div className="button-row">
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={pwa.updateStatus === 'checking'}
+            onClick={() => void pwa.checkForUpdate()}
+          >
+            {pwa.updateStatus === 'checking' ? 'Checking…' : 'Check for updates'}
+          </button>
+          {pwa.updateStatus === 'update-ready' && (
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void pwa.applyUpdate()}
+            >
+              Apply update
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="settings-section panel" aria-labelledby="about-settings-title">
