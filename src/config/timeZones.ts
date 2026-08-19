@@ -1,0 +1,16 @@
+export const TIME_ZONE_SUGGESTIONS = [
+  'UTC',
+  'Africa/Johannesburg',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'America/New_York',
+  'America/Sao_Paulo',
+  'Asia/Dubai',
+  'Asia/Kolkata',
+  'Asia/Singapore',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+  'Europe/Berlin',
+  'Europe/London',
+  'Pacific/Auckland',
+] as const;
