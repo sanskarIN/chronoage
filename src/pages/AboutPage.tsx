@@ -1,5 +1,6 @@
 import { PageHeader } from '../components/PageHeader';
 import { Logo } from '../components/Logo';
+import { mailto, project } from '../config/project';
 import { en } from '../i18n/en';
 
 export function AboutPage(): React.JSX.Element {
@@ -13,14 +14,14 @@ export function AboutPage(): React.JSX.Element {
       <section className="panel about-hero">
         <Logo />
         <p>{en.about.heroDescription}</p>
-        <div className="version-chip">{en.about.version}</div>
+        <div className="version-chip">Version {project.version}</div>
       </section>
       <section className="about-grid">
         <article className="panel">
           <p className="eyebrow">{en.about.projectEyebrow}</p>
           <h2>{en.about.licenseTitle}</h2>
           <p>{en.about.licenseDescription}</p>
-          <a href="https://github.com/sanskarIN/chronoage" target="_blank" rel="noreferrer">
+          <a href={project.repositoryUrl} target="_blank" rel="noreferrer">
             {en.about.sourceLink}
           </a>
         </article>
@@ -29,33 +30,28 @@ export function AboutPage(): React.JSX.Element {
           <h2>{en.about.supportTitle}</h2>
           <p>
             {en.about.supportLabel}{' '}
-            <a href="mailto:supportramsandesh@gmail.com">supportramsandesh@gmail.com</a>
+            <a href={mailto(project.supportEmail)}>{project.supportEmail}</a>
           </p>
           <p>
             {en.about.businessLabel}{' '}
-            <a href="mailto:sanskarin@outlook.in">sanskarin@outlook.in</a>
+            <a href={mailto(project.businessEmails[0])}>{project.businessEmails[0]}</a>
             <br />
-            <a href="mailto:sanskarin.business@gmail.com">sanskarin.business@gmail.com</a>
+            <a href={mailto(project.businessEmails[1])}>{project.businessEmails[1]}</a>
           </p>
         </article>
         <article className="panel">
           <p className="eyebrow">{en.about.fundingEyebrow}</p>
           <h2>{en.about.fundingTitle}</h2>
           <p>{en.about.fundingDescription}</p>
-          <a
-            className="bmc-link"
-            href="https://buymeacoffee.com/sanskarIN"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className="bmc-link" href={project.fundingUrl} target="_blank" rel="noreferrer">
             {en.about.fundingLink}
           </a>
         </article>
         <article className="panel">
           <p className="eyebrow">{en.about.creditEyebrow}</p>
-          <h2>{en.about.creditTitle}</h2>
+          <h2>{project.credit}</h2>
           <p>{en.about.creditDescription}</p>
-          <a href="https://github.com/sanskarIN" target="_blank" rel="noreferrer">
+          <a href={project.profileUrl} target="_blank" rel="noreferrer">
             {en.about.profileLink}
           </a>
         </article>
