@@ -21,7 +21,11 @@ import { en } from '../i18n/en';
 
 const PROFILE_PAGE_SIZE = 20;
 
-export function ProfilesPage(): React.JSX.Element {
+export function ProfilesPage({
+  onUseProfile,
+}: {
+  onUseProfile?: (profile: SavedProfile) => void;
+}): React.JSX.Element {
   const [profiles, setProfiles] = useState<SavedProfile[]>(() => loadProfiles());
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
@@ -302,6 +306,16 @@ export function ProfilesPage(): React.JSX.Element {
                     <span>{profile.birthDate}</span>
                   </div>
                   <div className="button-row">
+                    {onUseProfile && (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => onUseProfile(profile)}
+                        aria-label={`${en.nav.calculate}: ${profile.name}`}
+                      >
+                        <Icon name="age" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="icon-button"
