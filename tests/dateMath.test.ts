@@ -8,6 +8,7 @@ import {
   nextBirthday,
   parseDateInput,
   zonedLocalToUtc,
+  zonedLocalToUtcCandidates,
 } from '../src/domain/dateMath';
 
 describe('date math', () => {
@@ -29,6 +30,12 @@ describe('date math', () => {
     const leapDay = { year: 2000, month: 2, day: 29 };
     expect(addYearsClamped(leapDay, 1, 'feb28')).toEqual({ year: 2001, month: 2, day: 28 });
     expect(addYearsClamped(leapDay, 1, 'mar1')).toEqual({ year: 2001, month: 3, day: 1 });
+  });
+
+  it('rejects year arithmetic outside the supported calendar range', () => {
+    expect(() => addYearsClamped({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
+      'outside the supported range',
+    );
   });
 
   it('calculates a calendar age exactly', () => {
@@ -58,8 +65,35 @@ describe('date math', () => {
   });
 
   it('converts IANA zoned local time to a UTC instant', () => {
-    const timestamp = zonedLocalToUtc({ year: 2026, month: 8, day: 19, hour: 12, minute: 0 }, 'Asia/Kolkata');
+    const timestamp = zonedLocalToUtc(
+      { year: 2026, month: 8, day: 19, hour: 12, minute: 0 },
+      'Asia/Kolkata',
+    );
     expect(new Date(timestamp).toISOString()).toBe('2026-08-19T06:30:00.000Z');
+  });
+
+  it('returns both instants for an ambiguous DST fall-back time', () => {
+    const local = { year: 2026, month: 11, day: 1, hour: 1, minute: 30 };
+    const candidates = zonedLocalToUtcCandidates(local, 'America/New_York');
+    expect(candidates.map((value) => new Date(value).toISOString())).toEqual([
+      '2026-11-01T05:30:00.000Z',
+      '2026-11-01T06:30:00.000Z',
+    ]);
+    expect(new Date(zonedLocalToUtc(local, 'America/New_York', 'earlier')).toISOString()).toBe(
+      '2026-11-01T05:30:00.000Z',
+    );
+    expect(new Date(zonedLocalToUtc(local, 'America/New_York', 'later')).toISOString()).toBe(
+      '2026-11-01T06:30:00.000Z',
+    );
+  });
+
+  it('rejects nonexistent DST spring-forward times', () => {
+    expect(() =>
+      zonedLocalToUtc(
+        { year: 2026, month: 3, day: 8, hour: 2, minute: 30 },
+        'America/New_York',
+      ),
+    ).toThrow('does not exist');
   });
 
   it('counts exclusive and inclusive intervals', () => {
