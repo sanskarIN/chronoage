@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { SavedProfile } from './types/models';
 import { AboutPage } from './pages/AboutPage';
 import { CalculatorPage } from './pages/CalculatorPage';
 import { DifferencePage } from './pages/DifferencePage';
@@ -22,6 +23,7 @@ const pageOrder: Page[] = ['calculate', 'difference', 'interval', 'milestones', 
 
 export default function App(): React.JSX.Element {
   const [page, setPage] = useState<Page>('calculate');
+  const [profileBirthDate, setProfileBirthDate] = useState<string | undefined>();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settings, setSettings] = useSettings();
@@ -31,10 +33,21 @@ export default function App(): React.JSX.Element {
   const blockingModalOpen = !settings.onboardingComplete || searchOpen;
   const contentBlocked = blockingModalOpen || mobileNavOpen;
 
+  const useProfile = useCallback(
+    (profile: SavedProfile): void => {
+      setProfileBirthDate(profile.birthDate);
+      setPage('calculate');
+      setMobileNavOpen(false);
+      setSearchOpen(false);
+      window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+    },
+    [settings.reducedMotion],
+  );
+
   const pageContent = useMemo(() => {
     switch (page) {
       case 'calculate':
-        return <CalculatorPage settings={settings} />;
+        return <CalculatorPage settings={settings} initialBirthDate={profileBirthDate} />;
       case 'difference':
         return <DifferencePage settings={settings} />;
       case 'interval':
@@ -42,13 +55,13 @@ export default function App(): React.JSX.Element {
       case 'milestones':
         return <MilestonesPage settings={settings} />;
       case 'profiles':
-        return <ProfilesPage />;
+        return <ProfilesPage onUseProfile={useProfile} />;
       case 'settings':
         return <SettingsPage settings={settings} onChange={setSettings} />;
       case 'about':
         return <AboutPage />;
     }
-  }, [page, settings, setSettings]);
+  }, [page, profileBirthDate, settings, setSettings, useProfile]);
 
   const rememberFocus = useCallback((): void => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
