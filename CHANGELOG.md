@@ -4,7 +4,14 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
+### Added
+- Search/filter controls for saved profiles by name or birth date.
+- Accessible profile editing UI backed by the existing validated `updateProfile` storage operation.
+- Regression tests covering profile updates and missing-profile errors.
+
 ### Planned
+- Install/update prompt UX using browser capabilities.
+- Automated accessibility audit in CI.
 - Release screenshots captured from CI/release candidate.
 - Optional Tauri desktop wrapper after the PWA release is stable.
 
