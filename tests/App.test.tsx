@@ -23,6 +23,20 @@ describe('App', () => {
     expect(document.getElementById('main-content')).toHaveFocus();
   });
 
+  it('waits for the mobile navigation layer to close before focusing routed content', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    expect(container.querySelector('.content-shell')).toHaveAttribute('inert');
+
+    await user.click(screen.getByRole('button', { name: 'Interval' }));
+
+    expect(container.querySelector('.content-shell')).not.toHaveAttribute('inert');
+    expect(document.getElementById('main-content')).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+  });
+
   it('opens a valid page deep link on initial render', () => {
     window.history.replaceState(null, '', '#/milestones');
 
