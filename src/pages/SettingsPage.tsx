@@ -3,6 +3,7 @@ import type { AppSettings, ThemePreference } from '../types/models';
 import { SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
+import { en } from '../i18n/en';
 
 interface Props {
   settings: AppSettings;
@@ -18,57 +19,57 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
     const outcome = await pwa.install();
     setInstallMessage(
       outcome === 'accepted'
-        ? 'Installation accepted.'
+        ? en.settings.installAccepted
         : outcome === 'dismissed'
-          ? 'Installation was dismissed. You can try again later.'
-          : 'Your browser is not currently offering an install prompt.',
+          ? en.settings.installDismissed
+          : en.settings.promptUnavailable,
     );
   };
 
   const updateMessage =
     pwa.updateStatus === 'checking'
-      ? 'Checking for a newer app shell…'
+      ? en.settings.checking
       : pwa.updateStatus === 'current'
-        ? 'ChronoAge is up to date.'
+        ? en.settings.current
         : pwa.updateStatus === 'update-ready'
-          ? 'A newer version is ready to apply.'
+          ? en.settings.updateReady
           : pwa.updateStatus === 'error'
-            ? 'The update check could not be completed.'
-            : 'Check the service worker for a newer deployed version.';
+            ? en.settings.updateError
+            : en.settings.updateIdle;
 
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Preferences"
-        title="Settings"
-        description="Control appearance, accessibility, local data behavior, date rules, updates, and project information."
+        eyebrow={en.settings.eyebrow}
+        title={en.settings.title}
+        description={en.settings.description}
       />
 
       <section className="settings-section panel" aria-labelledby="appearance-title">
         <div>
-          <p className="eyebrow">Appearance</p>
-          <h2 id="appearance-title">Theme</h2>
+          <p className="eyebrow">{en.settings.appearanceEyebrow}</p>
+          <h2 id="appearance-title">{en.settings.themeTitle}</h2>
         </div>
         <SelectField
-          label="Theme"
+          label={en.settings.theme}
           value={settings.theme}
           onChange={(event) => patch({ theme: event.target.value as ThemePreference })}
         >
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
+          <option value="system">{en.settings.system}</option>
+          <option value="light">{en.settings.light}</option>
+          <option value="dark">{en.settings.dark}</option>
         </SelectField>
       </section>
 
       <section className="settings-section panel" aria-labelledby="accessibility-title">
         <div>
-          <p className="eyebrow">Accessibility</p>
-          <h2 id="accessibility-title">Comfort and contrast</h2>
+          <p className="eyebrow">{en.settings.accessibilityEyebrow}</p>
+          <h2 id="accessibility-title">{en.settings.comfortTitle}</h2>
         </div>
         <label className="switch-row">
           <span>
-            <strong>Reduce motion</strong>
-            <small>Minimize transitions and animated effects.</small>
+            <strong>{en.settings.reduceMotion}</strong>
+            <small>{en.settings.reduceMotionHint}</small>
           </span>
           <input
             type="checkbox"
@@ -78,8 +79,8 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
         </label>
         <label className="switch-row">
           <span>
-            <strong>High contrast</strong>
-            <small>Strengthen boundaries and text contrast.</small>
+            <strong>{en.settings.highContrast}</strong>
+            <small>{en.settings.highContrastHint}</small>
           </span>
           <input
             type="checkbox"
@@ -91,14 +92,14 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
 
       <section className="settings-section panel" aria-labelledby="date-title">
         <div>
-          <p className="eyebrow">Date behavior</p>
-          <h2 id="date-title">Calculation defaults</h2>
+          <p className="eyebrow">{en.settings.dateEyebrow}</p>
+          <h2 id="date-title">{en.settings.calculationDefaults}</h2>
         </div>
         <SelectField
-          label="Default timezone"
+          label={en.settings.defaultTimezone}
           value={settings.defaultTimeZone}
           onChange={(event) => patch({ defaultTimeZone: event.target.value })}
-          hint="Used when time-of-day precision is enabled."
+          hint={en.settings.defaultTimezoneHint}
         >
           {Array.from(
             new Set([
@@ -117,68 +118,62 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           ))}
         </SelectField>
         <SelectField
-          label="Leap-day anniversary"
+          label={en.settings.leapDay}
           value={settings.leapDayPolicy}
           onChange={(event) =>
             patch({ leapDayPolicy: event.target.value === 'mar1' ? 'mar1' : 'feb28' })
           }
-          hint="Applied when a February 29 birthday lands in a non-leap year."
+          hint={en.settings.leapDayHint}
         >
-          <option value="feb28">February 28</option>
-          <option value="mar1">March 1</option>
+          <option value="feb28">{en.settings.february28}</option>
+          <option value="mar1">{en.settings.march1}</option>
         </SelectField>
         <SelectField
-          label="Repeated DST time"
+          label={en.settings.repeatedDst}
           value={settings.dstAmbiguityPolicy}
           onChange={(event) =>
             patch({ dstAmbiguityPolicy: event.target.value === 'later' ? 'later' : 'earlier' })
           }
-          hint="When clocks move backward and a local time occurs twice, choose which occurrence ChronoAge uses."
+          hint={en.settings.repeatedDstHint}
         >
-          <option value="earlier">Earlier occurrence</option>
-          <option value="later">Later occurrence</option>
+          <option value="earlier">{en.settings.earlierOccurrence}</option>
+          <option value="later">{en.settings.laterOccurrence}</option>
         </SelectField>
       </section>
 
       <section className="settings-section panel" aria-labelledby="data-title">
         <div>
-          <p className="eyebrow">Data</p>
-          <h2 id="data-title">Local storage and backups</h2>
+          <p className="eyebrow">{en.settings.dataEyebrow}</p>
+          <h2 id="data-title">{en.settings.localStorageTitle}</h2>
         </div>
         <div className="privacy-box">
-          <strong>Profiles stay in this browser unless you explicitly export them.</strong>
-          <p>
-            Use the Profiles page to add, edit, delete, export, or import local profile data. Export
-            files are plain JSON and are not encrypted.
-          </p>
+          <strong>{en.settings.localStorageStrong}</strong>
+          <p>{en.settings.localStorageDescription}</p>
         </div>
       </section>
 
       <section className="settings-section panel" aria-labelledby="privacy-title">
         <div>
-          <p className="eyebrow">Privacy</p>
-          <h2 id="privacy-title">Local-first defaults</h2>
+          <p className="eyebrow">{en.settings.privacyEyebrow}</p>
+          <h2 id="privacy-title">{en.settings.privacyTitle}</h2>
         </div>
         <div className="privacy-box">
-          <strong>No analytics, account, advertising SDK, or cloud sync is built in.</strong>
-          <p>
-            Calculator inputs are transient UI state. Saved profiles and preferences use browser
-            localStorage only after user actions.
-          </p>
+          <strong>{en.settings.privacyStrong}</strong>
+          <p>{en.settings.privacyDescription}</p>
         </div>
       </section>
 
       <section className="settings-section panel" aria-labelledby="install-title">
         <div>
-          <p className="eyebrow">Installation</p>
-          <h2 id="install-title">Install ChronoAge</h2>
+          <p className="eyebrow">{en.settings.installEyebrow}</p>
+          <h2 id="install-title">{en.settings.installTitle}</h2>
         </div>
         <p className="muted">
           {pwa.installed
-            ? 'ChronoAge is running in an installed standalone experience on this device.'
+            ? en.settings.installed
             : pwa.canInstall
-              ? 'Your browser is ready to install ChronoAge as an app.'
-              : 'Installation availability depends on browser and platform support.'}
+              ? en.settings.installReady
+              : en.settings.installUnavailable}
         </p>
         {!pwa.installed && (
           <button
@@ -187,7 +182,7 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
             disabled={!pwa.canInstall}
             onClick={() => void installApp()}
           >
-            Install app
+            {en.settings.installApp}
           </button>
         )}
         {installMessage && (
@@ -199,8 +194,8 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
 
       <section className="settings-section panel" aria-labelledby="update-title">
         <div>
-          <p className="eyebrow">Updates</p>
-          <h2 id="update-title">PWA update check</h2>
+          <p className="eyebrow">{en.settings.updatesEyebrow}</p>
+          <h2 id="update-title">{en.settings.updatesTitle}</h2>
         </div>
         <p className="muted" role="status">
           {updateMessage}
@@ -212,15 +207,11 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
             disabled={pwa.updateStatus === 'checking'}
             onClick={() => void pwa.checkForUpdate()}
           >
-            {pwa.updateStatus === 'checking' ? 'Checking…' : 'Check for updates'}
+            {pwa.updateStatus === 'checking' ? en.settings.checkingButton : en.settings.checkUpdates}
           </button>
           {pwa.updateStatus === 'update-ready' && (
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => void pwa.applyUpdate()}
-            >
-              Apply update
+            <button type="button" className="primary-button" onClick={() => void pwa.applyUpdate()}>
+              {en.settings.applyUpdate}
             </button>
           )}
         </div>
@@ -228,17 +219,18 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
 
       <section className="settings-section panel" aria-labelledby="about-settings-title">
         <div>
-          <p className="eyebrow">About</p>
-          <h2 id="about-settings-title">ChronoAge 1.0.0</h2>
+          <p className="eyebrow">{en.settings.aboutEyebrow}</p>
+          <h2 id="about-settings-title">{en.settings.aboutTitle}</h2>
         </div>
         <p className="muted">
-          Open-source MIT project · Made by the Sanskar ·{' '}
+          {en.settings.aboutMeta}{' '}
           <a href="https://github.com/sanskarIN/chronoage" target="_blank" rel="noreferrer">
-            GitHub repository
+            {en.settings.githubRepository}
           </a>
         </p>
         <p className="muted">
-          Support: <a href="mailto:supportramsandesh@gmail.com">supportramsandesh@gmail.com</a>
+          {en.settings.support}{' '}
+          <a href="mailto:supportramsandesh@gmail.com">supportramsandesh@gmail.com</a>
         </p>
       </section>
     </div>
