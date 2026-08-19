@@ -14,7 +14,7 @@
 
 ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age math, next-birthday planning, interval tools, custom milestone discovery, visual date comparison, local saved profiles, accessibility, offline PWA support, printable/shareable results, explicit leap-day behavior, and explicit daylight-saving overlap handling in one maintainable React + TypeScript application.
 
-**Privacy is the default:** calculations run locally in the browser, saved profiles use local browser storage, no account is required, and the project ships with no analytics or cloud sync.
+**Privacy is the default:** calculations run locally in the browser, saved profiles use local browser storage, no account is required, and the project ships with no analytics, crash-reporting backend, or cloud sync.
 
 ## Interface preview
 
@@ -42,6 +42,8 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - Installable offline PWA with user-controlled update application.
 - Responsive layouts for phones, tablets, and desktops.
 - Browser-level accessibility regression checks and release-candidate screenshot capture.
+- Local crash-recovery UI with privacy-safe structured diagnostics.
+- Automated production JavaScript/CSS gzip budget enforcement.
 - Internationalization-ready string organization (English ships first).
 
 ## Supported platforms
@@ -93,6 +95,7 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run performance:check
 npm run test:e2e
 ```
 
@@ -101,6 +104,8 @@ Run the combined non-E2E quality suite with:
 ```bash
 npm run check
 ```
+
+`npm run performance:check` measures the built first-party JavaScript and CSS gzip totals against the release budgets, so run `npm run build` first when invoking it directly.
 
 See [docs/testing.md](docs/testing.md) for the full strategy and CI expectations.
 
@@ -112,7 +117,7 @@ npm run check
 npm run build
 ```
 
-The production web bundle is created in `dist/`. GitHub Actions also verifies clean builds and can publish versioned release artifacts. See [docs/release.md](docs/release.md).
+The production web bundle is created in `dist/`. GitHub Actions also verifies builds, runtime/security invariants, bundle budgets, and browser journeys and can publish versioned release artifacts. See [docs/release.md](docs/release.md).
 
 ## Architecture
 
@@ -121,18 +126,20 @@ ChronoAge is a modular client-side application:
 - `src/domain/` — deterministic date math, milestones, validation.
 - `src/storage/` — versioned local persistence and backup/restore.
 - `src/pages/` — feature-oriented UI pages.
-- `src/components/` — reusable UI building blocks and visualizations.
+- `src/components/` — reusable UI building blocks, visualizations, and the application crash boundary.
 - `src/hooks/` — browser/application state integration, including the PWA lifecycle.
-- `src/i18n/` — externalized English UI copy and interpolation helpers.
+- `src/i18n/` — externalized English UI/recovery copy and interpolation helpers.
 - `src/config/` — locale-independent project identity/runtime metadata.
-- `src/utils/` — safe logging, PWA registration, sharing, defaults.
+- `src/utils/` — privacy-safe logging, PWA registration, sharing, defaults.
 - `tests/` — unit, property, integration, component, and E2E coverage.
 
 Business rules do not depend on React. See [docs/architecture.md](docs/architecture.md), [docs/internationalization.md](docs/internationalization.md), and [docs/adr/](docs/adr/).
 
 ## Security and privacy
 
-ChronoAge has no backend, authentication, payments, or required network API. User-entered profile data remains in local browser storage unless the user explicitly exports it. Export files are plain JSON and are **not encrypted**.
+ChronoAge has no backend, authentication, payments, analytics, or required network API. User-entered profile data remains in local browser storage unless the user explicitly exports it. Export files are plain JSON and are **not encrypted**.
+
+Expected validation/product errors use curated user-visible messages. Unexpected implementation exceptions use generic UI fallbacks, and runtime diagnostics stay in the local browser console through a redacting structured logger rather than being uploaded.
 
 - Security policy: [SECURITY.md](SECURITY.md)
 - Privacy behavior: [PRIVACY.md](PRIVACY.md)
