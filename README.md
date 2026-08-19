@@ -4,6 +4,7 @@
   <p><strong>A privacy-first, timezone-aware age and date calculator that works beautifully on the web and offline.</strong></p>
   <p><strong>Made by the Sanskar</strong></p>
 
+  [![Version](https://img.shields.io/badge/version-2.0.12-6657e8.svg)](CHANGELOG.md)
   [![CI](https://github.com/sanskarIN/chronoage/actions/workflows/ci.yml/badge.svg)](https://github.com/sanskarIN/chronoage/actions/workflows/ci.yml)
   [![CodeQL](https://github.com/sanskarIN/chronoage/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanskarIN/chronoage/actions/workflows/codeql.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -15,6 +16,8 @@
 ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age math, next-birthday planning, interval tools, custom milestone discovery, visual date comparison, local saved profiles, accessibility, offline PWA support, printable/shareable results, explicit leap-day behavior, and explicit daylight-saving overlap handling in one maintainable React + TypeScript application.
 
 **Privacy is the default:** calculations run locally in the browser, saved profiles use local browser storage, no account is required, and the project ships with no analytics, crash-reporting backend, or cloud sync.
+
+**Current source version:** `2.0.12`. See the [2.0.12 release notes](docs/releases/2.0.12.md) and [release guide](docs/release.md). The source version does not by itself imply that the `v2.0.12` GitHub tag/release artifact has been published; release tagging remains evidence-gated.
 
 ## Interface preview
 
@@ -36,6 +39,7 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - 1,000/5,000/10,000+ day milestones and major birthday anniversaries.
 - Custom positive-whole-number milestones in days or birthday years.
 - Local-only saved profiles with validation, search, deterministic sorting, editing, one-step delete undo, progressive rendering, calculator handoff, export, import-replacement confirmation, and deletion controls.
+- Saved-profile import/restore validation rejects malformed timestamps and impossible update-before-creation histories.
 - Privacy-safe page deep links such as `#/profiles` plus browser Back/Forward navigation; calculator dates, times, profile names, and saved birth dates are not serialized into route URLs.
 - SPA page navigation updates the document title and moves focus into main content for keyboard and assistive-technology users.
 - Print/share result cards that omit private profile names by default.
@@ -120,9 +124,10 @@ See [docs/testing.md](docs/testing.md) for the full strategy and CI expectations
 npm install
 npm run check
 npm run build
+npm run release:check -- v2.0.12
 ```
 
-The production web bundle is created in `dist/`. GitHub Actions also verifies builds, runtime/security invariants, bundle budgets, and browser journeys and can publish versioned release artifacts. See [docs/release.md](docs/release.md).
+The production web bundle is created in `dist/`. GitHub Actions also verifies builds, runtime/security invariants, bundle budgets, and browser journeys and can publish versioned release artifacts. The `v2.0.12` tag should be created only after the evidence-gated release checklist is satisfied; see [docs/release.md](docs/release.md).
 
 ## Architecture
 
