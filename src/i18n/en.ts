@@ -155,6 +155,7 @@ export const en = {
     saved: 'Profile saved locally on this device.',
     unableSave: 'Unable to save profile.',
     deleted: 'Profile deleted.',
+    unableDelete: 'Unable to delete profile.',
     updated: 'Profile updated.',
     unableUpdate: 'Unable to update profile.',
     backupEyebrow: 'Backup',
@@ -183,6 +184,7 @@ export const en = {
     deleteAllConfirm: 'Delete all locally saved profiles?',
     deleteAll: 'Delete all profiles',
     allDeleted: 'All profiles deleted.',
+    unableClear: 'Unable to delete all profiles.',
   },
   settings: {
     eyebrow: 'Preferences',
@@ -244,8 +246,6 @@ export const en = {
     checkingButton: 'Checking…',
     applyUpdate: 'Apply update',
     aboutEyebrow: 'About',
-    aboutTitle: 'ChronoAge 1.0.0',
-    aboutMeta: 'Open-source MIT project · Made by the Sanskar ·',
     githubRepository: 'GitHub repository',
     support: 'Support:',
   },
@@ -255,7 +255,6 @@ export const en = {
     description: 'A polished, privacy-first age and date calculator built as a public portfolio project.',
     heroDescription:
       'ChronoAge calculates exact calendar ages, intervals, birthdays, and milestones without requiring an account or server.',
-    version: 'Version 1.0.0',
     projectEyebrow: 'Project',
     licenseTitle: 'MIT licensed',
     licenseDescription: 'You can use, study, modify, and redistribute ChronoAge under the MIT License.',
@@ -270,7 +269,6 @@ export const en = {
       'ChronoAge is fully usable without donating. Optional support helps open-source development.',
     fundingLink: '☕ Support sanskarIN ↗',
     creditEyebrow: 'Credit',
-    creditTitle: 'Made by the Sanskar',
     creditDescription:
       'Designed and developed with an emphasis on accessibility, privacy, maintainability, and precise date logic.',
     profileLink: 'github.com/sanskarIN ↗',
