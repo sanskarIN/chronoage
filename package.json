@@ -1,7 +1,7 @@
 {
   "name": "chronoage",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.12",
   "type": "module",
   "description": "A privacy-first, timezone-aware age and date calculator PWA.",
   "author": "Sanskar <sanskarin@outlook.in>",
