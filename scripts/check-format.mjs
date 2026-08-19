@@ -17,7 +17,8 @@ async function walk(directory) {
       continue;
     }
     if (!entry.isFile()) continue;
-    if (!checkedExtensions.has(extname(entry.name)) && !explicitNames.has(entry.name)) continue;
+    const extension = extname(entry.name);
+    if (!checkedExtensions.has(extension) && !explicitNames.has(entry.name)) continue;
     const content = await readFile(path, 'utf8');
     checked += 1;
     if (content.includes('\r')) failures.push(`${relative(root, path)}: contains CR line endings`);
@@ -25,7 +26,11 @@ async function walk(directory) {
     if (!content.endsWith('\n')) failures.push(`${relative(root, path)}: missing final newline`);
     const lines = content.split('\n');
     lines.forEach((line, index) => {
-      if (/\s+$/.test(line)) failures.push(`${relative(root, path)}:${index + 1}: trailing whitespace`);
+      const trailing = line.match(/\s+$/)?.[0] ?? '';
+      const allowedMarkdownBreak = extension === '.md' && trailing === '  ';
+      if (trailing && !allowedMarkdownBreak) {
+        failures.push(`${relative(root, path)}:${index + 1}: trailing whitespace`);
+      }
     });
   }
 }
