@@ -17,6 +17,9 @@
 
 - [x] Search/filter for large local profile collections
 - [x] Editable saved profiles using the validated local storage model
+- [x] One-step undo for individual saved-profile deletion
+- [x] Direct saved-profile handoff into the Age calculator
+- [x] Progressive 20-card rendering for bounded profile-list DOM work
 - [x] Install/update prompt UX using browser capabilities
 - [x] Baseline automated browser accessibility regression checks
 - [x] Maintained axe-core WCAG A/AA audits across core pages, dark theme, and mobile viewport
@@ -51,7 +54,7 @@
 - [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
 - [ ] Execute the complete clean-checkout install/check/E2E release gate in a network-enabled environment and record the passing run
 
-The remaining unchecked release-hardening items depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred.
+The remaining unchecked release-hardening items depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfile, but these items remain unchecked until the resulting dependency graph and quality runs are actually verified.
 
 ## Desktop delivery decision
 
