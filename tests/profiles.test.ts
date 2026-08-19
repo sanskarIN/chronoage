@@ -63,6 +63,17 @@ describe('local profiles', () => {
     expect(loadProfiles()).toEqual([original]);
   });
 
+  it('restores a profile at its original list position', () => {
+    const first = saveProfile({ name: 'First', birthDate: '2000-01-01' });
+    const second = saveProfile({ name: 'Second', birthDate: '2001-01-01' });
+    const third = saveProfile({ name: 'Third', birthDate: '2002-01-01' });
+    expect(loadProfiles()).toEqual([third, second, first]);
+
+    deleteProfile(second.id);
+    expect(restoreProfile(second, 1)).toEqual([third, second, first]);
+    expect(loadProfiles()).toEqual([third, second, first]);
+  });
+
   it('rejects restoring a profile whose identity already exists', () => {
     const original = saveProfile({ name: 'Existing', birthDate: '2000-01-01' });
 
