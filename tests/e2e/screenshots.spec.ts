@@ -1,12 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { navigateTo, seedCompletedOnboarding } from './helpers';
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'chronoage.settings.v1',
-      JSON.stringify({ onboardingComplete: true, theme: 'system' }),
-    );
-  });
+  await seedCompletedOnboarding(page);
 });
 
 test('captures the calculator release-candidate interface', async ({ page }, testInfo) => {
@@ -20,7 +16,7 @@ test('captures the calculator release-candidate interface', async ({ page }, tes
 
 test('captures the age-difference visualization', async ({ page }, testInfo) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Difference' }).click();
+  await navigateTo(page, 'Difference');
   await page.getByLabel('First date').fill('2000-01-01');
   await page.getByLabel('Second date').fill('2026-08-19');
   await expect(page.getByRole('heading', { name: 'Calendar duration timeline' })).toBeVisible();
@@ -32,7 +28,7 @@ test('captures the age-difference visualization', async ({ page }, testInfo) => 
 
 test('captures the custom milestone builder', async ({ page }, testInfo) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Milestones' }).click();
+  await navigateTo(page, 'Milestones');
   await page.getByLabel('Birth date').fill('2000-01-01');
   await page.getByLabel('Amount').fill('10000');
   await expect(page.getByText('10,000 days').first()).toBeVisible();
