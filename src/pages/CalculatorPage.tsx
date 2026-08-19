@@ -161,6 +161,7 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
           <ResultCard
             result={calculation.result}
             birthday={calculation.birthday}
+            showTime={includeTime}
             onPrint={printResult}
             onShare={() => void handleShare()}
             status={status}
