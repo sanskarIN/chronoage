@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import { mailto, project } from '../config/project';
 import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
 import { en } from '../i18n/en';
+import { sharedText } from '../i18n/shared';
 
 interface Props {
   settings: AppSettings;
@@ -226,7 +227,7 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           </h2>
         </div>
         <p className="muted">
-          Open-source {project.license} project · {project.credit} ·{' '}
+          {sharedText.openSourceProjectMeta(project.license, project.credit)}{' '}
           <a href={project.repositoryUrl} target="_blank" rel="noreferrer">
             {en.settings.githubRepository}
           </a>
