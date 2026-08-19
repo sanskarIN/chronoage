@@ -4,15 +4,34 @@ ChronoAge is intentionally small and local-first.
 
 ## Budgets
 
-Target release budgets:
+Release budgets:
 
-- Main JavaScript bundle: under 250 KiB gzip where practical.
-- First-party CSS: under 60 KiB gzip.
+- Total first-party JavaScript: at most 250 KiB gzip.
+- Total first-party CSS: at most 60 KiB gzip.
 - No runtime date library.
 - No calculation-triggered network requests.
 - Local calculation response: effectively synchronous for normal interactive inputs.
 
-Budgets are targets that must be measured on release candidates; they are not pass claims until the built artifacts have been inspected.
+The JavaScript and CSS transfer-size budgets are enforced against built `dist/` assets by `scripts/check-bundle-size.mjs` rather than existing only as documentation.
+
+## Automated bundle budget gate
+
+Build first, then run the budget checker:
+
+```bash
+npm run build
+npm run performance:check
+```
+
+The checker recursively measures production `.js` and `.css` files using Node's gzip implementation and fails when either total exceeds the configured limit. Source maps and unrelated assets are excluded from the transfer-size totals.
+
+The default limits can be overridden for an intentional reviewed experiment without changing the script:
+
+```bash
+CHRONOAGE_JS_GZIP_BUDGET_KIB=250 CHRONOAGE_CSS_GZIP_BUDGET_KIB=60 npm run performance:check
+```
+
+Increasing a release budget should be treated as a product/performance decision, not as a way to silence a regression. CI and the release quality suite use the repository defaults.
 
 ## Design decisions
 
