@@ -22,10 +22,12 @@ describe('usePwaLifecycle', () => {
     });
     const { result } = renderHook(() => usePwaLifecycle());
 
-    act(() => window.dispatchEvent(event));
+    act(() => {
+      window.dispatchEvent(event);
+    });
     expect(result.current.canInstall).toBe(true);
 
-    let outcome = 'unavailable';
+    let outcome: 'accepted' | 'dismissed' | 'unavailable' = 'unavailable';
     await act(async () => {
       outcome = await result.current.install();
     });
@@ -43,7 +45,9 @@ describe('usePwaLifecycle', () => {
     });
     const { result } = renderHook(() => usePwaLifecycle());
 
-    act(() => window.dispatchEvent(event));
+    act(() => {
+      window.dispatchEvent(event);
+    });
     await act(async () => {
       expect(await result.current.install()).toBe('unavailable');
     });
@@ -60,7 +64,7 @@ describe('usePwaLifecycle', () => {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         getRegistration,
-      } satisfies Partial<ServiceWorkerContainer>,
+      },
     });
     const { result } = renderHook(() => usePwaLifecycle());
 
