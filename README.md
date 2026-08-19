@@ -12,7 +12,7 @@
 
 ## Why ChronoAge
 
-ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age math, next-birthday planning, interval tools, milestone discovery, local saved profiles, accessibility, offline PWA support, printable/shareable results, and explicit leap-day behavior in one maintainable React + TypeScript application.
+ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age math, next-birthday planning, interval tools, custom milestone discovery, visual date comparison, local saved profiles, accessibility, offline PWA support, printable/shareable results, explicit leap-day behavior, and explicit daylight-saving overlap handling in one maintainable React + TypeScript application.
 
 **Privacy is the default:** calculations run locally in the browser, saved profiles use local browser storage, no account is required, and the project ships with no analytics or cloud sync.
 
@@ -20,24 +20,28 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 
 ![ChronoAge interface preview](docs/screenshots/app-preview.svg)
 
-> This repository preview is a source-controlled representation of the production UI. Real release screenshots should be refreshed whenever the visual design changes.
+> This repository preview is a source-controlled representation of the production UI. CI also captures desktop and mobile release-candidate screenshots during browser tests.
 
 ## Features
 
 - Exact age in years, months, days, hours, and minutes.
 - Total elapsed days, hours, and minutes.
 - IANA-timezone-aware calculations when time of day is enabled.
+- Rejection of nonexistent spring-forward wall-clock times.
+- User-selectable earlier/later occurrence for repeated fall-back local times.
 - Next-birthday date, weekday, days remaining, and age turning.
 - Configurable February 29 anniversary behavior (`February 28` or `March 1`).
-- Absolute age difference between any two dates.
+- Absolute age difference between any two dates with an accessible duration visualization.
 - Inclusive and exclusive date interval calculator.
 - 1,000/5,000/10,000+ day milestones and major birthday anniversaries.
-- Local-only saved profiles with schema validation, export, import, and deletion controls.
+- Custom positive-whole-number milestones in days or birthday years.
+- Local-only saved profiles with validation, search, editing, export, import, and deletion controls.
 - Print/share result cards that omit private profile names by default.
 - Light, dark, and system themes; reduced-motion and high-contrast settings.
 - Keyboard-first navigation, visible focus states, semantic labels, and quick actions (`Ctrl/Cmd + K`).
-- Installable offline PWA with a same-origin cache strategy.
+- Installable offline PWA with user-controlled update application.
 - Responsive layouts for phones, tablets, and desktops.
+- Browser-level accessibility regression checks and release-candidate screenshot capture.
 - Internationalization-ready string organization (English ships first).
 
 ## Supported platforms
@@ -50,7 +54,7 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 | Windows | PWA install | Supported |
 | macOS | PWA/browser | Supported |
 | Linux | PWA/browser | Supported |
-| Tauri desktop wrapper | Native wrapper | Roadmap |
+| Tauri desktop wrapper | Native wrapper | Roadmap evaluation |
 
 ## Tech stack
 
@@ -60,11 +64,11 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - Browser `localStorage` for optional profiles/settings
 - Native Service Worker + Web App Manifest
 - Vitest + Testing Library
-- Playwright end-to-end tests
+- Playwright end-to-end, accessibility-regression, and screenshot tests
 - ESLint + Prettier
 - GitHub Actions + CodeQL + Dependabot
 
-No date library is required by the runtime domain layer. Timezone conversion uses the browser's IANA timezone database through `Intl` and round-trip validation for nonexistent local times.
+No date library is required by the runtime domain layer. Timezone conversion uses the browser's IANA timezone database through `Intl`, round-trip validation for nonexistent local times, and explicit candidate selection for repeated local times. See [docs/date-semantics.md](docs/date-semantics.md).
 
 ## Quick start
 
@@ -115,10 +119,10 @@ ChronoAge is a modular client-side application:
 - `src/domain/` — deterministic date math, milestones, validation.
 - `src/storage/` — versioned local persistence and backup/restore.
 - `src/pages/` — feature-oriented UI pages.
-- `src/components/` — reusable UI building blocks.
-- `src/hooks/` — browser/application state integration.
+- `src/components/` — reusable UI building blocks and visualizations.
+- `src/hooks/` — browser/application state integration, including the PWA lifecycle.
 - `src/utils/` — safe logging, PWA registration, sharing, defaults.
-- `tests/` — unit, integration, component, and E2E coverage.
+- `tests/` — unit, property, integration, component, and E2E coverage.
 
 Business rules do not depend on React. See [docs/architecture.md](docs/architecture.md) and [docs/adr/](docs/adr/).
 
@@ -133,7 +137,7 @@ ChronoAge has no backend, authentication, payments, or required network API. Use
 
 ## Accessibility
 
-The UI targets WCAG-oriented practices: keyboard operation, skip links, focus visibility, semantic labels, non-color-only status, reduced-motion support, scalable layouts, and screen-reader-friendly status regions. See [docs/accessibility.md](docs/accessibility.md).
+The UI targets WCAG-oriented practices: keyboard operation, skip links, focus visibility, semantic labels, non-color-only status, reduced-motion support, scalable layouts, screen-reader-friendly status regions, and browser regression checks for common accessibility failures. See [docs/accessibility.md](docs/accessibility.md).
 
 ## Contributing
 
