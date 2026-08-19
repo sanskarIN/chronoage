@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 const STORAGE_KEY = 'chronoage.profiles.v1';
 const MAX_PROFILES = 100;
 const MAX_PROFILE_ID_LENGTH = 128;
+const STORAGE_UNAVAILABLE_MESSAGE = 'Browser storage is unavailable. Changes could not be saved.';
 export const MAX_BACKUP_FILE_BYTES = 1_000_000;
 
 interface ProfileEnvelope {
@@ -88,13 +89,31 @@ function parseEnvelope(raw: string | null): ProfileEnvelope {
   }
 }
 
+function readStoredProfiles(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Profile storage could not be read; no saved profiles are being loaded.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    return null;
+  }
+}
+
 function persist(profiles: SavedProfile[]): void {
   const envelope: ProfileEnvelope = { schemaVersion: 1, profiles: profiles.slice(0, MAX_PROFILES) };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+  } catch (error) {
+    logger.warn('Profile storage could not be written.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    throw new UserVisibleError(STORAGE_UNAVAILABLE_MESSAGE);
+  }
 }
 
 export function loadProfiles(): SavedProfile[] {
-  return parseEnvelope(localStorage.getItem(STORAGE_KEY)).profiles;
+  return parseEnvelope(readStoredProfiles()).profiles;
 }
 
 export function saveProfile(input: { name: string; birthDate: string }): SavedProfile {
@@ -135,7 +154,14 @@ export function deleteProfile(id: string): SavedProfile[] {
 }
 
 export function clearProfiles(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Profile storage could not be cleared.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    throw new UserVisibleError(STORAGE_UNAVAILABLE_MESSAGE);
+  }
 }
 
 export function exportProfiles(): string {
