@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { AboutPage } from './pages/AboutPage';
 import { CalculatorPage } from './pages/CalculatorPage';
@@ -48,18 +48,18 @@ export default function App(): React.JSX.Element {
     }
   }, [page, settings, setSettings]);
 
-  const rememberFocus = (): void => {
+  const rememberFocus = useCallback((): void => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  };
+  }, []);
 
-  const openSearch = (): void => {
+  const openSearch = useCallback((): void => {
     rememberFocus();
     setSearchOpen(true);
-  };
+  }, [rememberFocus]);
 
-  const closeSearch = (): void => {
+  const closeSearch = useCallback((): void => {
     setSearchOpen(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (searchOpen) {
@@ -88,7 +88,7 @@ export default function App(): React.JSX.Element {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [searchOpen]);
+  }, [closeSearch, openSearch, searchOpen]);
 
   const navigate = (next: Page): void => {
     setPage(next);
