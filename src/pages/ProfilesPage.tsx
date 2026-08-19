@@ -10,6 +10,7 @@ import {
   saveProfile,
   updateProfile,
 } from '../storage/profiles';
+import { getUserSafeErrorMessage, UserVisibleError } from '../errors';
 import { defaultBirthInputValue } from '../utils/dateDefaults';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
@@ -46,7 +47,7 @@ export function ProfilesPage(): React.JSX.Element {
       setError('');
       setMessage(en.profiles.saved);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : en.profiles.unableSave);
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableSave));
     }
   };
 
@@ -73,7 +74,7 @@ export function ProfilesPage(): React.JSX.Element {
       setError('');
       setMessage(en.profiles.updated);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : en.profiles.unableUpdate);
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableUpdate));
     }
   };
 
@@ -90,14 +91,14 @@ export function ProfilesPage(): React.JSX.Element {
 
   const restoreBackup = async (file: File): Promise<void> => {
     try {
-      if (file.size > MAX_BACKUP_FILE_BYTES) throw new Error(en.profiles.backupTooLarge);
+      if (file.size > MAX_BACKUP_FILE_BYTES) throw new UserVisibleError(en.profiles.backupTooLarge);
       const text = await file.text();
       setProfiles(importProfiles(text));
       setEditingId(null);
       setError('');
       setMessage(en.profiles.restored);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : en.profiles.unableImport);
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableImport));
     }
   };
 
