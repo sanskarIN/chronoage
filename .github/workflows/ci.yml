@@ -31,6 +31,8 @@ jobs:
         run: npm run format:check
       - name: Verify project metadata
         run: npm run metadata:check
+      - name: Verify static security invariants
+        run: npm run security:check
       - name: Lint
         run: npm run lint
       - name: Type check
