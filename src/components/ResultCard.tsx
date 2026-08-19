@@ -6,18 +6,30 @@ import { Icon } from './Icons';
 interface ResultCardProps {
   result: AgeBreakdown;
   birthday?: BirthdayCountdown;
+  showTime?: boolean;
   onPrint: () => void;
   onShare: () => void;
   status?: string;
 }
 
-export function ResultCard({ result, birthday, onPrint, onShare, status }: ResultCardProps): React.JSX.Element {
+export function ResultCard({
+  result,
+  birthday,
+  showTime = true,
+  onPrint,
+  onShare,
+  status,
+}: ResultCardProps): React.JSX.Element {
   const units = [
     [en.result.years, result.years],
     [en.result.months, result.months],
     [en.result.days, result.days],
-    [en.result.hours, result.hours],
-    [en.result.minutes, result.minutes],
+    ...(showTime
+      ? ([
+          [en.result.hours, result.hours],
+          [en.result.minutes, result.minutes],
+        ] as const)
+      : []),
   ] as const;
 
   return (
