@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearProfiles,
   exportProfiles,
@@ -13,6 +13,10 @@ const STORAGE_KEY = 'chronoage.profiles.v1';
 
 describe('local profiles', () => {
   beforeEach(() => clearProfiles());
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('saves profiles locally', () => {
     saveProfile({ name: ' Test User ', birthDate: '2000-01-01' });
@@ -97,6 +101,7 @@ describe('local profiles', () => {
   });
 
   it('ignores corrupted local entries while keeping valid profiles', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const timestamp = '2026-08-19T00:00:00.000Z';
     localStorage.setItem(
       STORAGE_KEY,
@@ -147,5 +152,34 @@ describe('local profiles', () => {
     });
 
     expect(() => importProfiles(backup)).toThrow('Backup contains an invalid profile.');
+  });
+
+  it('loads an empty profile list when browser storage cannot be read', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'SecurityError');
+    });
+
+    expect(loadProfiles()).toEqual([]);
+  });
+
+  it('throws a stable user-visible error when browser storage cannot be written', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota reached', 'QuotaExceededError');
+    });
+
+    expect(() => saveProfile({ name: 'Example', birthDate: '2001-02-03' })).toThrow(
+      'Browser storage is unavailable. Changes could not be saved.',
+    );
+  });
+
+  it('throws a stable user-visible error when browser storage cannot be cleared', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'SecurityError');
+    });
+
+    expect(() => clearProfiles()).toThrow('Browser storage is unavailable. Changes could not be saved.');
   });
 });
