@@ -1,136 +1,263 @@
-# ChronoAge — Work Handoff
+# ChronoAge — Final 2.0.12 Work Handoff
 
-## Current milestone
+## Current source release
 
-ChronoAge is in **final v1.1 polish + release hardening** on top of the existing `1.0.0` production-PWA baseline.
-
-The product feature scope from the ChronoAge master prompt has been audited again against the repository. The core calculator, advanced date tooling, local profiles, import/export, privacy-safe sharing, responsive PWA, themes, onboarding, quick actions, accessibility, internationalization-ready English strings, structured logging, offline behavior, security checks, performance budgets, tests, screenshots automation, CI, CodeQL, dependency review, release automation, and documentation set are implemented.
-
-No new feature was added merely to increase feature or commit count. The remaining unfinished items are release evidence or repository settings, not missing application functionality.
-
-## Remaining evidence-gated release blockers
-
-1. Generate and review a real npm-registry-resolved `package-lock.json`.
-2. Switch permanent CI and release installation from `npm install` to `npm ci` only after that lockfile is verified.
-3. Record a passing clean-checkout quality + browser E2E + accessibility + offline-PWA + bundle-budget release gate.
-4. Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings.
-
-Do not mark any of these complete without actual evidence.
-
-Additional locale packs remain intentionally gated on complete human translation review. The native/Tauri wrapper remains intentionally deferred by ADR until a concrete native-only requirement justifies its signing, updater, permissions, packaging, and security surface.
-
-## Repository state verified in this final continuation
+ChronoAge is now finalized on `main` as source version **2.0.12**.
 
 - Repository: `https://github.com/sanskarIN/chronoage`
-- Default branch: `main`
-- Visibility/source model: public open source
+- Source version: `2.0.12`
+- Matching semantic tag: `v2.0.12`
+- Release date recorded in the changelog/release notes: `2026-08-19`
 - License: MIT
-- Package version: `1.0.0`
-- Primary stack: React + TypeScript + Vite + native service worker/PWA
-- Exact Node runtime pin: `22.13.0`
-- Package engine floor: `>=22.13.0`
-- Commit identity previously verified from raw Git commit data: `Sanskar <sanskarin@outlook.in>`
-- No open GitHub issues were found during the final audit.
-- Repository searches did not expose unresolved TODO/FIXME source placeholders requiring implementation.
-- `public/logo.svg` provides editable branding artwork.
-- `docs/troubleshooting.md` exists and covers install, timezone/DST, profile storage/backup, PWA, CSP, offline behavior, and Playwright troubleshooting.
-- GitHub repository-maintenance documentation covers branch protection, labels, milestones, Discussions, merge strategy, and releases.
-- Permanent workflows include CI, CodeQL, dependency review, and release verification.
-- Static security checks reject selected dangerous browser primitives and direct runtime `console.*` usage outside the redacting logger.
-- `main` currently contains no temporary `release-lockfile.yml` workflow.
+- Runtime: React + TypeScript + Vite + native service worker/PWA
+- Exact Node pin: `22.13.0`
+- Package Node engine floor: `>=22.13.0`
+- Commit identity used throughout the repository work: `Sanskar <sanskarin@outlook.in>`
 
-## Final saved-profile integrity fix
+The repository source version is 2.0.12, but this file does **not** claim that a `v2.0.12` GitHub tag or release artifact has been published. Tagging remains evidence-gated by the release-hardening items below.
 
-### Reversed timestamp histories are rejected
+## Final 2.0.12 continuation completed
 
-Saved-profile normalization already required ISO timestamps, but an imported or restored record could previously contain an impossible history where `updatedAt` was earlier than `createdAt`.
+### Canonical version metadata
 
-`src/storage/profiles.ts` now rejects that state after ISO validation and before accepting the profile into local storage or a restore operation.
+`package.json` and `src/config/project.ts` now both use `2.0.12`.
 
-This does not change the persisted schema. It strengthens validation of untrusted/corrupted profile data while preserving all valid existing `schemaVersion: 1` records.
+The change was committed atomically so the metadata consistency gate never intentionally received a package/runtime version mismatch on `main`.
 
-### Regression coverage
+### 2.0.12 changelog publication
 
-`tests/profiles.test.ts` now includes a focused regression asserting that an imported profile with `updatedAt < createdAt` is rejected with the existing stable user-safe backup error and leaves storage empty.
+`CHANGELOG.md` now contains:
 
-### Changelog
+- an empty/future-facing `Unreleased` section containing only genuinely unfinished/deferred work;
+- a dated `2.0.12` release section containing the completed profile, navigation, PWA, accessibility, reliability, security, testing, documentation, and release-hardening work;
+- the historical `1.0.0` baseline entry.
 
-`CHANGELOG.md` now records the timestamp-integrity fix under **Unreleased → Fixed**.
+### Dedicated release notes
 
-## Previously completed saved-profile polish retained
+Added:
 
-The final audit preserved the already implemented profile improvements:
+- `docs/releases/2.0.12.md`
+- `docs/releases/README.md`
 
-- local save/load/edit/delete;
-- strict backup import validation and export;
-- 1 MB UTF-8 backup limit;
-- 100-profile capacity limit;
-- duplicate-id rejection;
-- malformed/corrupted local-data recovery;
-- blocked/quota-limited storage handling;
-- one-step deletion undo;
-- exact identity/timestamp restoration;
-- restoration at the original list position;
-- stale-undo expiration after replacement creation;
-- deterministic profile sorting without mutating storage order;
-- search/filter;
-- progressive 20-card rendering;
-- import replacement confirmation;
-- direct saved-profile handoff to the Age calculator.
+The 2.0.12 notes distinguish the source release from a published GitHub tag/artifact and list the remaining evidence-gated release boundaries.
 
-## Core application audit
+### Public README alignment
 
-The repository continues to cover the master-prompt product requirements:
+`README.md` now:
 
-### Date and age calculations
+- shows a 2.0.12 version badge;
+- identifies `2.0.12` as the current source version;
+- links the 2.0.12 release notes;
+- uses `npm run release:check -- v2.0.12` in the release command example;
+- explicitly warns that version metadata alone does not mean the GitHub release has been published;
+- documents rejection of impossible saved-profile timestamp histories.
+
+### Roadmap alignment
+
+`ROADMAP.md` now identifies `v2.0.12` as the current release line while preserving the historical v1.0/v1.1/v1.2 implementation phases.
+
+The roadmap continues to leave evidence-gated dependency/release installation and GitHub branch protection unchecked.
+
+### Release guide alignment
+
+`docs/release.md` now contains a current 2.0.12 release-candidate section and the exact matching tag `v2.0.12`.
+
+It explicitly prohibits tagging merely because package metadata changed and requires actual release evidence first.
+
+### Version-documentation invariant
+
+`scripts/check-metadata.mjs` was strengthened so a version bump cannot silently omit its release documentation.
+
+The metadata gate now requires:
+
+- package/project name consistency;
+- package/project version consistency;
+- package/project license consistency;
+- repository URL consistency;
+- homepage consistency;
+- issues URL consistency;
+- funding URL consistency;
+- primary author/business-email consistency;
+- package engine floor matching `.nvmrc`;
+- permanent CI/release `node-version` values matching `.nvmrc`;
+- a dated `## [VERSION] - ...` heading in `CHANGELOG.md`;
+- `docs/releases/VERSION.md` to exist;
+- that release-note file to identify the same ChronoAge version.
+
+### PWA cache/version invariant
+
+The service-worker cache generation is now tied directly to the app version:
+
+```text
+chronoage-2.0.12
+```
+
+`npm run metadata:check` now reads `public/sw.js` and requires `CACHE_NAME` to equal:
+
+```text
+chronoage-${package.json version}
+```
+
+A future application version bump therefore fails the quality gate if the offline cache namespace is left stale.
+
+This replaces the need to remember a separate manual cache-generation counter.
+
+### Security/PWA documentation synchronization
+
+`SECURITY.md` now records:
+
+- current source version 2.0.12 without claiming an unpublished tag;
+- rejection of impossible `updatedAt < createdAt` profile histories;
+- version-bound PWA cache namespace verification through `metadata:check`.
+
+`docs/pwa.md` now documents the same 2.0.12 cache/version relationship and adds it to manual release testing guidance.
+
+## Final data-integrity fix retained
+
+Saved-profile normalization rejects an imported/restored record when:
+
+```text
+updatedAt < createdAt
+```
+
+This is checked after ISO timestamp validation and before the record is accepted.
+
+A focused regression test in `tests/profiles.test.ts` verifies the invalid backup is rejected and local profile state remains empty.
+
+Persisted profile schema remains `schemaVersion: 1`; no migration is required for valid existing data.
+
+## Product feature audit
+
+The ChronoAge master-prompt product scope has been audited repeatedly against the final source tree. Implemented functionality includes the following.
+
+### Age and date calculations
 
 - exact calendar years/months/days;
-- optional hours/minutes and elapsed totals;
-- next birthday countdown and weekday;
+- optional time-of-day precision;
+- total elapsed days/hours/minutes;
+- next birthday date, weekday, days remaining, and age turning;
 - age difference;
-- inclusive/exclusive intervals;
-- Gregorian leap-year handling;
+- inclusive/exclusive date intervals;
+- Gregorian leap-year behavior;
 - configurable February 29 policy;
-- built-in and custom milestones;
-- IANA timezone support using browser `Intl`;
-- spring-forward nonexistent-time rejection;
-- explicit earlier/later policy for repeated fall-back times;
-- supported civil-year boundaries.
+- built-in day-count/birthday milestones;
+- custom day-count/birthday milestones;
+- calendar-duration comparison visualization;
+- supported civil-year range checks.
 
-### Product experience
+### Timezone and DST behavior
 
-- local-only profiles with no account requirement;
-- privacy-safe print/share result behavior;
-- responsive phone/tablet/desktop layout;
-- light/dark/system appearance;
-- onboarding and quick actions;
-- settings and About pages;
-- visible project credit and contact/funding metadata;
-- PWA installation/update UX;
-- offline service-worker behavior;
-- privacy-safe page deep links with browser history;
-- route titles and main-content focus handoff.
+- browser-supported IANA timezones through native `Intl`;
+- free-form timezone entry with suggestions/validation;
+- nonexistent spring-forward local-time rejection;
+- repeated fall-back time candidate discovery;
+- explicit earlier/later repeated-time policy;
+- consistent persisted ambiguity policy across timezone-aware age calculations.
 
-### Reliability, security, accessibility, and performance
+### Saved profiles
 
-- centralized user-safe errors;
-- root React crash recovery;
-- privacy-safe structured logger with redaction;
-- browser error/unhandled-rejection routing;
-- restrictive CSP and no-referrer policy;
-- metadata/security/documentation-link invariant scripts;
-- gzip bundle budgets;
-- Vitest domain/storage/component coverage;
-- deterministic fuzz-style date invariants;
-- Playwright desktop/mobile journeys;
-- axe WCAG A/AA automated audits;
-- offline PWA browser regression tests;
-- release-candidate screenshot automation;
-- exact Node pin consistency checks.
+- local-only save/load;
+- editing;
+- deletion;
+- one-step delete undo;
+- exact identity/timestamp restoration;
+- restoration at original list position;
+- stale-undo expiration after replacement creation;
+- search/filter;
+- deterministic sorting without mutating storage order;
+- progressive 20-card rendering;
+- 100-profile capacity;
+- strict validated import/export;
+- 1 MB UTF-8 backup limit;
+- duplicate-id rejection;
+- malformed timestamp rejection;
+- reversed timestamp-history rejection;
+- corrupted-local-entry recovery;
+- blocked/quota-limited storage handling;
+- confirmation before replacing an existing collection during import;
+- direct saved-profile handoff into the Age calculator.
+
+### Privacy and routing
+
+- client-only calculations;
+- no account requirement;
+- no analytics/crash-reporting backend/cloud sync;
+- public page-only hash routes;
+- private dates/times/profile values omitted from URLs;
+- print/share results that do not add private profile names;
+- structured diagnostics redaction;
+- aggregate-only corruption logging.
+
+### PWA and offline behavior
+
+- installable web app manifest;
+- editable SVG branding source;
+- privacy-safe installed-app shortcuts;
+- install prompt UX;
+- explicit update checks;
+- waiting-worker apply action;
+- controlled `SKIP_WAITING` flow;
+- versioned release cache namespace;
+- old ChronoAge cache cleanup only;
+- navigation-only HTML offline fallback;
+- missing non-navigation assets do not receive HTML;
+- same-origin GET cache restriction;
+- desktop/mobile offline Playwright coverage.
+
+### Accessibility and responsive UX
+
+- keyboard-first controls;
+- visible focus states;
+- skip navigation;
+- route-change main-content focus transfer;
+- route-change document titles;
+- blocking-dialog focus containment/restoration;
+- onboarding background-shortcut isolation;
+- semantic labels and status regions;
+- light/dark/system theme;
+- reduced-motion/high-contrast preferences;
+- desktop/mobile responsive navigation;
+- maintained axe WCAG A/AA automated audits;
+- release-candidate screenshot automation.
+
+### Reliability, security, and performance
+
+- central curated user-visible error classification;
+- root React crash-recovery boundary;
+- global browser error/unhandled-rejection logging;
+- sensitive-key/email/bearer/date/time/circular/deep-object diagnostic redaction;
+- blocked browser-storage recovery;
+- stable malformed-backup messages;
+- PWA install/update promise containment;
+- restrictive CSP and no-referrer metadata;
+- static dangerous-browser-primitive scan;
+- direct runtime `console.*` rejection outside the privacy-safe logger;
+- production gzip JavaScript/CSS bundle budgets;
+- exact Node runtime pin enforcement;
+- release-tag/package-version identity gate.
+
+### Testing and automation
+
+- deterministic domain unit tests;
+- date invariant/property-style tests;
+- storage integration tests;
+- component/hook tests;
+- desktop Chromium E2E;
+- Pixel-class mobile Chromium E2E;
+- accessibility smoke checks;
+- axe WCAG audits;
+- offline PWA tests;
+- release-candidate screenshot tests;
+- CI;
+- CodeQL;
+- dependency review;
+- Dependabot;
+- release workflow;
+- metadata/security/docs-link/bundle-budget executable invariants.
 
 ## Documentation audit
 
-The required documentation set is present and remains aligned with the implementation:
+The final repository includes and maintains:
 
 - `README.md`
 - `LICENSE`
@@ -145,7 +272,7 @@ The required documentation set is present and remains aligned with the implement
 - `.gitignore`
 - `.editorconfig`
 - `.gitattributes`
-- configuration/environment examples where applicable
+- `.env.example`
 - `docs/architecture.md`
 - `docs/setup.md`
 - `docs/development.md`
@@ -161,23 +288,38 @@ The required documentation set is present and remains aligned with the implement
 - `docs/desktop.md`
 - `docs/github.md`
 - `docs/github-maintenance.md`
+- `docs/releases/README.md`
+- `docs/releases/2.0.12.md`
 - architecture decision records under `docs/adr/`
-- documentation preview artwork and automated release-candidate screenshot coverage.
+- source-controlled preview artwork under `docs/screenshots/`.
 
-## Final lockfile verification setup
+## Stale verification PR retired
 
-The original temporary lockfile PR #16 was closed while its branch was being refreshed from newer `main` work. A new clean verification PR now exists:
+PR #17 (`chore: verify final reproducible npm lockfile`) was created before the 2.0.12 version and release-hardening changes landed.
 
-- PR: **#17 — `chore: verify final reproducible npm lockfile`**
-- branch: `chore/release-lockfile-v2`
-- base at creation: `583e013e2277c6696687056ebd37fae4cae091d5`
-- verification branch commit: `cf383d9de7ac8aa007d4ad28d7614ca0303d3065`
-- changed files in the PR at creation: 1
-- temporary file: `.github/workflows/release-lockfile.yml`
+It was closed without merge on 2026-08-19 and its body now explicitly states that it is superseded.
 
-The temporary workflow is intentionally branch-only. A direct fetch of `main/.github/workflows/release-lockfile.yml` returned 404 after the correction, confirming the final `main` tree does not contain this temporary workflow.
+Do not use PR #17 as release evidence for 2.0.12.
 
-The verification workflow is designed to:
+## Fresh 2.0.12 verification branch
+
+The dedicated replacement branch is:
+
+```text
+chore/release-lockfile-2.0.12
+```
+
+It is created from the frozen 2.0.12 `main` handoff commit immediately after this file is committed.
+
+Its only intended branch-specific file is:
+
+```text
+.github/workflows/release-lockfile.yml
+```
+
+The workflow must remain temporary branch tooling and must not be merged into `main`.
+
+The workflow sequence is designed to run:
 
 ```bash
 npm install --package-lock-only --ignore-scripts --no-fund --no-audit
@@ -189,152 +331,79 @@ npm run test:e2e
 git diff --exit-code -- package.json
 ```
 
-If successful, it commits only the generated `package-lock.json` using:
+If all checks succeed and the lockfile changes, the branch workflow commits only `package-lock.json` with:
 
 ```text
 Sanskar <sanskarin@outlook.in>
 build: add reproducible npm lockfile
 ```
 
-The temporary workflow must not be merged into `main`; only a reviewed lockfile should be brought over after successful verification.
+After successful verification, copy/rebase only the reviewed generated lockfile onto the then-current `main`; do not merge temporary branch-only workflow machinery.
 
-## Current GitHub Actions evidence for PR #17
+## Remaining evidence-gated release blockers
 
-At the latest inspection, the pull-request-triggered workflows for head `cf383d9de7ac8aa007d4ad28d7614ca0303d3065` were queued:
+These are the only known release-hardening blockers that remain intentionally incomplete:
 
-- Dependency Review — run `32246267005` — queued
-- CodeQL — run `32246266999` — queued
-- CI — run `32246267142` — queued
-  - `Playwright E2E` job `96047357218` — queued
-  - `Format, lint, types, tests, build` job `96047357457` — queued
+1. **Generate and review a real registry-resolved `package-lock.json`.**
+2. **Migrate permanent CI/release dependency installation from `npm install` to `npm ci` after the lockfile is accepted.**
+3. **Record a passing clean-checkout reproducible install + complete quality + browser E2E + accessibility + offline-PWA + bundle-budget release gate.**
+4. **Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings.**
 
-No passing conclusion is claimed while these jobs are queued.
+None may be marked complete without real evidence.
 
-The connector can enumerate pull-request-triggered runs but does not expose a general workflow-run listing suitable for reliably identifying the new push-triggered temporary lockfile workflow by commit. Therefore no claim is made about that push workflow beyond the committed configuration itself.
+## Intentional non-blocking deferrals
 
-## Temporary workflow correction on `main`
+These are not defects or missing 2.0.12 functionality:
 
-During the branch refresh, a connector parameter mismatch caused two temporary workflow commits to land on `main` instead of the intended verification branch. This was detected immediately by fetching the file from `main`.
+- Additional locale packs require complete human translation review; do not machine-fill them merely to close a roadmap checkbox.
+- Native/Tauri packaging remains deferred by ADR until a concrete native-only requirement justifies signing, updater, permissions, platform packaging, security surface, and CI-secret handling.
 
-A corrective commit removed the temporary workflow:
+## Release-tag rule
 
-- `583e013e` — `chore: remove temporary lockfile workflow from main`
+When—and only when—all required release gates pass, the version identity must be checked with:
 
-Current-tree verification then returned **Not Found / 404** for `.github/workflows/release-lockfile.yml` on `main` and returned the expected workflow on `chore/release-lockfile-v2`.
-
-The two preceding temporary commits remain in Git history for transparency, but their file changes are fully reversed in the current `main` tree. No production source, package metadata, profile data, or permanent CI workflow was altered by that temporary branch-tooling correction.
-
-## Verification constraints
-
-### Local execution environment
-
-A shallow clone attempt in the execution container failed because the environment could not resolve `github.com`:
-
-```text
-Could not resolve host: github.com
+```bash
+npm run metadata:check
+npm run release:check -- v2.0.12
 ```
 
-Accordingly, this continuation does **not** claim that local `npm install`, `npm run check`, Playwright, or npm audit completed in that container.
+Then the matching tag is:
 
-### GitHub runners
+```text
+v2.0.12
+```
 
-The latest observable PR #17 checks remain queued. No passing quality/E2E/CodeQL/dependency-review result is claimed until GitHub reports a successful conclusion.
+Do not publish a different tag for this source version.
 
-### Dependency lock
+## Main commits created in this 2.0.12 continuation
 
-There is still no verified `package-lock.json` on `main`. Permanent CI/release files therefore intentionally still use `npm install` rather than prematurely switching to `npm ci`.
+Newest-to-oldest before this final handoff commit:
 
-### Branch protection
+- `e633455d` — `docs: bind PWA cache guidance to release version`
+- `73852b95` — `docs: align security model with 2.0.12 invariants`
+- `51d73d0f` — `build: bind PWA cache generation to app version`
+- `3f94da75` — `pwa: advance cache generation for 2.0.12`
+- `c6896c80` — `docs: index ChronoAge release notes`
+- `7c403911` — `build: enforce version release documentation metadata`
+- `8377d9ac` — `docs: publish ChronoAge 2.0.12 in README`
+- `6245a129` — `docs: add ChronoAge 2.0.12 release notes`
+- `9cabd2bf` — `docs: prepare release guide for v2.0.12`
+- `71abc60d` — `docs: align roadmap with ChronoAge 2.0.12`
+- `2c30d36d` — `docs: publish ChronoAge 2.0.12 changelog`
+- `8eff3b3c` — `release: set ChronoAge version to 2.0.12`
 
-The previously verified GitHub state reported `main` as unprotected. The available connector exposes repository/file/PR/workflow operations but no branch-protection/ruleset write action, so this setting cannot be truthfully enabled from this environment. `docs/github.md` and `docs/release.md` document the intended configuration and release requirement.
-
-## Files changed on `main` in this final continuation
-
-### Runtime/source
-
-- `src/storage/profiles.ts`
-  - reject profile histories where `updatedAt` precedes `createdAt`.
-
-### Tests
-
-- `tests/profiles.test.ts`
-  - regression coverage for reversed imported profile timestamps.
-
-### Documentation
-
-- `CHANGELOG.md`
-  - records the profile timestamp-integrity fix.
-- `what_changed.md`
-  - this refreshed final audit/release handoff.
-
-### Corrective temporary-workflow cleanup
-
-- `.github/workflows/release-lockfile.yml`
-  - was accidentally written to `main` during branch refresh and then removed in `583e013e`; it is absent from the current `main` tree.
-
-## Temporary verification branch files
-
-- `chore/release-lockfile-v2:.github/workflows/release-lockfile.yml`
-  - network-dependent lockfile/release verification only.
-
-## Recent meaningful `main` commits
-
-Newest before this handoff commit:
-
-- `583e013e` — `chore: remove temporary lockfile workflow from main`
-- `25c33543` — `docs: record profile timestamp integrity fix`
-- `b436743b` — `test: cover reversed profile timestamps`
-- `941e6400` — `fix: reject reversed profile timestamps`
-- `8782cd7e` — `test: narrow manifest shortcut URL before validation`
-- `0b651f55` — `test: protect quick-action route focus handoff`
-- `a406ae4a` — `docs: extend security model for routes and imports`
-- `f5b2e343` — `docs: align performance guidance with bounded sorting`
-- `8aeaf135` — `test: derive PWA shortcuts from canonical routes`
-- `aaf56e9b` — `docs: strengthen pull request release checklist`
-
-Temporary history-only commits `72767075` and `70d4d988` added/retargeted the lockfile workflow on `main` during the connector parameter mismatch; `583e013e` fully removes that file from the current tree.
-
-## Verification-branch commits
-
-- `cf383d9d` — `ci: add final lockfile verification gate` on `chore/release-lockfile-v2`.
-
-Older temporary PR #16/branch history is superseded by PR #17 for future lockfile verification.
-
-## Open issues
-
-No open GitHub issues were found during this final audit.
-
-Remaining work is intentionally tracked through `ROADMAP.md`, this handoff, and PR #17 rather than manufacturing duplicate issues for already-known release blockers.
-
-## Next exact tasks
-
-1. Re-check PR #17 pull-request runs `32246267005`, `32246266999`, and `32246267142` until they reach conclusions.
-2. Identify and inspect the push-triggered `Generate verified npm lockfile` run for `chore/release-lockfile-v2` when GitHub exposes it.
-3. If any run fails, inspect the exact failed job/step/log and fix only the verified failure.
-4. If a real `package-lock.json` is generated, review that file and confirm `package.json` was not rewritten.
-5. Bring only the reviewed lockfile onto the then-current `main`.
-6. Change permanent `.github/workflows/ci.yml` installation commands from `npm install` to `npm ci` in a focused commit.
-7. Change permanent `.github/workflows/release.yml` installation from `npm install` to `npm ci` in a separate focused commit.
-8. Update setup/testing/release documentation for the verified reproducible-install workflow.
-9. Run/observe a clean-checkout `npm ci` + `npm run check` + runtime audit + Chromium desktop/mobile E2E + offline PWA + axe accessibility + screenshot + bundle-budget gate.
-10. Only after passing evidence, mark the lockfile, `npm ci`, and clean-release-gate roadmap items complete.
-11. Close PR #17 and remove temporary verification branches/workflow machinery after their purpose is complete.
-12. Enable the documented `main` branch protection/ruleset in GitHub repository settings and verify GitHub reports it as effective before marking that roadmap item complete.
-13. Do not add machine-generated locale packs or a native wrapper solely to make unchecked intentional-deferral items disappear.
+The preceding final-audit commits also remain on `main`, including the saved-profile timestamp-integrity fix and its regression coverage.
 
 ## Migration notes
 
-- Saved-profile storage remains `schemaVersion: 1`.
-- No localStorage migration is required.
-- Valid existing profile records remain compatible.
-- Records with impossible reversed creation/update timestamps are now treated as invalid/corrupted input.
-- Backup format is unchanged.
-- Settings format is unchanged.
-- URL/navigation format is unchanged.
-- No backend/database migration exists because ChronoAge remains local-first and client-only.
+- Saved-profile persistence remains `schemaVersion: 1`.
+- Existing valid local profiles/settings remain compatible.
+- No browser-data migration is required for 2.0.12.
+- No backend/database migration exists because ChronoAge remains client-only.
+- The PWA cache namespace changes to `chronoage-2.0.12`; activation removes older `chronoage-*` caches while preserving unrelated same-origin cache namespaces.
 
-## Release notes draft
+## Final accuracy boundary
 
-The next ChronoAge release delivers a broad polish and release-hardening pass across saved profiles, calculator handoff, responsive rendering, route privacy, PWA lifecycle behavior, accessibility automation, runtime error containment, logging redaction, performance budgets, metadata consistency, exact Node runtime pinning, documentation, and release verification. The final data-integrity audit additionally rejects saved-profile records whose update timestamp predates their creation timestamp and adds a regression test for that case.
+This handoff intentionally distinguishes implemented source from external release evidence.
 
-Release reproducibility is deliberately evidence-gated: a real npm lockfile, permanent `npm ci` migration, a passing clean-checkout quality/E2E gate, and effective `main` branch protection remain required before declaring release hardening fully complete. PR #17 contains only the temporary network-enabled lockfile verification workflow and must not be merged as permanent branch tooling.
+Do not claim that `npm ci`, a registry-resolved lockfile, a clean full release gate, branch protection, or the `v2.0.12` GitHub release has succeeded until GitHub or another clean network-enabled environment provides actual verifiable evidence.
