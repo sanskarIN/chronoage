@@ -9,6 +9,7 @@ import type { AppSettings } from '../types/models';
 import { defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
 import { Field, SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { en } from '../i18n/en';
 
 export function MilestonesPage({ settings }: { settings: AppSettings }): React.JSX.Element {
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
@@ -35,7 +36,7 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
       return {
         milestones: [],
         custom: null,
-        error: error instanceof Error ? error.message : 'Unable to calculate milestones.',
+        error: error instanceof Error ? error.message : en.milestones.unable,
       };
     }
   }, [birthDate, customAmount, customUnit, referenceDate, settings.leapDayPolicy]);
@@ -43,20 +44,20 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Timeline"
-        title="Life milestones"
-        description="Discover day-count landmarks, major anniversaries, and a milestone you define yourself."
+        eyebrow={en.milestones.eyebrow}
+        title={en.milestones.title}
+        description={en.milestones.description}
       />
       <section className="panel">
         <div className="form-grid two-columns">
           <Field
-            label="Birth date"
+            label={en.milestones.birthDate}
             type="date"
             value={birthDate}
             onChange={(event) => setBirthDate(event.target.value)}
           />
           <Field
-            label="As of"
+            label={en.milestones.asOf}
             type="date"
             value={referenceDate}
             onChange={(event) => setReferenceDate(event.target.value)}
@@ -67,34 +68,36 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
       <section className="panel" aria-labelledby="custom-milestone-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Custom landmark</p>
-            <h2 id="custom-milestone-title">Build your own milestone</h2>
+            <p className="eyebrow">{en.milestones.customEyebrow}</p>
+            <h2 id="custom-milestone-title">{en.milestones.customTitle}</h2>
           </div>
-          <span className="privacy-chip">Calculated locally</span>
+          <span className="privacy-chip">{en.milestones.calculatedLocally}</span>
         </div>
         <div className="form-grid two-columns">
           <Field
-            label="Amount"
+            label={en.milestones.amount}
             type="number"
             inputMode="numeric"
             min="1"
             step="1"
             value={customAmount}
             onChange={(event) => setCustomAmount(event.target.value)}
-            hint="Use a positive whole number."
+            hint={en.milestones.amountHint}
           />
           <SelectField
-            label="Milestone unit"
+            label={en.milestones.unit}
             value={customUnit}
             onChange={(event) => setCustomUnit(event.target.value === 'years' ? 'years' : 'days')}
           >
-            <option value="days">Days lived</option>
-            <option value="years">Birthday years</option>
+            <option value="days">{en.milestones.daysLived}</option>
+            <option value="years">{en.milestones.birthdayYears}</option>
           </SelectField>
         </div>
         {value.custom && (
           <div className="privacy-box" aria-live="polite">
-            <p className="eyebrow">{value.custom.reached ? 'Reached' : 'Upcoming'}</p>
+            <p className="eyebrow">
+              {value.custom.reached ? en.milestones.reached : en.milestones.upcoming}
+            </p>
             <strong>{value.custom.label}</strong>
             <p>
               {value.custom.weekday} · {formatDateInput(value.custom.date)}
@@ -108,7 +111,7 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
           {value.error}
         </div>
       ) : (
-        <section className="timeline" aria-label="Calculated milestones">
+        <section className="timeline" aria-label={en.milestones.calculatedMilestones}>
           {value.milestones.map((milestone) => (
             <article
               className={`timeline-item ${milestone.reached ? 'reached' : 'upcoming'}`}
@@ -116,7 +119,9 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
             >
               <span className="timeline-dot" aria-hidden="true" />
               <div>
-                <p className="eyebrow">{milestone.reached ? 'Reached' : 'Upcoming'}</p>
+                <p className="eyebrow">
+                  {milestone.reached ? en.milestones.reached : en.milestones.upcoming}
+                </p>
                 <h3>{milestone.label}</h3>
                 <p>
                   {milestone.weekday} · {formatDateInput(milestone.date)}
