@@ -7,6 +7,7 @@ import {
   importProfiles,
   loadProfiles,
   MAX_BACKUP_FILE_BYTES,
+  restoreProfile,
   saveProfile,
   updateProfile,
 } from '../storage/profiles';
@@ -26,6 +27,7 @@ export function ProfilesPage(): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
+  const [recentlyDeleted, setRecentlyDeleted] = useState<SavedProfile | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -52,13 +54,28 @@ export function ProfilesPage(): React.JSX.Element {
   };
 
   const removeProfile = (id: string): void => {
+    const profile = profiles.find((entry) => entry.id === id);
+    if (!profile) return;
     try {
       setProfiles(deleteProfile(id));
+      setRecentlyDeleted(profile);
       if (editingId === id) setEditingId(null);
       setError('');
       setMessage(en.profiles.deleted);
     } catch (caught) {
       setError(getUserSafeErrorMessage(caught, en.profiles.unableDelete));
+    }
+  };
+
+  const undoDelete = (): void => {
+    if (!recentlyDeleted) return;
+    try {
+      setProfiles(restoreProfile(recentlyDeleted));
+      setRecentlyDeleted(null);
+      setError('');
+      setMessage(en.profiles.restoredDeleted);
+    } catch (caught) {
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableRestore));
     }
   };
 
@@ -100,6 +117,7 @@ export function ProfilesPage(): React.JSX.Element {
       const text = await file.text();
       setProfiles(importProfiles(text));
       setEditingId(null);
+      setRecentlyDeleted(null);
       setError('');
       setMessage(en.profiles.restored);
     } catch (caught) {
@@ -113,6 +131,7 @@ export function ProfilesPage(): React.JSX.Element {
       clearProfiles();
       setProfiles([]);
       setEditingId(null);
+      setRecentlyDeleted(null);
       setQuery('');
       setError('');
       setMessage(en.profiles.allDeleted);
@@ -162,6 +181,11 @@ export function ProfilesPage(): React.JSX.Element {
           <p className="status-line" role="status">
             {message}
           </p>
+        )}
+        {recentlyDeleted && (
+          <button type="button" className="text-button" onClick={undoDelete}>
+            {en.profiles.undoDelete}
+          </button>
         )}
       </section>
       <section className="panel">
