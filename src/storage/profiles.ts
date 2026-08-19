@@ -1,5 +1,6 @@
 import type { SavedProfile } from '../types/models';
 import { validateBirthDateString, validateProfileName } from '../domain/validation';
+import { UserVisibleError } from '../errors';
 import { logger } from '../utils/logger';
 
 const STORAGE_KEY = 'chronoage.profiles.v1';
@@ -98,7 +99,9 @@ export function loadProfiles(): SavedProfile[] {
 
 export function saveProfile(input: { name: string; birthDate: string }): SavedProfile {
   const profiles = loadProfiles();
-  if (profiles.length >= MAX_PROFILES) throw new Error(`Profile limit of ${MAX_PROFILES} reached.`);
+  if (profiles.length >= MAX_PROFILES) {
+    throw new UserVisibleError(`Profile limit of ${MAX_PROFILES} reached.`);
+  }
   const now = new Date().toISOString();
   const profile: SavedProfile = {
     id: crypto.randomUUID(),
@@ -114,7 +117,7 @@ export function saveProfile(input: { name: string; birthDate: string }): SavedPr
 export function updateProfile(id: string, input: { name: string; birthDate: string }): SavedProfile {
   const profiles = loadProfiles();
   const current = profiles.find((profile) => profile.id === id);
-  if (!current) throw new Error('Profile not found.');
+  if (!current) throw new UserVisibleError('Profile not found.');
   const updated: SavedProfile = {
     ...current,
     name: validateProfileName(input.name),
@@ -145,16 +148,22 @@ export function exportProfiles(): string {
 
 export function importProfiles(raw: string): SavedProfile[] {
   if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_FILE_BYTES) {
-    throw new Error('Backup file is too large.');
+    throw new UserVisibleError('Backup file is too large.');
   }
-  const parsed = JSON.parse(raw) as unknown;
-  if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup file.');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    throw new UserVisibleError('Invalid backup file.');
+  }
+  if (!parsed || typeof parsed !== 'object') throw new UserVisibleError('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
   if (value.schemaVersion !== 1 || !Array.isArray(value.profiles)) {
-    throw new Error('Unsupported backup format.');
+    throw new UserVisibleError('Unsupported backup format.');
   }
   if (value.profiles.length > MAX_PROFILES) {
-    throw new Error(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
+    throw new UserVisibleError(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
   }
 
   const seenIds = new Set<string>();
@@ -162,7 +171,7 @@ export function importProfiles(raw: string): SavedProfile[] {
     try {
       return normalizeProfile(entry, seenIds);
     } catch {
-      throw new Error('Backup contains an invalid profile.');
+      throw new UserVisibleError('Backup contains an invalid profile.');
     }
   });
   persist(imported);
