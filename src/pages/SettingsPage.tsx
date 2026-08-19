@@ -11,15 +11,20 @@ import { sharedText } from '../i18n/shared';
 
 interface Props {
   settings: AppSettings;
-  onChange: (settings: AppSettings) => void;
+  onChange: (settings: AppSettings) => boolean | void;
 }
 
 export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
-  const patch = (next: Partial<AppSettings>): void => onChange({ ...settings, ...next });
   const pwa = usePwaLifecycle();
   const [installMessage, setInstallMessage] = useState('');
   const [timeZoneDraft, setTimeZoneDraft] = useState(settings.defaultTimeZone);
+  const [storageWarning, setStorageWarning] = useState('');
   const timeZoneError = isValidTimeZone(timeZoneDraft) ? undefined : sharedText.invalidTimeZone;
+
+  const patch = (next: Partial<AppSettings>): void => {
+    const persisted = onChange({ ...settings, ...next });
+    setStorageWarning(persisted === false ? en.settings.storageUnavailable : '');
+  };
 
   const installApp = async (): Promise<void> => {
     const outcome = await pwa.install();
@@ -146,6 +151,11 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           <strong>{en.settings.localStorageStrong}</strong>
           <p>{en.settings.localStorageDescription}</p>
         </div>
+        {storageWarning && (
+          <div className="alert error" role="alert">
+            {storageWarning}
+          </div>
+        )}
       </section>
 
       <section className="settings-section panel" aria-labelledby="privacy-title">
