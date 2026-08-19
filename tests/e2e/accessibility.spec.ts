@@ -28,6 +28,14 @@ test.describe('accessibility checks', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   });
 
+  test('moves focus into main content and updates the document title after page navigation', async ({ page }) => {
+    await navigateTo(page, 'Interval');
+
+    await expect(page.locator('#main-content')).toBeFocused();
+    await expect(page).toHaveTitle('Interval · ChronoAge');
+    await expect(page.getByRole('heading', { name: 'Date interval' })).toBeVisible();
+  });
+
   test('interactive controls expose accessible names', async ({ page }) => {
     const unnamedButtons = await page.locator('button').evaluateAll((buttons) =>
       buttons
