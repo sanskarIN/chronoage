@@ -1,14 +1,23 @@
 import { useMemo, useState } from 'react';
 import { calculateAge, nextBirthday, parseDateInput, parseTimeInput } from '../domain/dateMath';
-import type { AppSettings } from '../types/models';
-import { currentTimeInputValue, defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
+import type { AppSettings, BirthdayCountdown } from '../types/models';
+import { currentTimeInputValue, todayInputValue } from '../utils/dateDefaults';
 import { printResult, shareText } from '../utils/share';
 import { Field, SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { ResultCard } from '../components/ResultCard';
 
-export function CalculatorPage({ settings }: { settings: AppSettings }): React.JSX.Element {
-  const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
+interface CalculatorPageProps {
+  settings: AppSettings;
+  birthDate: string;
+  onBirthDateChange: (value: string) => void;
+}
+
+export function CalculatorPage({
+  settings,
+  birthDate,
+  onBirthDateChange,
+}: CalculatorPageProps): React.JSX.Element {
   const [birthTime, setBirthTime] = useState('00:00');
   const [referenceDate, setReferenceDate] = useState(todayInputValue());
   const [referenceTime, setReferenceTime] = useState(currentTimeInputValue());
@@ -29,11 +38,15 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
         includeTime,
         leapDayPolicy: settings.leapDayPolicy,
       });
-      return {
-        result,
-        birthday: nextBirthday(birth, reference, settings.leapDayPolicy),
-        error: '',
-      };
+
+      let birthday: BirthdayCountdown | undefined;
+      try {
+        birthday = nextBirthday(birth, reference, settings.leapDayPolicy);
+      } catch {
+        birthday = undefined;
+      }
+
+      return { result, birthday, error: '' };
     } catch (error) {
       return {
         result: null,
@@ -72,26 +85,79 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
             <span className="privacy-chip">Local only</span>
           </div>
           <div className="form-grid two-columns">
-            <Field label="Birth date" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} max="9999-12-31" />
-            {includeTime && <Field label="Birth time" type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />}
-            <Field label="Reference date" type="date" value={referenceDate} onChange={(event) => setReferenceDate(event.target.value)} max="9999-12-31" />
-            {includeTime && <Field label="Reference time" type="time" value={referenceTime} onChange={(event) => setReferenceTime(event.target.value)} />}
+            <Field
+              label="Birth date"
+              type="date"
+              value={birthDate}
+              onChange={(event) => onBirthDateChange(event.target.value)}
+              min="0001-01-01"
+              max="9999-12-31"
+            />
+            {includeTime && (
+              <Field
+                label="Birth time"
+                type="time"
+                value={birthTime}
+                onChange={(event) => setBirthTime(event.target.value)}
+              />
+            )}
+            <Field
+              label="Reference date"
+              type="date"
+              value={referenceDate}
+              onChange={(event) => setReferenceDate(event.target.value)}
+              min="0001-01-01"
+              max="9999-12-31"
+            />
+            {includeTime && (
+              <Field
+                label="Reference time"
+                type="time"
+                value={referenceTime}
+                onChange={(event) => setReferenceTime(event.target.value)}
+              />
+            )}
           </div>
           <label className="switch-row">
             <span>
               <strong>Include time of day</strong>
               <small>Enables hour/minute precision and timezone-aware instant calculations.</small>
             </span>
-            <input type="checkbox" checked={includeTime} onChange={(event) => setIncludeTime(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeTime}
+              onChange={(event) => setIncludeTime(event.target.checked)}
+            />
           </label>
           {includeTime && (
-            <SelectField label="Timezone" value={timeZone} onChange={(event) => setTimeZone(event.target.value)} hint="Uses your browser's IANA timezone database.">
-              {Array.from(new Set([settings.defaultTimeZone, 'UTC', 'Asia/Kolkata', 'America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney'])).map((zone) => (
-                <option key={zone} value={zone}>{zone}</option>
+            <SelectField
+              label="Timezone"
+              value={timeZone}
+              onChange={(event) => setTimeZone(event.target.value)}
+              hint="Uses your browser's IANA timezone database."
+            >
+              {Array.from(
+                new Set([
+                  settings.defaultTimeZone,
+                  'UTC',
+                  'Asia/Kolkata',
+                  'America/New_York',
+                  'Europe/London',
+                  'Asia/Tokyo',
+                  'Australia/Sydney',
+                ]),
+              ).map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
               ))}
             </SelectField>
           )}
-          {calculation.error && <div className="alert error" role="alert">{calculation.error}</div>}
+          {calculation.error && (
+            <div className="alert error" role="alert">
+              {calculation.error}
+            </div>
+          )}
         </section>
 
         {calculation.result ? (
@@ -112,7 +178,10 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
       </div>
       <div className="info-strip">
         <strong>Leap-day birthdays:</strong>
-        <span>Non-leap anniversaries currently use {settings.leapDayPolicy === 'mar1' ? 'March 1' : 'February 28'}, configurable in Settings.</span>
+        <span>
+          Non-leap anniversaries currently use{' '}
+          {settings.leapDayPolicy === 'mar1' ? 'March 1' : 'February 28'}, configurable in Settings.
+        </span>
       </div>
     </div>
   );
