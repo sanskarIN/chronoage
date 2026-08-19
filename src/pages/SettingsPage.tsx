@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { AppSettings, ThemePreference } from '../types/models';
+import { isValidTimeZone } from '../domain/dateMath';
 import { SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { TimeZoneField } from '../components/TimeZoneField';
 import { mailto, project } from '../config/project';
 import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
 import { en } from '../i18n/en';
@@ -16,6 +18,8 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
   const patch = (next: Partial<AppSettings>): void => onChange({ ...settings, ...next });
   const pwa = usePwaLifecycle();
   const [installMessage, setInstallMessage] = useState('');
+  const [timeZoneDraft, setTimeZoneDraft] = useState(settings.defaultTimeZone);
+  const timeZoneError = isValidTimeZone(timeZoneDraft) ? undefined : sharedText.invalidTimeZone;
 
   const installApp = async (): Promise<void> => {
     const outcome = await pwa.install();
@@ -26,6 +30,11 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           ? en.settings.installDismissed
           : en.settings.promptUnavailable,
     );
+  };
+
+  const changeTimeZone = (value: string): void => {
+    setTimeZoneDraft(value);
+    if (isValidTimeZone(value)) patch({ defaultTimeZone: value });
   };
 
   const updateMessage =
@@ -97,28 +106,13 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           <p className="eyebrow">{en.settings.dateEyebrow}</p>
           <h2 id="date-title">{en.settings.calculationDefaults}</h2>
         </div>
-        <SelectField
+        <TimeZoneField
           label={en.settings.defaultTimezone}
-          value={settings.defaultTimeZone}
-          onChange={(event) => patch({ defaultTimeZone: event.target.value })}
+          value={timeZoneDraft}
+          onChange={(event) => changeTimeZone(event.target.value)}
           hint={en.settings.defaultTimezoneHint}
-        >
-          {Array.from(
-            new Set([
-              settings.defaultTimeZone,
-              'UTC',
-              'Asia/Kolkata',
-              'America/New_York',
-              'Europe/London',
-              'Asia/Tokyo',
-              'Australia/Sydney',
-            ]),
-          ).map((zone) => (
-            <option key={zone} value={zone}>
-              {zone}
-            </option>
-          ))}
-        </SelectField>
+          error={timeZoneError}
+        />
         <SelectField
           label={en.settings.leapDay}
           value={settings.leapDayPolicy}
