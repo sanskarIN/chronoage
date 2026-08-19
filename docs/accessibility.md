@@ -16,6 +16,13 @@ ChronoAge targets WCAG-oriented inclusive design rather than treating accessibil
 - High-contrast preference that strengthens boundaries.
 - Responsive typography and touch targets.
 - Dialog labeling for onboarding and quick actions.
+- Playwright accessibility smoke checks for primary landmarks, skip navigation, heading structure, accessible control names, input labels, and image alternative text.
+
+## Automated checks
+
+`tests/e2e/accessibility.spec.ts` runs with the normal Playwright suite and catches common regressions such as unnamed buttons, unlabeled form controls, missing image `alt` attributes, or removal of the main navigation/skip-link structure.
+
+These checks are intentionally dependency-light and are **not** a full WCAG conformance audit. A maintained browser accessibility engine can be added later when its rule/version lifecycle is explicitly owned.
 
 ## Manual review checklist
 
