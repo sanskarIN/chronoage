@@ -41,6 +41,18 @@ describe('ProfilesPage', () => {
     expect(screen.queryByRole('button', { name: 'Show more profiles' })).not.toBeInTheDocument();
   });
 
+  it('passes a saved profile to the calculator action', async () => {
+    const profile = saveProfile({ name: 'Open me', birthDate: '2004-05-06' });
+    const onUseProfile = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ProfilesPage onUseProfile={onUseProfile} />);
+    await user.click(screen.getByRole('button', { name: 'Age: Open me' }));
+
+    expect(onUseProfile).toHaveBeenCalledTimes(1);
+    expect(onUseProfile).toHaveBeenCalledWith(profile);
+  });
+
   it('edits a saved profile through the UI', async () => {
     saveProfile({ name: 'Before', birthDate: '2000-01-01' });
     const user = userEvent.setup();
