@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { calculateAge, nextBirthday, parseDateInput, parseTimeInput } from '../domain/dateMath';
+import { getUserSafeErrorMessage } from '../errors';
 import type { AppSettings } from '../types/models';
 import { currentTimeInputValue, defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
 import { printResult, shareText } from '../utils/share';
@@ -40,7 +41,7 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
       return {
         result: null,
         birthday: undefined,
-        error: error instanceof Error ? error.message : en.calculator.unable,
+        error: getUserSafeErrorMessage(error, en.calculator.unable),
       };
     }
   }, [
