@@ -6,7 +6,7 @@ ChronoAge is intentionally local-first.
 
 The calculator may process dates, optional times/timezones, optional local profile names, and user preferences. This data is used to perform the requested calculation or provide local convenience features.
 
-Time-aware preferences include the default timezone and the choice of earlier/later occurrence when a daylight-saving fall-back hour repeats. These preferences remain local browser settings.
+Time-aware preferences include the default timezone and the choice of earlier/later occurrence when a daylight-saving fall-back hour repeats. Timezone inputs may use any IANA identifier supported by the browser. These preferences remain local browser settings when persistence is available.
 
 ## Where data is stored
 
@@ -16,6 +16,17 @@ Time-aware preferences include the default timezone and the choice of earlier/la
 - Export creates a plain JSON file only when the user chooses Export.
 
 ChronoAge includes no account system, analytics SDK, advertising SDK, telemetry endpoint, cloud synchronization, or crash-reporting backend.
+
+## When browser storage is unavailable
+
+Browsers can block local storage because of privacy settings, security policy, quota limits, or environment restrictions.
+
+- If profile storage cannot be read, ChronoAge loads no saved profiles rather than treating inaccessible data as valid.
+- If a profile write/delete/clear cannot be persisted, the action fails with a user-visible local error instead of pretending the change was saved.
+- If settings storage cannot be read, safe defaults are used.
+- If a settings write fails, the preference still applies to the current React session and Settings explicitly warns that the change is session-only.
+
+These fallbacks do not cause data to be uploaded elsewhere.
 
 ## Runtime diagnostics
 
