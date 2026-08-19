@@ -88,6 +88,12 @@ export default function App(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
+    if (window.location.hash.startsWith('#/') && !pageFromHash(window.location.hash)) {
+      window.history.replaceState(null, '', hashForPage('calculate'));
+    }
+  }, []);
+
+  useEffect(() => {
     document.title = `${en.nav[page]} · ${project.name}`;
   }, [page]);
 
