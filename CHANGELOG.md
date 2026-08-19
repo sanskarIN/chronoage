@@ -31,6 +31,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Structured logging redaction for sensitive object keys, emails, bearer credentials, ISO dates, clock times, circular references, and excessive nesting.
 - Central runtime project metadata for version, repository/funding links, contacts, license, and visible credit.
 - Project metadata consistency checker integrated with the quality suite and CI.
+- Runtime-pin consistency checks covering `.nvmrc`, the package Node engine floor, and permanent CI/release `node-version` declarations.
 - Static browser-security invariant checker integrated with the quality suite and CI.
 - Static enforcement preventing runtime source from bypassing the privacy-safe logger with direct console output.
 - Production JavaScript/CSS gzip budget checker integrated with `npm run check` and CI.
@@ -45,6 +46,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, optional clock precision units, profile recovery, ordered undo, progressive profile rendering, and profile-to-calculator navigation.
 
 ### Changed
+- Permanent CI and release verification now run the exact project Node.js `22.13.0` pin instead of the moving Node 22 channel.
 - Service-worker activation waits for explicit update application instead of always taking control immediately after installation.
 - Offline document fallback is restricted to navigation requests; failed scripts/styles/images no longer receive cached HTML.
 - Service-worker cache generation advanced to invalidate the previous app-shell cache after offline-behavior changes.
