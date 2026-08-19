@@ -8,7 +8,9 @@ ChronoAge targets WCAG-oriented inclusive design rather than treating accessibil
 - Visible keyboard focus indicators.
 - Skip-to-content link.
 - Keyboard-operable primary navigation and quick actions.
-- `Ctrl/Cmd + K` quick actions and `Escape` dismissal.
+- `Ctrl/Cmd + K` quick actions and `Escape` dismissal after onboarding is complete.
+- Quick-actions focus moves into the modal on open, wraps within its actions, and returns to the prior control on close.
+- First-run onboarding focuses its start action, contains Tab/Shift+Tab focus, and blocks background quick-action shortcuts while the modal is active.
 - ARIA live/status regions for calculation/share feedback.
 - Errors are communicated with text, not color alone.
 - Light/dark/system theme support.
@@ -28,6 +30,8 @@ The first layer contains product-specific structural checks that make failures e
 
 The second layer uses `@axe-core/playwright` and scans Age, Difference, Interval, Milestones, Profiles, Settings, and About using WCAG A/AA tags. Any reported violation fails the E2E suite and the CI job.
 
+Component tests additionally protect modal focus behavior: `tests/App.test.tsx` covers quick-actions focus entry, wrap, restoration, shortcut toggling, and onboarding shortcut isolation; `tests/Onboarding.test.tsx` covers first-run focus containment.
+
 The axe dependency is pinned intentionally. Dependency updates should be reviewed like other test-engine changes because rule behavior can change as standards support evolves.
 
 Automated checks cannot prove complete accessibility or standards conformance. They complement, rather than replace, keyboard, zoom, contrast, screen-reader, reduced-motion, and platform assistive-technology review.
@@ -36,10 +40,11 @@ Automated checks cannot prove complete accessibility or standards conformance. T
 
 - Navigate every interactive element with keyboard only.
 - Verify focus order follows visual order.
-- Open and dismiss quick actions with keyboard only.
+- Open and dismiss quick actions with keyboard only; verify focus enters, wraps, and returns to the trigger.
+- Exercise onboarding with Tab and Shift+Tab and confirm background shortcuts/actions cannot take focus.
 - Verify mobile navigation can be opened, traversed, and dismissed without a pointer.
 - Zoom to 200% without losing core content/actions.
-- Test screen-reader labels for dates, toggles, icon buttons, dialogs, and the duration visualization.
+- Test screen-reader labels for dates, toggles, icon buttons, dialogs, the crash-recovery alert, and the duration visualization.
 - Verify errors/status updates are announced at sensible times and do not repeatedly interrupt reading.
 - Verify dark and light themes at common contrast-sensitive states.
 - Verify reduced-motion mode removes nonessential animated transitions.
