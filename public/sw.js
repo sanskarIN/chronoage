@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'chronoage-';
-const CACHE_NAME = 'chronoage-v3';
+const CACHE_NAME = 'chronoage-v4';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/logo.svg'];
 
 self.addEventListener('install', (event) => {
