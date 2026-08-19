@@ -13,6 +13,29 @@
   "orientation": "any",
   "categories": ["utilities", "productivity"],
   "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Age Calculator",
+      "short_name": "Age",
+      "description": "Open the exact age calculator.",
+      "url": "/#/calculate",
+      "icons": [{ "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Age Difference",
+      "short_name": "Difference",
+      "description": "Compare two calendar dates.",
+      "url": "/#/difference",
+      "icons": [{ "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Life Milestones",
+      "short_name": "Milestones",
+      "description": "Open birthday and day-count milestones.",
+      "url": "/#/milestones",
+      "icons": [{ "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
   "icons": [
     { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
