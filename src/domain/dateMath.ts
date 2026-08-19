@@ -94,12 +94,17 @@ export function toEpochDay(date: LocalDate): number {
 }
 
 export function fromEpochDay(epochDay: number): LocalDate {
+  if (!Number.isInteger(epochDay)) throw new DateCalculationError('Epoch day must be an integer.');
   const date = new Date(epochDay * MS_PER_DAY);
-  return {
+  const result = {
     year: date.getUTCFullYear(),
     month: date.getUTCMonth() + 1,
     day: date.getUTCDate(),
   };
+  if (!isValidLocalDate(result)) {
+    throw new DateCalculationError('Resulting date is outside the supported range.');
+  }
+  return result;
 }
 
 export function addDays(date: LocalDate, days: number): LocalDate {
