@@ -15,9 +15,9 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) =>
         Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
-      ),
+      )
+      .then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -35,8 +35,14 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached || caches.match('/index.html'));
-      return cached || network;
+        .catch(async () => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return (await caches.match('/index.html')) ?? Response.error();
+          }
+          return Response.error();
+        });
+      return cached ?? network;
     }),
   );
 });
