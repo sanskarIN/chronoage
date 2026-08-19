@@ -15,7 +15,7 @@ describe('CalculatorPage', () => {
 
     expect(screen.getByLabelText('Timezone')).toHaveValue('America/New_York');
     expect(screen.getByText(/Repeated fall-back times use the later occurrence/)).toBeInTheDocument();
-    expect(screen.getByText(/repeated fall-back times use the later occurrence/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/repeated fall-back times use the later occurrence/i)).toHaveLength(2);
   });
 
   it('reports a nonexistent local wall-clock time instead of normalizing it', () => {
