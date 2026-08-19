@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { navigateTo, seedCompletedOnboarding } from './helpers';
 
 async function expectNoWcagViolations(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page })
@@ -16,17 +17,12 @@ async function expectNoWcagViolations(page: Page): Promise<void> {
 
 test.describe('accessibility checks', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        'chronoage.settings.v1',
-        JSON.stringify({ onboardingComplete: true, theme: 'system' }),
-      );
-    });
+    await seedCompletedOnboarding(page);
     await page.goto('/');
   });
 
   test('provides landmarks, a skip link, and one main heading', async ({ page }) => {
-    await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Primary' })).toBeAttached();
     await expect(page.locator('#main-content')).toBeVisible();
     await expect(page.locator('.skip-link')).toHaveAttribute('href', '#main-content');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
@@ -60,12 +56,12 @@ test.describe('accessibility checks', () => {
   });
 
   test('advanced date tools retain accessible controls and visualization names', async ({ page }) => {
-    await page.getByRole('button', { name: 'Difference' }).click();
+    await navigateTo(page, 'Difference');
     await expect(page.getByLabel('First date')).toBeVisible();
     await expect(page.getByLabel('Second date')).toBeVisible();
     await expect(page.getByRole('img', { name: /years, .* months, and .* days between/ })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Milestones' }).click();
+    await navigateTo(page, 'Milestones');
     await expect(page.getByLabel('Amount')).toBeVisible();
     await expect(page.getByLabel('Milestone unit')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Build your own milestone' })).toBeVisible();
@@ -82,14 +78,14 @@ test.describe('accessibility checks', () => {
     await expectNoWcagViolations(page);
 
     for (const name of ['Difference', 'Interval', 'Milestones', 'Profiles', 'Settings', 'About']) {
-      await page.getByRole('button', { name }).click();
+      await navigateTo(page, name);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expectNoWcagViolations(page);
     }
   });
 
   test('passes an automated WCAG audit in dark theme', async ({ page }) => {
-    await page.getByRole('button', { name: 'Settings' }).click();
+    await navigateTo(page, 'Settings');
     await page.getByLabel('Theme').selectOption('dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expectNoWcagViolations(page);
