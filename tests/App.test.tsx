@@ -17,18 +17,21 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
   });
 
-  it('opens quick actions with the toolbar button and restores focus on Escape', async () => {
+  it('opens quick actions with the toolbar button, isolates background content, and restores focus on Escape', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    const { container } = render(<App />);
     const trigger = screen.getByRole('button', { name: /quick actions/i });
 
     await user.click(trigger);
     const dialog = screen.getByRole('dialog', { name: 'Quick actions' });
     expect(dialog).toBeInTheDocument();
     expect(dialog.contains(document.activeElement)).toBe(true);
+    expect(container.querySelector('.content-shell')).toHaveAttribute('inert');
+    expect(container.querySelector('.sidebar')).toHaveAttribute('inert');
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Quick actions' })).not.toBeInTheDocument();
+    expect(container.querySelector('.content-shell')).not.toHaveAttribute('inert');
     expect(trigger).toHaveFocus();
   });
 
@@ -63,9 +66,11 @@ describe('App', () => {
   it('does not open background quick actions while onboarding is active', async () => {
     const user = userEvent.setup();
     localStorage.clear();
-    render(<App />);
+    const { container } = render(<App />);
 
     expect(screen.getByRole('dialog', { name: /time is personal/i })).toBeInTheDocument();
+    expect(container.querySelector('.content-shell')).toHaveAttribute('inert');
+    expect(container.querySelector('.sidebar')).toHaveAttribute('inert');
     await user.keyboard('{Control>}k{/Control}');
     expect(screen.queryByRole('dialog', { name: 'Quick actions' })).not.toBeInTheDocument();
   });
