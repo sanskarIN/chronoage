@@ -19,8 +19,9 @@ function seededDates(count: number): LocalDate[] {
   const result: LocalDate[] = [];
   let cursor: LocalDate = { year: 1900, month: 1, day: 1 };
   for (let index = 0; index < count; index += 1) {
+    if (cursor.year > 9800) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
     cursor = addDays(cursor, next() % 45_000);
-    if (cursor.year > 9990) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
+    if (cursor.year > 9800) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
     result.push(cursor);
   }
   return result;
