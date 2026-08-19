@@ -37,7 +37,7 @@ Increasing a release budget should be treated as a product/performance decision,
 
 - Native `Intl` avoids shipping a timezone/date library.
 - Pages use derived memoized calculations rather than network state.
-- Saved profiles are capped at 100, so filtering is bounded and list virtualization is unnecessary.
+- Saved profiles are capped at 100 and rendered in batches of 20. Search still evaluates the bounded local collection, while DOM work stays small until the user requests more matching cards.
 - The service worker caches only same-origin GET resources.
 - No analytics or third-party UI framework is loaded.
 - The duration visualization uses three lightweight DOM segments and does not introduce a charting dependency.
@@ -76,7 +76,7 @@ Use browser Performance/Lighthouse tooling against `npm run preview`, not the de
 - calculator input-to-result responsiveness;
 - Difference page visualization rendering;
 - Milestones page rendering with the built-in timeline;
-- profile filtering at the 100-profile cap;
+- profile filtering at the 100-profile cap, including initial 20-card rendering and progressive reveal;
 - offline reload behavior after service-worker installation.
 
 Record regressions in pull requests when a change materially increases bundle size or interaction latency.
