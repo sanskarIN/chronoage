@@ -39,6 +39,27 @@ test('saved profile remains local and can be removed', async ({ page }) => {
   await expect(page.getByText('No profiles saved')).toBeVisible();
 });
 
+test('saved profiles can be sorted without changing local storage data', async ({ page }) => {
+  await page.goto('/');
+  await navigateTo(page, 'Profiles');
+
+  for (const [name, birthDate] of [
+    ['Charlie', '2002-01-01'],
+    ['Alpha', '2005-01-01'],
+    ['Bravo', '1999-01-01'],
+  ] as const) {
+    await page.getByLabel('Name').fill(name);
+    await page.getByLabel('Birth date').fill(birthDate);
+    await page.getByRole('button', { name: 'Save profile' }).click();
+  }
+
+  const storedBefore = await page.evaluate(() => localStorage.getItem('chronoage.profiles.v1'));
+  await page.getByLabel('Sort profiles').selectOption('name-asc');
+  await expect(page.locator('.profile-card .profile-copy strong')).toHaveText(['Alpha', 'Bravo', 'Charlie']);
+  const storedAfter = await page.evaluate(() => localStorage.getItem('chronoage.profiles.v1'));
+  expect(storedAfter).toBe(storedBefore);
+});
+
 test('saved profile deletion can be undone', async ({ page }) => {
   await page.goto('/');
   await navigateTo(page, 'Profiles');
