@@ -15,8 +15,9 @@
 
 ## v1.1 — Polish
 
+- [x] Search/filter for large local profile collections
+- [x] Editable saved profiles using the validated local storage model
 - [ ] Additional locale packs after translation review
-- [ ] Search/filter for large local profile collections
 - [ ] Install/update prompt UX using browser capabilities
 - [ ] Automated accessibility audit in CI
 - [ ] Release-candidate screenshot automation
