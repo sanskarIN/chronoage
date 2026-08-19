@@ -165,6 +165,9 @@ export const en = {
     dataControls: 'Data controls',
     export: 'Export',
     import: 'Import',
+    importReplaceConfirm:
+      'Importing this backup will replace all currently saved profiles on this device. Continue?',
+    importCancelled: 'Import cancelled. Existing profiles were kept unchanged.',
     backupDescription: 'Export creates a plain JSON backup. Treat it like any file containing personal dates.',
     backupWarning: 'Encrypted storage is not implied: keep exported backup files private.',
     backupTooLarge: 'Backup file is too large. Choose a file smaller than 1 MB.',
