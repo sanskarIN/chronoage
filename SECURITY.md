@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes target the latest released version of ChronoAge and the current `main` branch.
+Security fixes target the latest released version of ChronoAge and the current `main` branch. The current source version is `2.0.12`; source-version metadata does not by itself claim that a matching GitHub tag or release artifact has been published.
 
 ## Reporting a vulnerability
 
@@ -35,7 +35,7 @@ The application:
 - keeps PWA shortcut launch URLs inside the same public route set and verifies they contain no query-style data parameters;
 - validates imported profile data before persistence;
 - rejects oversized backups before the UI reads them and rechecks the UTF-8 byte limit at the storage boundary;
-- limits backup profile count and rejects duplicate imported profile ids and malformed profile timestamps;
+- limits backup profile count and rejects duplicate imported profile ids, malformed timestamps, and impossible histories where `updatedAt` precedes `createdAt`;
 - converts malformed backup JSON into a stable user-safe error instead of exposing parser implementation text;
 - requires confirmation before a backup import replaces an existing non-empty profile collection;
 - validates and normalizes profile names and calendar dates at the storage boundary;
@@ -51,7 +51,8 @@ The application:
 - limits the service worker cache to same-origin GET requests;
 - restricts the cached `index.html` offline fallback to document navigations rather than serving HTML for missing assets;
 - requires explicit user action before applying a waiting service-worker update;
-- versions the ChronoAge cache namespace and precaches the manifest used for installed-app metadata/shortcuts;
+- versions the ChronoAge cache namespace with the application release and verifies the cache/version relationship through `npm run metadata:check`;
+- precaches the manifest used for installed-app metadata/shortcuts;
 - commits no credentials and provides only placeholder `.env.example` values;
 - runs static security invariants, runtime dependency audit, dependency review, and CodeQL in repository automation;
 - reruns browser journeys and automated accessibility checks on release tags before creating the release artifact.
