@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../src/App';
+import { saveProfile } from '../src/storage/profiles';
 
 beforeEach(() => {
   localStorage.clear();
@@ -15,6 +16,18 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Interval' }));
     expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+  });
+
+  it('opens a saved profile directly in the calculator', async () => {
+    saveProfile({ name: 'Saved person', birthDate: '2004-05-06' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Profiles' }));
+    await user.click(screen.getByRole('button', { name: 'Age: Saved person' }));
+
+    expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Birth date')).toHaveValue('2004-05-06');
   });
 
   it('opens quick actions with the toolbar button, isolates background content, and restores focus on Escape', async () => {
