@@ -1,4 +1,5 @@
 export const sharedText = {
+  primaryNavigation: 'Primary',
   quickActionsShortcut: 'Ctrl/⌘ K',
   versionLabel: (version: string): string => `Version ${version}`,
   openSourceProjectMeta: (license: string, credit: string): string =>
