@@ -1,13 +1,21 @@
 import { useMemo, useState } from 'react';
-import { calculateAge, nextBirthday, parseDateInput, parseTimeInput } from '../domain/dateMath';
+import {
+  calculateAge,
+  isValidTimeZone,
+  nextBirthday,
+  parseDateInput,
+  parseTimeInput,
+} from '../domain/dateMath';
 import { getUserSafeErrorMessage } from '../errors';
 import type { AppSettings } from '../types/models';
 import { currentTimeInputValue, defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
 import { printResult, shareText } from '../utils/share';
-import { Field, SelectField } from '../components/Field';
+import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { ResultCard } from '../components/ResultCard';
+import { TimeZoneField } from '../components/TimeZoneField';
 import { en } from '../i18n/en';
+import { sharedText } from '../i18n/shared';
 
 export function CalculatorPage({ settings }: { settings: AppSettings }): React.JSX.Element {
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
@@ -17,6 +25,7 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
   const [includeTime, setIncludeTime] = useState(false);
   const [timeZone, setTimeZone] = useState(settings.defaultTimeZone);
   const [status, setStatus] = useState('');
+  const timeZoneError = includeTime && !isValidTimeZone(timeZone) ? sharedText.invalidTimeZone : undefined;
 
   const calculation = useMemo(() => {
     try {
@@ -127,28 +136,13 @@ export function CalculatorPage({ settings }: { settings: AppSettings }): React.J
             />
           </label>
           {includeTime && (
-            <SelectField
+            <TimeZoneField
               label={en.calculator.timezone}
               value={timeZone}
               onChange={(event) => setTimeZone(event.target.value)}
               hint={en.calculator.timezoneHint(settings.dstAmbiguityPolicy)}
-            >
-              {Array.from(
-                new Set([
-                  settings.defaultTimeZone,
-                  'UTC',
-                  'Asia/Kolkata',
-                  'America/New_York',
-                  'Europe/London',
-                  'Asia/Tokyo',
-                  'Australia/Sydney',
-                ]),
-              ).map((zone) => (
-                <option key={zone} value={zone}>
-                  {zone}
-                </option>
-              ))}
-            </SelectField>
+              error={timeZoneError}
+            />
           )}
           {calculation.error && (
             <div className="alert error" role="alert">
