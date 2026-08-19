@@ -1,6 +1,7 @@
 import type { AppSettings } from '../types/models';
 import { isValidTimeZone } from '../domain/dateMath';
 import { systemTimeZone } from '../utils/dateDefaults';
+import { logger } from '../utils/logger';
 
 const STORAGE_KEY = 'chronoage.settings.v1';
 
@@ -39,11 +40,22 @@ export function loadSettings(): AppSettings {
         DEFAULT_SETTINGS.onboardingComplete,
       ),
     };
-  } catch {
+  } catch (error) {
+    logger.warn('Settings storage could not be read; defaults are being used.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
     return DEFAULT_SETTINGS;
   }
 }
 
-export function saveSettings(settings: AppSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export function saveSettings(settings: AppSettings): boolean {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    return true;
+  } catch (error) {
+    logger.warn('Settings storage could not be written; changes are session-only.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    return false;
+  }
 }
