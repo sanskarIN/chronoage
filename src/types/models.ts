@@ -1,5 +1,6 @@
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type LeapDayPolicy = 'feb28' | 'mar1';
+export type DstAmbiguityPolicy = 'earlier' | 'later';
 
 export interface LocalDate {
   year: number;
@@ -18,6 +19,7 @@ export interface AgeInput {
   timeZone: string;
   includeTime: boolean;
   leapDayPolicy: LeapDayPolicy;
+  dstAmbiguityPolicy?: DstAmbiguityPolicy;
 }
 
 export interface AgeBreakdown {
@@ -59,5 +61,6 @@ export interface AppSettings {
   highContrast: boolean;
   defaultTimeZone: string;
   leapDayPolicy: LeapDayPolicy;
+  dstAmbiguityPolicy: DstAmbiguityPolicy;
   onboardingComplete: boolean;
 }
