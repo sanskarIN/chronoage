@@ -206,7 +206,7 @@ export const en = {
     dateEyebrow: 'Date behavior',
     calculationDefaults: 'Calculation defaults',
     defaultTimezone: 'Default timezone',
-    defaultTimezoneHint: 'Used when time-of-day precision is enabled.',
+    defaultTimezoneHint: 'Used when time-of-day precision is enabled. You can enter any browser-supported IANA identifier.',
     leapDay: 'Leap-day anniversary',
     leapDayHint: 'Applied when a February 29 birthday lands in a non-leap year.',
     february28: 'February 28',
@@ -221,6 +221,8 @@ export const en = {
     localStorageStrong: 'Profiles stay in this browser unless you explicitly export them.',
     localStorageDescription:
       'Use the Profiles page to add, edit, delete, export, or import local profile data. Export files are plain JSON and are not encrypted.',
+    storageUnavailable:
+      'Browser storage is unavailable. Preference changes will last only for this session.',
     privacyEyebrow: 'Privacy',
     privacyTitle: 'Local-first defaults',
     privacyStrong: 'No analytics, account, advertising SDK, or cloud sync is built in.',
