@@ -16,10 +16,14 @@
 ## v1.1 — Polish
 
 - [x] Search/filter for large local profile collections
+- [x] Deterministic saved-profile sorting without mutating storage order
 - [x] Editable saved profiles using the validated local storage model
 - [x] One-step undo for individual saved-profile deletion
+- [x] Confirm backup replacement before overwriting an existing saved-profile collection
 - [x] Direct saved-profile handoff into the Age calculator
 - [x] Progressive 20-card rendering for bounded profile-list DOM work
+- [x] Privacy-safe page deep links and browser Back/Forward navigation using public page identifiers only
+- [x] Route-change document titles and main-content focus management
 - [x] Install/update prompt UX using browser capabilities
 - [x] Baseline automated browser accessibility regression checks
 - [x] Maintained axe-core WCAG A/AA audits across core pages, dark theme, and mobile viewport
