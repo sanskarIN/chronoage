@@ -4,6 +4,14 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
+### Planned
+- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate CI/release installs to `npm ci`.
+- Record a passing clean-checkout full quality/E2E run after reproducible dependency installation is available.
+- Additional locale packs after complete human translation review.
+- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, permission, and security surface.
+
+## [2.0.12] - 2026-08-19
+
 ### Added
 - Search/filter controls for saved profiles by name or birth date.
 - Deterministic saved-profile sorting by recent storage order, name, or birth date without mutating persisted ordering.
@@ -50,6 +58,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, optional clock precision units, profile recovery, ordered undo, sorting, progressive profile rendering, import replacement safety, page routing/history, and profile-to-calculator navigation.
 
 ### Changed
+- Canonical package and runtime project metadata now identify this release as version `2.0.12`.
 - Permanent CI and release verification now run the exact project Node.js `22.13.0` pin instead of the moving Node 22 channel.
 - Core page navigation uses a dependency-free hash/history layer so direct links are stable without introducing a router dependency or server rewrite requirement.
 - Page route fragments contain only public page ids; calculator dates, times, profile names, saved birth dates, and other calculation values remain transient/local state rather than URL state.
@@ -108,12 +117,6 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - The onboarding modal no longer permits the background `Ctrl/Cmd + K` shortcut to open a second modal.
 - The exact-age card no longer displays zero-valued clock units when time precision is disabled.
 - Browser-storage, PWA install, and service-worker update failures no longer rely on the root runtime boundary for ordinary recoverable behavior.
-
-### Planned
-- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate CI/release installs to `npm ci`.
-- Record a passing clean-checkout full quality/E2E run after reproducible dependency installation is available.
-- Additional locale packs after complete human translation review.
-- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, permission, and security surface.
 
 ## [1.0.0] - 2026-08-19
 
