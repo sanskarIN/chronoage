@@ -151,6 +151,22 @@ describe('App', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('keeps focus on routed content when navigation occurs inside quick actions', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const trigger = screen.getByRole('button', { name: /quick actions/i });
+    await user.click(trigger);
+
+    const dialog = screen.getByRole('dialog', { name: 'Quick actions' });
+    await user.click(dialog.getByRole('button', { name: /Interval/i }));
+
+    expect(screen.queryByRole('dialog', { name: 'Quick actions' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/interval');
+    expect(document.getElementById('main-content')).toHaveFocus();
+    expect(trigger).not.toHaveFocus();
+  });
+
   it('wraps focus inside the quick actions modal', async () => {
     const user = userEvent.setup();
     render(<App />);
