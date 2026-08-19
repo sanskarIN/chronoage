@@ -19,11 +19,14 @@ import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icons';
 import { en } from '../i18n/en';
 
+const PROFILE_PAGE_SIZE = 20;
+
 export function ProfilesPage(): React.JSX.Element {
   const [profiles, setProfiles] = useState<SavedProfile[]>(() => loadProfiles());
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
   const [query, setQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(PROFILE_PAGE_SIZE);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
@@ -40,6 +43,7 @@ export function ProfilesPage(): React.JSX.Element {
         profile.name.toLocaleLowerCase().includes(normalized) || profile.birthDate.includes(normalized),
     );
   }, [profiles, query]);
+  const visibleProfiles = filteredProfiles.slice(0, visibleCount);
 
   const addProfile = (): void => {
     try {
@@ -118,6 +122,7 @@ export function ProfilesPage(): React.JSX.Element {
       setProfiles(importProfiles(text));
       setEditingId(null);
       setRecentlyDeleted(null);
+      setVisibleCount(PROFILE_PAGE_SIZE);
       setError('');
       setMessage(en.profiles.restored);
     } catch (caught) {
@@ -133,6 +138,7 @@ export function ProfilesPage(): React.JSX.Element {
       setEditingId(null);
       setRecentlyDeleted(null);
       setQuery('');
+      setVisibleCount(PROFILE_PAGE_SIZE);
       setError('');
       setMessage(en.profiles.allDeleted);
     } catch (caught) {
@@ -227,7 +233,10 @@ export function ProfilesPage(): React.JSX.Element {
             type="search"
             value={query}
             autoComplete="off"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setVisibleCount(PROFILE_PAGE_SIZE);
+            }}
             placeholder={en.profiles.searchPlaceholder}
           />
           <p className="muted" role="status">
@@ -253,7 +262,7 @@ export function ProfilesPage(): React.JSX.Element {
         </section>
       ) : (
         <section className="profile-list" aria-label={en.profiles.listLabel}>
-          {filteredProfiles.map((profile) => (
+          {visibleProfiles.map((profile) => (
             <article className="profile-card" key={profile.id}>
               {editingId === profile.id ? (
                 <div className="profile-edit-form">
@@ -314,6 +323,20 @@ export function ProfilesPage(): React.JSX.Element {
               )}
             </article>
           ))}
+          {visibleProfiles.length < filteredProfiles.length && (
+            <div className="panel">
+              <p className="muted" role="status">
+                {en.profiles.rendered(visibleProfiles.length, filteredProfiles.length)}
+              </p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setVisibleCount((count) => count + PROFILE_PAGE_SIZE)}
+              >
+                {en.profiles.showMore}
+              </button>
+            </div>
+          )}
           <button type="button" className="text-button danger-text" onClick={deleteAllProfiles}>
             {en.profiles.deleteAll}
           </button>
