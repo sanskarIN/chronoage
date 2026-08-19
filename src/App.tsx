@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { AboutPage } from './pages/AboutPage';
 import { CalculatorPage } from './pages/CalculatorPage';
 import { DifferencePage } from './pages/DifferencePage';
@@ -13,6 +14,7 @@ import { project } from './config/project';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useSettings } from './hooks/useSettings';
 import { en } from './i18n/en';
+import { sharedText } from './i18n/shared';
 
 type Page = keyof typeof en.nav;
 
@@ -24,6 +26,8 @@ export default function App(): React.JSX.Element {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settings, setSettings] = useSettings();
   const online = useOnlineStatus();
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const firstCommandRef = useRef<HTMLButtonElement>(null);
 
   const pageContent = useMemo(() => {
     switch (page) {
@@ -44,26 +48,70 @@ export default function App(): React.JSX.Element {
     }
   }, [page, settings, setSettings]);
 
+  const rememberFocus = (): void => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  };
+
+  const openSearch = (): void => {
+    rememberFocus();
+    setSearchOpen(true);
+  };
+
+  const closeSearch = (): void => {
+    setSearchOpen(false);
+  };
+
+  useEffect(() => {
+    if (searchOpen) {
+      firstCommandRef.current?.focus();
+      return;
+    }
+    const previous = previousFocusRef.current;
+    if (previous?.isConnected) previous.focus();
+    previousFocusRef.current = null;
+  }, [searchOpen]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setSearchOpen((current) => !current);
+        if (searchOpen) {
+          closeSearch();
+        } else {
+          openSearch();
+        }
       }
       if (event.key === 'Escape') {
-        setSearchOpen(false);
+        closeSearch();
         setMobileNavOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [searchOpen]);
 
   const navigate = (next: Page): void => {
     setPage(next);
     setMobileNavOpen(false);
-    setSearchOpen(false);
+    closeSearch();
     window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+  };
+
+  const trapCommandFocus = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   };
 
   return (
@@ -86,7 +134,7 @@ export default function App(): React.JSX.Element {
             <Icon name="close" />
           </button>
         </div>
-        <nav aria-label="Primary">
+        <nav aria-label={sharedText.primaryNavigation}>
           {pageOrder.map((item) => (
             <button
               key={item}
@@ -125,10 +173,10 @@ export default function App(): React.JSX.Element {
           >
             <Icon name="menu" />
           </button>
-          <button type="button" className="search-trigger" onClick={() => setSearchOpen(true)}>
+          <button type="button" className="search-trigger" onClick={openSearch}>
             <Icon name="search" />
             <span>{en.app.quickActions}</span>
-            <kbd>Ctrl K</kbd>
+            <kbd>{sharedText.quickActionsShortcut}</kbd>
           </button>
           <span className={online ? 'connection online' : 'connection offline'}>
             {online ? en.app.online : en.app.offline}
@@ -145,12 +193,13 @@ export default function App(): React.JSX.Element {
         </footer>
       </div>
       {searchOpen && (
-        <div className="command-layer" role="presentation" onMouseDown={() => setSearchOpen(false)}>
+        <div className="command-layer" role="presentation" onMouseDown={closeSearch}>
           <div
             className="command"
             role="dialog"
             aria-modal="true"
             aria-label={en.app.quickActions}
+            onKeyDown={trapCommandFocus}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="command-title">
@@ -158,8 +207,13 @@ export default function App(): React.JSX.Element {
               <strong>{en.app.quickActions}</strong>
               <kbd>Esc</kbd>
             </div>
-            {pageOrder.map((item) => (
-              <button type="button" key={item} onClick={() => navigate(item)}>
+            {pageOrder.map((item, index) => (
+              <button
+                ref={index === 0 ? firstCommandRef : undefined}
+                type="button"
+                key={item}
+                onClick={() => navigate(item)}
+              >
                 <Icon name={item === 'calculate' ? 'age' : item === 'milestones' ? 'milestone' : item} />
                 <span>
                   <strong>{en.nav[item]}</strong>
