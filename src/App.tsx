@@ -187,6 +187,10 @@ export default function App(): React.JSX.Element {
         className="skip-link"
         href="#main-content"
         tabIndex={contentBlocked ? -1 : undefined}
+        onClick={(event) => {
+          event.preventDefault();
+          focusMainContent();
+        }}
       >
         {en.app.skipToContent}
       </a>
