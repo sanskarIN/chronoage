@@ -33,9 +33,13 @@ The service worker uses a controlled worker-update lifecycle:
 
 Install/update-application promise failures are caught inside `usePwaLifecycle`, logged through the privacy-safe logger using non-sensitive error types, and surfaced as a safe unavailable/error state.
 
-A service-worker cache generation should still be incremented when worker/cache logic changes in a way that should invalidate previous ChronoAge caches.
+### Cache/version invariant
 
-Application resources do **not** depend solely on a worker-script change to refresh. Online document navigations are network-first, so a normal online reload can receive and cache the latest deployed `index.html` even when the service-worker source itself is unchanged.
+For release `2.0.12`, the service-worker cache name is `chronoage-2.0.12`. ChronoAge binds the cache generation to the application version rather than maintaining a separate manual cache counter.
+
+`npm run metadata:check` verifies that `public/sw.js` declares `CACHE_NAME` as `chronoage-${package.json version}`. A future version bump therefore fails the quality gate if the offline cache generation is not advanced with the application version.
+
+Application resources do **not** depend solely on a worker-script change to refresh. Online document navigations are network-first, so a normal online reload can receive and cache the latest deployed `index.html` even when the service-worker source itself is unchanged. The version-bound cache still provides a clean release-level namespace and deterministic removal of older ChronoAge caches when the new worker activates.
 
 ## Offline strategy
 
@@ -81,6 +85,7 @@ The PWA E2E journey runs in the normal desktop and mobile Chromium projects.
 - Verify install prompt acceptance and dismissal in a supported browser.
 - Verify an installed display-mode session is detected.
 - On a platform that exposes PWA shortcuts, verify Age, Difference, and Milestones open the expected public pages without personal data in their launch URLs.
+- Bump the application version and verify `npm run metadata:check` rejects any stale service-worker cache name.
 - Deploy two worker/cache generations and verify update discovery, waiting state, apply action, controller change, and reload.
 - Deploy changed application assets without changing the worker script and verify an online reload receives the current application document.
 - Verify offline fallback after the updated worker activates.
