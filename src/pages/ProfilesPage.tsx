@@ -14,6 +14,7 @@ import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icons';
+import { en } from '../i18n/en';
 
 export function ProfilesPage(): React.JSX.Element {
   const [profiles, setProfiles] = useState<SavedProfile[]>(() => loadProfiles());
@@ -42,16 +43,16 @@ export function ProfilesPage(): React.JSX.Element {
       setProfiles(loadProfiles());
       setName('');
       setError('');
-      setMessage('Profile saved locally on this device.');
+      setMessage(en.profiles.saved);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to save profile.');
+      setError(caught instanceof Error ? caught.message : en.profiles.unableSave);
     }
   };
 
   const removeProfile = (id: string): void => {
     setProfiles(deleteProfile(id));
     if (editingId === id) setEditingId(null);
-    setMessage('Profile deleted.');
+    setMessage(en.profiles.deleted);
   };
 
   const beginEdit = (profile: SavedProfile): void => {
@@ -69,9 +70,9 @@ export function ProfilesPage(): React.JSX.Element {
       setProfiles(loadProfiles());
       setEditingId(null);
       setError('');
-      setMessage('Profile updated.');
+      setMessage(en.profiles.updated);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to update profile.');
+      setError(caught instanceof Error ? caught.message : en.profiles.unableUpdate);
     }
   };
 
@@ -83,7 +84,7 @@ export function ProfilesPage(): React.JSX.Element {
     anchor.download = `chronoage-backup-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
-    setMessage('Encrypted storage is not implied: keep exported backup files private.');
+    setMessage(en.profiles.backupWarning);
   };
 
   const restoreBackup = async (file: File): Promise<void> => {
@@ -92,42 +93,42 @@ export function ProfilesPage(): React.JSX.Element {
       setProfiles(importProfiles(text));
       setEditingId(null);
       setError('');
-      setMessage('Backup restored successfully.');
+      setMessage(en.profiles.restored);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to import backup.');
+      setError(caught instanceof Error ? caught.message : en.profiles.unableImport);
     }
   };
 
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Private by design"
-        title="Saved profiles"
-        description="Keep frequently used birth dates in browser storage. Nothing is uploaded by ChronoAge."
-        action={<span className="privacy-chip">{profiles.length}/100 profiles</span>}
+        eyebrow={en.profiles.eyebrow}
+        title={en.profiles.title}
+        description={en.profiles.description}
+        action={<span className="privacy-chip">{en.profiles.count(profiles.length)}</span>}
       />
       <section className="panel">
         <div className="section-heading">
-          <h2>Add profile</h2>
-          <span className="muted">Local storage only</span>
+          <h2>{en.profiles.addTitle}</h2>
+          <span className="muted">{en.profiles.localOnly}</span>
         </div>
         <div className="form-grid profile-form">
           <Field
-            label="Name"
+            label={en.profiles.name}
             value={name}
             maxLength={80}
             autoComplete="off"
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Alex"
+            placeholder={en.profiles.namePlaceholder}
           />
           <Field
-            label="Birth date"
+            label={en.profiles.birthDate}
             type="date"
             value={birthDate}
             onChange={(event) => setBirthDate(event.target.value)}
           />
           <button type="button" className="primary-button align-end" onClick={addProfile}>
-            Save profile
+            {en.profiles.save}
           </button>
         </div>
         {error && (
@@ -144,19 +145,19 @@ export function ProfilesPage(): React.JSX.Element {
       <section className="panel">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Backup</p>
-            <h2>Data controls</h2>
+            <p className="eyebrow">{en.profiles.backupEyebrow}</p>
+            <h2>{en.profiles.dataControls}</h2>
           </div>
           <div className="button-row">
             <button type="button" className="secondary-button" onClick={downloadBackup}>
-              <Icon name="download" /> Export
+              <Icon name="download" /> {en.profiles.export}
             </button>
             <button
               type="button"
               className="secondary-button"
               onClick={() => fileRef.current?.click()}
             >
-              <Icon name="upload" /> Import
+              <Icon name="upload" /> {en.profiles.import}
             </button>
             <input
               ref={fileRef}
@@ -171,22 +172,20 @@ export function ProfilesPage(): React.JSX.Element {
             />
           </div>
         </div>
-        <p className="muted">
-          Export creates a plain JSON backup. Treat it like any file containing personal dates.
-        </p>
+        <p className="muted">{en.profiles.backupDescription}</p>
       </section>
       {profiles.length > 0 && (
         <section className="panel">
           <Field
-            label="Search saved profiles"
+            label={en.profiles.search}
             type="search"
             value={query}
             autoComplete="off"
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name or YYYY-MM-DD"
+            placeholder={en.profiles.searchPlaceholder}
           />
           <p className="muted" role="status">
-            Showing {filteredProfiles.length} of {profiles.length} profiles.
+            {en.profiles.showing(filteredProfiles.length, profiles.length)}
           </p>
         </section>
       )}
@@ -194,47 +193,47 @@ export function ProfilesPage(): React.JSX.Element {
         <section className="panel">
           <EmptyState
             icon="profiles"
-            title="No profiles saved"
-            description="Add a profile above when you want a reusable local birth date."
+            title={en.profiles.noProfiles}
+            description={en.profiles.noProfilesDescription}
           />
         </section>
       ) : filteredProfiles.length === 0 ? (
         <section className="panel">
           <EmptyState
             icon="profiles"
-            title="No matching profiles"
-            description="Try a different name or birth-date search."
+            title={en.profiles.noMatches}
+            description={en.profiles.noMatchesDescription}
           />
         </section>
       ) : (
-        <section className="profile-list" aria-label="Saved profiles">
+        <section className="profile-list" aria-label={en.profiles.listLabel}>
           {filteredProfiles.map((profile) => (
             <article className="profile-card" key={profile.id}>
               {editingId === profile.id ? (
                 <div className="profile-edit-form">
                   <Field
-                    label={`Name for ${profile.name}`}
+                    label={en.profiles.editName(profile.name)}
                     value={editName}
                     maxLength={80}
                     autoComplete="off"
                     onChange={(event) => setEditName(event.target.value)}
                   />
                   <Field
-                    label={`Birth date for ${profile.name}`}
+                    label={en.profiles.editBirthDate(profile.name)}
                     type="date"
                     value={editBirthDate}
                     onChange={(event) => setEditBirthDate(event.target.value)}
                   />
                   <div className="button-row">
                     <button type="button" className="primary-button" onClick={saveEdit}>
-                      Save changes
+                      {en.profiles.saveChanges}
                     </button>
                     <button
                       type="button"
                       className="secondary-button"
                       onClick={() => setEditingId(null)}
                     >
-                      Cancel
+                      {en.profiles.cancel}
                     </button>
                   </div>
                 </div>
@@ -252,15 +251,15 @@ export function ProfilesPage(): React.JSX.Element {
                       type="button"
                       className="icon-button"
                       onClick={() => beginEdit(profile)}
-                      aria-label={`Edit ${profile.name}`}
+                      aria-label={en.profiles.edit(profile.name)}
                     >
-                      Edit
+                      {en.profiles.edit(profile.name)}
                     </button>
                     <button
                       type="button"
                       className="icon-button danger"
                       onClick={() => removeProfile(profile.id)}
-                      aria-label={`Delete ${profile.name}`}
+                      aria-label={en.profiles.delete(profile.name)}
                     >
                       <Icon name="trash" />
                     </button>
@@ -273,16 +272,16 @@ export function ProfilesPage(): React.JSX.Element {
             type="button"
             className="text-button danger-text"
             onClick={() => {
-              if (window.confirm('Delete all locally saved profiles?')) {
+              if (window.confirm(en.profiles.deleteAllConfirm)) {
                 clearProfiles();
                 setProfiles([]);
                 setEditingId(null);
                 setQuery('');
-                setMessage('All profiles deleted.');
+                setMessage(en.profiles.allDeleted);
               }
             }}
           >
-            Delete all profiles
+            {en.profiles.deleteAll}
           </button>
         </section>
       )}
