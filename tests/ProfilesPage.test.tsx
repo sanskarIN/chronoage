@@ -40,6 +40,23 @@ describe('ProfilesPage', () => {
     expect(loadProfiles()[0]?.name).toBe('After');
   });
 
+  it('restores the most recently deleted profile through undo', async () => {
+    const original = saveProfile({ name: 'Recoverable', birthDate: '2000-01-01' });
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+    await user.click(screen.getByRole('button', { name: 'Delete Recoverable' }));
+
+    expect(screen.queryByText('Recoverable')).not.toBeInTheDocument();
+    expect(loadProfiles()).toEqual([]);
+
+    await user.click(screen.getByRole('button', { name: 'Undo delete' }));
+
+    expect(screen.getByText('Recoverable')).toBeInTheDocument();
+    expect(loadProfiles()).toEqual([original]);
+    expect(screen.getByRole('status')).toHaveTextContent('Deleted profile restored.');
+  });
+
   it('shows a safe error when deleting cannot write browser storage', async () => {
     saveProfile({ name: 'Blocked', birthDate: '2000-01-01' });
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
