@@ -13,7 +13,8 @@ import {
 } from '../storage/profiles';
 import { getUserSafeErrorMessage, UserVisibleError } from '../errors';
 import { defaultBirthInputValue } from '../utils/dateDefaults';
-import { Field } from '../components/Field';
+import { sortProfiles, type ProfileSort } from '../utils/profileSort';
+import { Field, SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icons';
@@ -35,6 +36,7 @@ export function ProfilesPage({
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
   const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<ProfileSort>('recent');
   const [visibleCount, setVisibleCount] = useState(PROFILE_PAGE_SIZE);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -46,12 +48,14 @@ export function ProfilesPage({
 
   const filteredProfiles = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
-    if (!normalized) return profiles;
-    return profiles.filter(
-      (profile) =>
-        profile.name.toLocaleLowerCase().includes(normalized) || profile.birthDate.includes(normalized),
-    );
-  }, [profiles, query]);
+    const matches = normalized
+      ? profiles.filter(
+          (profile) =>
+            profile.name.toLocaleLowerCase().includes(normalized) || profile.birthDate.includes(normalized),
+        )
+      : profiles;
+    return sortProfiles(matches, sort);
+  }, [profiles, query, sort]);
   const visibleProfiles = filteredProfiles.slice(0, visibleCount);
 
   const addProfile = (): void => {
@@ -149,6 +153,7 @@ export function ProfilesPage({
       setEditingId(null);
       setRecentlyDeleted(null);
       setQuery('');
+      setSort('recent');
       setVisibleCount(PROFILE_PAGE_SIZE);
       setError('');
       setMessage(en.profiles.allDeleted);
@@ -239,17 +244,33 @@ export function ProfilesPage({
       </section>
       {profiles.length > 0 && (
         <section className="panel">
-          <Field
-            label={en.profiles.search}
-            type="search"
-            value={query}
-            autoComplete="off"
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setVisibleCount(PROFILE_PAGE_SIZE);
-            }}
-            placeholder={en.profiles.searchPlaceholder}
-          />
+          <div className="form-grid two-columns">
+            <Field
+              label={en.profiles.search}
+              type="search"
+              value={query}
+              autoComplete="off"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setVisibleCount(PROFILE_PAGE_SIZE);
+              }}
+              placeholder={en.profiles.searchPlaceholder}
+            />
+            <SelectField
+              label={en.profiles.sort}
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value as ProfileSort);
+                setVisibleCount(PROFILE_PAGE_SIZE);
+              }}
+            >
+              <option value="recent">{en.profiles.sortRecent}</option>
+              <option value="name-asc">{en.profiles.sortNameAsc}</option>
+              <option value="name-desc">{en.profiles.sortNameDesc}</option>
+              <option value="birth-asc">{en.profiles.sortBirthAsc}</option>
+              <option value="birth-desc">{en.profiles.sortBirthDesc}</option>
+            </SelectField>
+          </div>
           <p className="muted" role="status">
             {en.profiles.showing(filteredProfiles.length, profiles.length)}
           </p>
