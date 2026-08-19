@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearProfiles,
+  deleteProfile,
   exportProfiles,
   importProfiles,
   loadProfiles,
@@ -43,6 +44,15 @@ describe('local profiles', () => {
     expect(() => updateProfile('missing', { name: 'Example', birthDate: '2001-02-03' })).toThrow(
       'Profile not found.',
     );
+  });
+
+  it('rejects deletion for missing profiles without rewriting storage', () => {
+    const existing = saveProfile({ name: 'Existing', birthDate: '2000-01-01' });
+    const before = localStorage.getItem(STORAGE_KEY);
+
+    expect(() => deleteProfile('missing')).toThrow('Profile not found.');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
+    expect(loadProfiles()).toEqual([existing]);
   });
 
   it('restores a removed profile without changing its identity or timestamps', () => {
