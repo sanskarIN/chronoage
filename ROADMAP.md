@@ -17,9 +17,10 @@
 
 - [x] Search/filter for large local profile collections
 - [x] Editable saved profiles using the validated local storage model
+- [x] Install/update prompt UX using browser capabilities
+- [x] Baseline automated browser accessibility regression checks
 - [ ] Additional locale packs after translation review
-- [ ] Install/update prompt UX using browser capabilities
-- [ ] Automated accessibility audit in CI
+- [ ] Full maintained accessibility-engine audit in CI
 - [ ] Release-candidate screenshot automation
 
 ## v1.2 — Advanced date tooling
