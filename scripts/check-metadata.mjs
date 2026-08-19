@@ -2,6 +2,11 @@ import { readFile } from 'node:fs/promises';
 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const projectSource = await readFile(new URL('../src/config/project.ts', import.meta.url), 'utf8');
+const changelog = await readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8');
+const releaseNotes = await readFile(
+  new URL(`../docs/releases/${packageJson.version}.md`, import.meta.url),
+  'utf8',
+).catch(() => null);
 const nodeVersion = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const releaseWorkflow = await readFile(
@@ -43,6 +48,20 @@ const failures = checks
       `${label}: package.json=${JSON.stringify(packageValue)} project=${JSON.stringify(projectValue)}`,
   );
 
+const changelogHeading = `## [${packageJson.version}] - `;
+if (!changelog.includes(changelogHeading)) {
+  failures.push(`changelog: missing released-version heading beginning ${JSON.stringify(changelogHeading)}`);
+}
+
+if (!releaseNotes) {
+  failures.push(`release notes: missing docs/releases/${packageJson.version}.md`);
+} else {
+  const releaseNotesHeading = `# ChronoAge ${packageJson.version}`;
+  if (!releaseNotes.includes(releaseNotesHeading)) {
+    failures.push(`release notes: missing heading ${JSON.stringify(releaseNotesHeading)}`);
+  }
+}
+
 const author = String(packageJson.author ?? '');
 const businessEmail = projectSource.match(/businessEmails:\s*\['([^']+)'/)?.[1];
 if (!businessEmail || !author.includes(businessEmail)) {
@@ -70,5 +89,5 @@ if (failures.length > 0) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Project metadata and runtime pins are consistent.');
+  console.log('Project metadata, release documentation, and runtime pins are consistent.');
 }
