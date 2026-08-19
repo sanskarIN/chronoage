@@ -1,6 +1,6 @@
 # Testing
 
-ChronoAge uses layered automated tests because calendar and timezone behavior is edge-heavy.
+ChronoAge uses layered automated tests because calendar, timezone, persistence, accessibility, and offline behavior are edge-heavy.
 
 ## Unit tests
 
@@ -10,9 +10,11 @@ ChronoAge uses layered automated tests because calendar and timezone behavior is
 
 `tests/dateProperties.test.ts` runs deterministic invariant/fuzz-style coverage across many civil dates so epoch-day conversion, ordering, and symmetric age-difference rules are exercised beyond hand-picked examples.
 
+`tests/validation.test.ts` covers profile-name normalization, control-character rejection, length/non-empty limits, and birth-date validation.
+
 ## Storage integration tests
 
-`tests/profiles.test.ts` verifies local save/load, edits, backup round trips, invalid import rejection, duplicate-id rejection, ISO timestamp validation, and safe recovery when corrupted local entries are mixed with valid records.
+`tests/profiles.test.ts` verifies local save/load, edits, backup round trips, invalid import rejection, UTF-8 backup byte limits, duplicate-id rejection, ISO timestamp validation, and safe recovery when corrupted local entries are mixed with valid records.
 
 `tests/settings.test.ts` validates defaults, DST-setting migration, malformed-storage recovery, and prevention of truthy-string coercion for boolean preferences.
 
@@ -27,9 +29,16 @@ ChronoAge uses layered automated tests because calendar and timezone behavior is
 
 ## End-to-end tests
 
-Playwright covers the primary age calculation and local profile journey on desktop. Additional browser checks cover navigation/accessibility semantics for advanced date tools and produce release-candidate screenshots for the calculator, date-difference visualization, custom milestone builder, and a mobile calculator viewport.
+Playwright runs both desktop Chromium and a Pixel-class mobile Chromium project. Shared helpers in `tests/e2e/helpers.ts` seed the backwards-compatible completed-onboarding state and navigate through either the visible desktop sidebar or the mobile navigation drawer, so the same user journeys are exercised responsively instead of accidentally clicking hidden controls.
 
-E2E tests seed only the minimal settings needed to bypass first-run onboarding. The settings loader fills missing fields using production migration/default behavior, keeping the test seed concise while still exercising compatibility.
+Browser coverage includes:
+
+- `tests/e2e/app.spec.ts` — primary age calculation and local profile create/delete journeys;
+- `tests/e2e/accessibility.spec.ts` — structural accessibility checks and axe WCAG audits;
+- `tests/e2e/pwa.spec.ts` — service-worker control, offline reload, and non-navigation asset fallback behavior;
+- `tests/e2e/screenshots.spec.ts` — calculator, date-difference visualization, custom milestone builder, and mobile release-candidate captures.
+
+E2E tests seed only the minimal settings needed to bypass first-run onboarding. The settings loader fills missing fields using production migration/default behavior, keeping the seed concise while still exercising compatibility.
 
 ```bash
 npm run build
@@ -56,9 +65,24 @@ The standards-engine layer uses the pinned `@axe-core/playwright` package and fa
 
 Automated accessibility testing complements but does not replace manual keyboard, zoom, screen-reader, reduced-motion, and platform assistive-technology review.
 
+## PWA/offline regression coverage
+
+The PWA browser test waits until the service worker controls the page, performs an online controlled reload so runtime resources can populate the cache, switches the browser context offline, reloads the application, and verifies the main calculator remains usable. It also requests a deliberately missing CSS asset and verifies that the request fails rather than receiving cached `index.html`.
+
+This protects the distinction between navigation fallback and asset failure that is implemented in `public/sw.js`.
+
 ## Coverage
 
 Vitest V8 coverage thresholds are configured in `vite.config.ts`. Coverage is a signal, not a substitute for meaningful edge-case tests.
+
+## Repository invariant checks
+
+The quality suite also contains non-test executable checks:
+
+- `npm run metadata:check` — keeps package and runtime project identity/version/link metadata consistent;
+- `npm run security:check` — verifies the expected static browser policy and rejects selected dangerous source primitives;
+- `npm run docs:links` — verifies local documentation links;
+- `npm run release:check -- vX.Y.Z` — verifies a candidate release tag matches the package version.
 
 ## Benchmarks
 
@@ -72,8 +96,8 @@ Benchmarks are comparative engineering signals; do not claim a universal runtime
 
 ## Regression policy
 
-Every fixed calculation, persistence, accessibility, or release-automation bug should add a focused test when the behavior can be reproduced deterministically.
+Every fixed calculation, persistence, accessibility, PWA, security, or release-automation bug should add a focused test or executable invariant when the behavior can be reproduced deterministically.
 
 ## CI
 
-CI fails on formatting, lint, type errors, unit/component tests, production build errors, documentation links, and E2E failures. Security workflows remain separate so their permissions stay least-privilege.
+CI fails on repository formatting conventions, metadata/security invariants, lint, type errors, unit/component tests, documentation links, production build errors, runtime dependency-audit failures, and E2E failures. CodeQL and dependency-review workflows remain separate so their permissions stay explicit and least-privilege.
