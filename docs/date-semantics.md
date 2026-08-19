@@ -20,7 +20,12 @@ Some local wall-clock times never occur during a spring-forward transition. Chro
 
 ## Fall-back ambiguity
 
-A repeated local hour during a fall-back transition can refer to two instants. The current native-Intl conversion resolves one matching occurrence deterministically. A future release may expose explicit ambiguity selection if users need it.
+A repeated local hour during a fall-back transition can refer to two distinct UTC instants. ChronoAge discovers matching instants from the browser's IANA timezone data and exposes a setting with two policies:
+
+- **Earlier occurrence** — use the first matching instant. This is the default and preserves the behavior of earlier ChronoAge releases.
+- **Later occurrence** — use the second matching instant when the local time repeats.
+
+Normal local times have one candidate, so the preference has no effect outside an overlap. The same preference is applied consistently to birth, reference, and calendar-anchor instants during time-aware age calculation.
 
 ## February 29 birthdays
 
@@ -29,7 +34,19 @@ Users can choose one of two non-leap anniversary policies:
 - February 28
 - March 1
 
-The choice applies to next-birthday and calendar-anniversary calculations. Leap years continue to use February 29.
+The choice applies to next-birthday, built-in anniversary, and custom birthday-milestone calculations. Leap years continue to use February 29.
+
+## Custom milestones
+
+Custom milestones accept a positive whole number of either days or birthday years.
+
+- Day milestones use exact Gregorian calendar-day addition.
+- Birthday-year milestones use anniversary arithmetic and the configured February 29 policy.
+- Results outside the supported civil-calendar range are rejected instead of being silently wrapped or normalized.
+
+## Comparison visualization
+
+The age-difference tool reports exact years, months, days, and total elapsed days. Its timeline segment widths are intentionally approximate because calendar years and months do not have fixed day lengths. The exact numeric values remain authoritative.
 
 ## Intervals
 
@@ -38,4 +55,4 @@ Inclusive interval = elapsed calendar days + 1, so both endpoints are counted.
 
 ## Supported civil-year range
 
-Date input validation supports years `0001` through `9999`. Domain code avoids JavaScript's historical `Date.UTC` remapping of years 0-99.
+Date input validation supports years `0001` through `9999`. Calendar-year arithmetic rejects results outside that range. Domain code avoids JavaScript's historical `Date.UTC` remapping of years 0-99.
