@@ -6,6 +6,15 @@
   "description": "A privacy-first, timezone-aware age and date calculator PWA.",
   "author": "Sanskar <sanskarin@outlook.in>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanskarIN/chronoage.git"
+  },
+  "homepage": "https://github.com/sanskarIN/chronoage#readme",
+  "bugs": {
+    "url": "https://github.com/sanskarIN/chronoage/issues"
+  },
+  "funding": "https://buymeacoffee.com/sanskarIN",
   "engines": { "node": ">=22.13.0" },
   "scripts": {
     "dev": "vite",
