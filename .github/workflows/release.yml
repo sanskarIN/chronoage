@@ -37,7 +37,7 @@ jobs:
       - name: Generate release checksum
         run: sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz" > "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
       - name: Stage verified release package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chronoage-release-package
           path: |
