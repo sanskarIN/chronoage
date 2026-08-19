@@ -7,6 +7,9 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 ### Added
 - Search/filter controls for saved profiles by name or birth date.
 - Accessible profile editing UI backed by the existing validated `updateProfile` storage operation.
+- One-step undo for the most recently deleted saved profile while preserving its original identity and timestamps.
+- Direct saved-profile handoff to the Age calculator with birth-date prefill.
+- Progressive saved-profile rendering in batches of 20 for bounded DOM work at the 100-profile cap.
 - PWA install availability detection and a browser-native install action in Settings.
 - Explicit service-worker update checks with a controlled waiting-worker apply flow.
 - Custom milestone calculations for positive whole-number day counts or birthday years.
@@ -39,7 +42,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Desktop delivery/signing documentation and an ADR retaining PWA-first desktop support until a native-only requirement exists.
 - Internationalization contributor documentation and expanded externalized English UI strings.
 - PWA manifest identity metadata including stable id/scope/language/direction/category fields.
-- Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, and optional clock precision units.
+- Regression tests for runtime error recovery, safe-error classification, structured log redaction, modal focus behavior, PWA lifecycle failures, unavailable browser storage, arbitrary timezone entry, optional clock precision units, profile recovery, progressive profile rendering, and profile-to-calculator navigation.
 
 ### Changed
 - Service-worker activation waits for explicit update application instead of always taking control immediately after installation.
@@ -52,6 +55,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Saved-profile loading validates ids, uniqueness, timestamps, names, and calendar dates instead of trusting structurally shaped local JSON.
 - Profile storage reads gracefully fall back to an empty saved list when browser storage is blocked.
 - Profile writes/clears convert blocked or quota-limited browser storage failures into stable user-visible errors.
+- Saved-profile deletion now rejects missing identities rather than silently rewriting unchanged storage.
 - Settings loading accepts only real booleans for boolean preferences instead of JavaScript truthiness coercion.
 - Settings writes degrade to session-only state when browser storage is unavailable, and Settings displays that persistence limitation to the user.
 - Profile names reject unsupported control characters after whitespace normalization.
@@ -75,6 +79,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 ### Fixed
 - Profile edit actions use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
 - Profile delete/clear actions no longer allow storage exceptions to escape from click handlers.
+- Missing-profile deletion can no longer appear to succeed while leaving storage unchanged.
 - Milestone screenshot assertions no longer fail Playwright strict mode when built-in and custom 10,000-day labels are both visible.
 - Mobile Playwright projects no longer attempt to click hidden desktop-sidebar navigation controls.
 - Missing non-navigation resources no longer receive `index.html` as an offline fallback.
