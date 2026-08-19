@@ -133,6 +133,11 @@ export function ProfilesPage({
   const restoreBackup = async (file: File): Promise<void> => {
     try {
       if (file.size > MAX_BACKUP_FILE_BYTES) throw new UserVisibleError(en.profiles.backupTooLarge);
+      if (profiles.length > 0 && !window.confirm(en.profiles.importReplaceConfirm)) {
+        setError('');
+        setMessage(en.profiles.importCancelled);
+        return;
+      }
       const text = await file.text();
       setProfiles(importProfiles(text));
       setEditingId(null);
