@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AppSettings } from '../types/models';
 import { loadSettings, saveSettings } from '../storage/settings';
 
@@ -7,11 +7,11 @@ export type SettingsUpdater = (next: AppSettings) => boolean;
 export function useSettings(): [AppSettings, SettingsUpdater] {
   const [settings, setSettingsState] = useState<AppSettings>(() => loadSettings());
 
-  const setSettings = (next: AppSettings): boolean => {
+  const setSettings = useCallback((next: AppSettings): boolean => {
     const persisted = saveSettings(next);
     setSettingsState(next);
     return persisted;
-  };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
