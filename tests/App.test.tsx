@@ -43,6 +43,22 @@ describe('App', () => {
     expect(document.title).toBe('Age · ChronoAge');
   });
 
+  it('canonicalizes an invalid application route reached through browser history', async () => {
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Interval' }));
+
+    await act(async () => {
+      window.history.replaceState(null, '', '#/unknown-history-page');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(window.location.hash).toBe('#/calculate');
+    expect(screen.getByRole('heading', { name: 'How much time has passed?' })).toBeInTheDocument();
+    expect(document.title).toBe('Age · ChronoAge');
+    expect(document.getElementById('main-content')).toHaveFocus();
+  });
+
   it('responds to browser history navigation without exposing calculation inputs in the URL', async () => {
     render(<App />);
 
