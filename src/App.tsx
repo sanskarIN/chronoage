@@ -23,10 +23,12 @@ export default function App(): React.JSX.Element {
   const [profileBirthDate, setProfileBirthDate] = useState<string | undefined>();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mainFocusRequest, setMainFocusRequest] = useState(0);
   const [settings, setSettings] = useSettings();
   const online = useOnlineStatus();
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const firstCommandRef = useRef<HTMLButtonElement>(null);
+  const handledMainFocusRequestRef = useRef(0);
   const blockingModalOpen = !settings.onboardingComplete || searchOpen;
   const contentBlocked = blockingModalOpen || mobileNavOpen;
 
@@ -42,17 +44,21 @@ export default function App(): React.JSX.Element {
     document.getElementById('main-content')?.focus();
   }, []);
 
+  const requestMainFocus = useCallback((): void => {
+    setMainFocusRequest((request) => request + 1);
+  }, []);
+
   const useProfile = useCallback(
     (profile: SavedProfile): void => {
       setProfileBirthDate(profile.birthDate);
       previousFocusRef.current = null;
+      requestMainFocus();
       commitPage('calculate');
       setMobileNavOpen(false);
       setSearchOpen(false);
       window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
-      focusMainContent();
     },
-    [commitPage, focusMainContent, settings.reducedMotion],
+    [commitPage, requestMainFocus, settings.reducedMotion],
   );
 
   const pageContent = useMemo(() => {
@@ -111,7 +117,7 @@ export default function App(): React.JSX.Element {
       setMobileNavOpen(false);
       setSearchOpen(false);
       previousFocusRef.current = null;
-      focusMainContent();
+      requestMainFocus();
     };
 
     window.addEventListener('popstate', syncPageFromLocation);
@@ -120,7 +126,7 @@ export default function App(): React.JSX.Element {
       window.removeEventListener('popstate', syncPageFromLocation);
       window.removeEventListener('hashchange', syncPageFromLocation);
     };
-  }, [focusMainContent]);
+  }, [requestMainFocus]);
 
   useEffect(() => {
     if (searchOpen) {
@@ -131,6 +137,19 @@ export default function App(): React.JSX.Element {
     if (previous?.isConnected) previous.focus();
     previousFocusRef.current = null;
   }, [searchOpen]);
+
+  useEffect(() => {
+    if (
+      mainFocusRequest === handledMainFocusRequestRef.current ||
+      !settings.onboardingComplete ||
+      mobileNavOpen ||
+      searchOpen
+    ) {
+      return;
+    }
+    handledMainFocusRequestRef.current = mainFocusRequest;
+    focusMainContent();
+  }, [focusMainContent, mainFocusRequest, mobileNavOpen, searchOpen, settings.onboardingComplete]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -154,11 +173,11 @@ export default function App(): React.JSX.Element {
 
   const navigate = (next: PageId): void => {
     previousFocusRef.current = null;
+    requestMainFocus();
     commitPage(next);
     setMobileNavOpen(false);
     closeSearch();
     window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
-    focusMainContent();
   };
 
   const trapCommandFocus = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
