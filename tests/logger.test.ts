@@ -9,26 +9,30 @@ describe('privacy-safe logging', () => {
   it('redacts sensitive keys and sensitive text patterns', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    logger.error('Contact person@example.com with Bearer abc123', {
+    logger.error('Contact person@example.com on 1990-05-04 at 14:30 with Bearer abc123', {
       profileName: 'Ada Lovelace',
+      occurredAt: new Date('2026-08-19T04:00:00Z'),
       nested: {
-        note: 'Reply to another@example.com',
+        note: 'Reply to another@example.com on 2026-08-19 at 09:45',
         token: 'should-never-appear',
       },
-      error: new Error('Failure for owner@example.com'),
+      error: new Error('Failure for owner@example.com on 2001-01-02'),
     });
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
     const [message, context] = errorSpy.mock.calls[0] as [string, Record<string, unknown>];
-    expect(message).toBe('[ChronoAge:error] Contact [redacted-email] with Bearer [redacted]');
+    expect(message).toBe(
+      '[ChronoAge:error] Contact [redacted-email] on [redacted-date] at [redacted-time] with Bearer [redacted]',
+    );
     expect(context.profileName).toBe('[redacted]');
+    expect(context.occurredAt).toBe('[redacted-date]');
     expect(context.nested).toEqual({
-      note: 'Reply to [redacted-email]',
+      note: 'Reply to [redacted-email] on [redacted-date] at [redacted-time]',
       token: '[redacted]',
     });
     expect(context.error).toEqual({
       errorType: 'Error',
-      message: 'Failure for [redacted-email]',
+      message: 'Failure for [redacted-email] on [redacted-date]',
     });
   });
 
