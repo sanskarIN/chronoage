@@ -71,7 +71,7 @@ describe('ProfilesPage', () => {
 
     expect(screen.getByText('Recoverable')).toBeInTheDocument();
     expect(loadProfiles()).toEqual([original]);
-    expect(screen.getByRole('status')).toHaveTextContent('Deleted profile restored.');
+    expect(screen.getByText('Deleted profile restored.')).toHaveAttribute('role', 'status');
   });
 
   it('shows a safe error when deleting cannot write browser storage', async () => {
