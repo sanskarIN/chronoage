@@ -17,8 +17,14 @@ import { TimeZoneField } from '../components/TimeZoneField';
 import { en } from '../i18n/en';
 import { sharedText } from '../i18n/shared';
 
-export function CalculatorPage({ settings }: { settings: AppSettings }): React.JSX.Element {
-  const [birthDate, setBirthDate] = useState(defaultBirthInputValue());
+export function CalculatorPage({
+  settings,
+  initialBirthDate,
+}: {
+  settings: AppSettings;
+  initialBirthDate?: string;
+}): React.JSX.Element {
+  const [birthDate, setBirthDate] = useState(initialBirthDate ?? defaultBirthInputValue());
   const [birthTime, setBirthTime] = useState('00:00');
   const [referenceDate, setReferenceDate] = useState(todayInputValue());
   const [referenceTime, setReferenceTime] = useState(currentTimeInputValue());
