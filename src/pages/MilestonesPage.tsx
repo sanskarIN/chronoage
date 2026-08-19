@@ -93,14 +93,12 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
           </SelectField>
         </div>
         {value.custom && (
-          <div className="custom-milestone-result" aria-live="polite">
-            <div>
-              <p className="eyebrow">{value.custom.reached ? 'Reached' : 'Upcoming'}</p>
-              <strong>{value.custom.label}</strong>
-            </div>
-            <span>
+          <div className="privacy-box" aria-live="polite">
+            <p className="eyebrow">{value.custom.reached ? 'Reached' : 'Upcoming'}</p>
+            <strong>{value.custom.label}</strong>
+            <p>
               {value.custom.weekday} · {formatDateInput(value.custom.date)}
-            </span>
+            </p>
           </div>
         )}
       </section>
