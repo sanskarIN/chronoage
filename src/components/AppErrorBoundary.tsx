@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { en } from '../i18n/en';
+import { errorMessages } from '../i18n/errors';
 import { logger } from '../utils/logger';
 
 interface AppErrorBoundaryProps {
@@ -35,13 +35,13 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     return (
       <main id="main-content" className="page" tabIndex={-1}>
         <section className="panel" role="alert" aria-live="assertive">
-          <p className="eyebrow">{en.errors.eyebrow}</p>
-          <h1>{en.errors.title}</h1>
-          <p>{en.errors.description}</p>
-          <p className="muted">{en.errors.privacyNote}</p>
+          <p className="eyebrow">{errorMessages.eyebrow}</p>
+          <h1>{errorMessages.title}</h1>
+          <p>{errorMessages.description}</p>
+          <p className="muted">{errorMessages.privacyNote}</p>
           <div className="button-row">
             <button type="button" className="primary-button" onClick={this.reload}>
-              {en.errors.reload}
+              {errorMessages.reload}
             </button>
           </div>
         </section>
