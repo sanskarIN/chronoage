@@ -18,10 +18,9 @@ export interface PwaLifecycle {
 }
 
 function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
+  const displayModeStandalone =
+    typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
+  return displayModeStandalone || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
 
 export function usePwaLifecycle(): PwaLifecycle {
@@ -53,10 +52,18 @@ export function usePwaLifecycle(): PwaLifecycle {
 
   const install = useCallback(async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
     if (!installPrompt) return 'unavailable';
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === 'accepted') setInstallPrompt(null);
-    return choice.outcome;
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      setInstallPrompt(null);
+      return choice.outcome;
+    } catch (error) {
+      logger.warn('PWA install prompt failed.', {
+        errorType: error instanceof Error ? error.name : 'unknown',
+      });
+      setInstallPrompt(null);
+      return 'unavailable';
+    }
   }, [installPrompt]);
 
   const checkForUpdate = useCallback(async (): Promise<void> => {
@@ -83,10 +90,18 @@ export function usePwaLifecycle(): PwaLifecycle {
 
   const applyUpdate = useCallback(async (): Promise<boolean> => {
     if (!('serviceWorker' in navigator)) return false;
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (!registration?.waiting) return false;
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    return true;
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration?.waiting) return false;
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      return true;
+    } catch (error) {
+      logger.warn('Service worker update application failed.', {
+        errorType: error instanceof Error ? error.name : 'unknown',
+      });
+      setUpdateStatus('error');
+      return false;
+    }
   }, []);
 
   return {
