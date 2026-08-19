@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { seedCompletedOnboarding } from './helpers';
 
-test('reloads the application offline without serving HTML for missing assets', async ({ page, context }) => {
+test('refreshes online navigations and reloads offline without HTML asset fallbacks', async ({ page, context }) => {
   await seedCompletedOnboarding(page);
   await page.goto('/');
 
@@ -27,6 +27,22 @@ test('reloads the application offline without serving HTML for missing assets', 
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'How much time has passed?' })).toBeVisible();
+
+  await page.evaluate(async () => {
+    const key = (await caches.keys()).find((candidate) => candidate.startsWith('chronoage-'));
+    if (!key) throw new Error('ChronoAge cache was not found.');
+    const cache = await caches.open(key);
+    await cache.put(
+      '/',
+      new Response('<!doctype html><html><body><h1>Stale cached document</h1></body></html>', {
+        headers: { 'Content-Type': 'text/html' },
+      }),
+    );
+  });
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'How much time has passed?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Stale cached document' })).toHaveCount(0);
 
   try {
     await context.setOffline(true);
