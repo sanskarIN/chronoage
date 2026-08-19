@@ -86,6 +86,22 @@ describe('ProfilesPage', () => {
     expect(screen.getByText('Deleted profile restored.')).toHaveAttribute('role', 'status');
   });
 
+  it('restores a deleted profile to its original card position', async () => {
+    saveProfile({ name: 'Alpha', birthDate: '2000-01-01' });
+    saveProfile({ name: 'Beta', birthDate: '2001-01-01' });
+    saveProfile({ name: 'Gamma', birthDate: '2002-01-01' });
+    const user = userEvent.setup();
+
+    render(<ProfilesPage />);
+    await user.click(screen.getByRole('button', { name: 'Delete Beta' }));
+    await user.click(screen.getByRole('button', { name: 'Undo delete' }));
+
+    const names = screen
+      .getAllByRole('article')
+      .map((article) => article.querySelector('strong')?.textContent);
+    expect(names).toEqual(['Gamma', 'Beta', 'Alpha']);
+  });
+
   it('expires stale delete undo after a new profile is saved', async () => {
     saveProfile({ name: 'Old profile', birthDate: '2000-01-01' });
     const user = userEvent.setup();
