@@ -148,7 +148,11 @@ export function updateProfile(id: string, input: { name: string; birthDate: stri
 }
 
 export function deleteProfile(id: string): SavedProfile[] {
-  const next = loadProfiles().filter((profile) => profile.id !== id);
+  const profiles = loadProfiles();
+  if (!profiles.some((profile) => profile.id === id)) {
+    throw new UserVisibleError('Profile not found.');
+  }
+  const next = profiles.filter((profile) => profile.id !== id);
   persist(next);
   return next;
 }
