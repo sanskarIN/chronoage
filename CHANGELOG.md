@@ -89,6 +89,7 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - README, architecture, date-semantics, testing, development, accessibility, performance, privacy, security, release, PWA, internationalization, and troubleshooting documentation were expanded to match implemented behavior.
 
 ### Fixed
+- Imported or restored saved profiles whose `updatedAt` precedes `createdAt` are rejected instead of accepting an impossible timestamp history.
 - Backup import can no longer silently replace an existing local profile collection after file selection; the user must confirm replacement first.
 - Profile edit actions use an icon-only fixed-size control so long translated/action text cannot overflow the icon button.
 - Profile delete/clear actions no longer allow storage exceptions to escape from click handlers.
