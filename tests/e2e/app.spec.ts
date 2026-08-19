@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { navigateTo, seedCompletedOnboarding } from './helpers';
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('chronoage.settings.v1', JSON.stringify({ onboardingComplete: true, theme: 'system' }));
-  });
+  await seedCompletedOnboarding(page);
 });
 
 test('primary age calculation flow works', async ({ page }) => {
@@ -17,7 +16,7 @@ test('primary age calculation flow works', async ({ page }) => {
 
 test('saved profile remains local and can be removed', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Profiles' }).click();
+  await navigateTo(page, 'Profiles');
   await page.getByLabel('Name').fill('Example');
   await page.getByLabel('Birth date').fill('2001-02-03');
   await page.getByRole('button', { name: 'Save profile' }).click();
