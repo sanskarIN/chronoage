@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
+import { hashForPage, PAGE_IDS } from '../src/utils/navigation';
 
 interface ManifestShortcut {
   name?: string;
@@ -17,6 +18,7 @@ const manifest = JSON.parse(
   await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'),
 ) as WebManifest;
 const serviceWorker = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
+const allowedShortcutUrls = new Set(PAGE_IDS.map((page) => `/${hashForPage(page)}`));
 
 describe('web app manifest', () => {
   it('keeps stable root application identity and scope', () => {
@@ -25,12 +27,12 @@ describe('web app manifest', () => {
     expect(manifest.scope).toBe('/');
   });
 
-  it('exposes shortcuts only through public application page routes', () => {
+  it('exposes shortcuts only through canonical public application page routes', () => {
     expect(manifest.shortcuts?.length).toBeGreaterThan(0);
 
     for (const shortcut of manifest.shortcuts ?? []) {
       expect(shortcut.name).toBeTruthy();
-      expect(shortcut.url).toMatch(/^\/#\/(calculate|difference|interval|milestones|profiles|settings|about)$/);
+      expect(shortcut.url && allowedShortcutUrls.has(shortcut.url)).toBe(true);
       expect(shortcut.url).not.toMatch(/[?&=]/);
     }
   });
