@@ -16,6 +16,7 @@ interface WebManifest {
 const manifest = JSON.parse(
   await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'),
 ) as WebManifest;
+const serviceWorker = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
 
 describe('web app manifest', () => {
   it('keeps stable root application identity and scope', () => {
@@ -32,5 +33,10 @@ describe('web app manifest', () => {
       expect(shortcut.url).toMatch(/^\/#\/(calculate|difference|interval|milestones|profiles|settings|about)$/);
       expect(shortcut.url).not.toMatch(/[?&=]/);
     }
+  });
+
+  it('keeps the manifest in the versioned service-worker core shell', () => {
+    expect(serviceWorker).toMatch(/CACHE_NAME = 'chronoage-v\d+'/);
+    expect(serviceWorker).toContain("'/manifest.webmanifest'");
   });
 });
