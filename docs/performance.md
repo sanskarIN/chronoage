@@ -9,6 +9,7 @@ Release budgets:
 - Total first-party JavaScript: at most 250 KiB gzip.
 - Total first-party CSS: at most 60 KiB gzip.
 - No runtime date library.
+- No client-side routing library for the finite core page set.
 - No calculation-triggered network requests.
 - Local calculation response: effectively synchronous for normal interactive inputs.
 
@@ -36,9 +37,12 @@ Increasing a release budget should be treated as a product/performance decision,
 ## Design decisions
 
 - Native `Intl` avoids shipping a timezone/date library.
+- The finite page set uses native hash/history APIs instead of a runtime routing dependency.
 - Pages use derived memoized calculations rather than network state.
-- Saved profiles are capped at 100 and rendered in batches of 20. Search still evaluates the bounded local collection, while DOM work stays small until the user requests more matching cards.
+- Saved profiles are capped at 100 and rendered in batches of 20. Search and sorting still evaluate only that bounded local collection, while DOM work stays small until the user requests more matching cards.
+- Profile sorting copies the bounded array instead of mutating/re-persisting storage solely for presentation ordering.
 - The service worker caches only same-origin GET resources.
+- PWA shortcuts reuse the same root application shell and public hash routes rather than requiring separate entry bundles.
 - No analytics or third-party UI framework is loaded.
 - The duration visualization uses three lightweight DOM segments and does not introduce a charting dependency.
 
@@ -76,7 +80,8 @@ Use browser Performance/Lighthouse tooling against `npm run preview`, not the de
 - calculator input-to-result responsiveness;
 - Difference page visualization rendering;
 - Milestones page rendering with the built-in timeline;
-- profile filtering at the 100-profile cap, including initial 20-card rendering and progressive reveal;
+- profile filtering/sorting at the 100-profile cap, including initial 20-card rendering and progressive reveal;
+- page-route navigation and Back/Forward responsiveness;
 - offline reload behavior after service-worker installation.
 
 Record regressions in pull requests when a change materially increases bundle size or interaction latency.
