@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addDays,
   addYearsClamped,
   ageDifference,
   calculateAge,
@@ -34,6 +35,15 @@ describe('date math', () => {
 
   it('rejects year arithmetic outside the supported calendar range', () => {
     expect(() => addYearsClamped({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
+      'outside the supported range',
+    );
+  });
+
+  it('rejects day arithmetic outside the supported calendar range', () => {
+    expect(() => addDays({ year: 1, month: 1, day: 1 }, -1)).toThrow(
+      'outside the supported range',
+    );
+    expect(() => addDays({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
       'outside the supported range',
     );
   });
