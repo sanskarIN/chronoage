@@ -127,6 +127,17 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
           <option value="feb28">February 28</option>
           <option value="mar1">March 1</option>
         </SelectField>
+        <SelectField
+          label="Repeated DST time"
+          value={settings.dstAmbiguityPolicy}
+          onChange={(event) =>
+            patch({ dstAmbiguityPolicy: event.target.value === 'later' ? 'later' : 'earlier' })
+          }
+          hint="When clocks move backward and a local time occurs twice, choose which occurrence ChronoAge uses."
+        >
+          <option value="earlier">Earlier occurrence</option>
+          <option value="later">Later occurrence</option>
+        </SelectField>
       </section>
 
       <section className="settings-section panel" aria-labelledby="data-title">
