@@ -1,0 +1,57 @@
+name: Generate verified npm lockfile
+
+on:
+  push:
+    branches: [chore/release-lockfile-v2]
+    paths:
+      - package.json
+      - .github/workflows/release-lockfile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: Resolve, verify, and commit lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout verification branch
+        uses: actions/checkout@v6
+        with:
+          ref: chore/release-lockfile-v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Resolve exact dependency graph
+        run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit
+      - name: Verify clean lockfile install
+        run: npm ci --no-fund --no-audit
+      - name: Run non-E2E quality gate
+        run: npm run check
+      - name: Audit high-severity runtime vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser, PWA, and accessibility verification
+        run: npm run test:e2e
+      - name: Ensure package manifest was not rewritten
+        run: git diff --exit-code -- package.json
+      - name: Commit verified lockfile
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already matches the verified dependency graph."
+            exit 0
+          fi
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+          git add package-lock.json
+          git commit -m "build: add reproducible npm lockfile"
+          git push origin HEAD:chore/release-lockfile-v2
