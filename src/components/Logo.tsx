@@ -2,7 +2,7 @@ import { en } from '../i18n/en';
 
 export function Logo({ compact = false }: { compact?: boolean }): React.JSX.Element {
   return (
-    <div className="brand" aria-label={`${en.appName} home`}>
+    <div className="brand">
       <span className="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 48 48">
           <circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" strokeWidth="3.2" />
