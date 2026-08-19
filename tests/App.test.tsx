@@ -74,6 +74,20 @@ describe('App', () => {
     expect(document.getElementById('main-content')).toHaveFocus();
   });
 
+  it('keeps the current route when skip navigation focuses main content', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Interval' }));
+    const routeBeforeSkip = window.location.href;
+
+    await user.click(screen.getByRole('link', { name: 'Skip to main content' }));
+
+    expect(window.location.href).toBe(routeBeforeSkip);
+    expect(window.location.hash).toBe('#/interval');
+    expect(document.getElementById('main-content')).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Date interval' })).toBeInTheDocument();
+  });
+
   it('ignores accessibility anchor fragments as page routes', async () => {
     const user = userEvent.setup();
     render(<App />);
