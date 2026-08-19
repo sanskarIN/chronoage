@@ -76,7 +76,7 @@ No date library is required by the runtime domain layer. Timezone conversion use
 
 ## Quick start
 
-Requirements: Node.js 22.13+ and npm.
+Requirements: Node.js 22.13+ and npm. The repository's reproducible development/CI runtime pin is Node.js `22.13.0` in `.nvmrc`.
 
 ```bash
 git clone https://github.com/sanskarIN/chronoage.git
@@ -105,7 +105,7 @@ Run the combined non-E2E quality suite with:
 npm run check
 ```
 
-`npm run performance:check` measures the built first-party JavaScript and CSS gzip totals against the release budgets, so run `npm run build` first when invoking it directly.
+`npm run performance:check` measures the built first-party JavaScript and CSS gzip totals against the release budgets, so run `npm run build` first when invoking it directly. `npm run metadata:check`, which is included in `npm run check`, also verifies that the `.nvmrc`, package engine floor, and permanent CI/release Node pins remain aligned.
 
 See [docs/testing.md](docs/testing.md) for the full strategy and CI expectations.
 
