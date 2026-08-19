@@ -330,7 +330,8 @@ export function ageDifference(
   second: LocalDate,
   leapDayPolicy: LeapDayPolicy = 'feb28',
 ): AgeBreakdown {
-  const [start, end] = compareLocalDate(first, second) <= 0 ? [first, second] : [second, first];
+  const [start, end]: [LocalDate, LocalDate] =
+    compareLocalDate(first, second) <= 0 ? [first, second] : [second, first];
   return calculateAge({
     birth: { ...start, hour: 0, minute: 0 },
     reference: { ...end, hour: 0, minute: 0 },
