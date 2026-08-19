@@ -52,9 +52,14 @@ export function ProfilesPage(): React.JSX.Element {
   };
 
   const removeProfile = (id: string): void => {
-    setProfiles(deleteProfile(id));
-    if (editingId === id) setEditingId(null);
-    setMessage(en.profiles.deleted);
+    try {
+      setProfiles(deleteProfile(id));
+      if (editingId === id) setEditingId(null);
+      setError('');
+      setMessage(en.profiles.deleted);
+    } catch (caught) {
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableDelete));
+    }
   };
 
   const beginEdit = (profile: SavedProfile): void => {
@@ -99,6 +104,20 @@ export function ProfilesPage(): React.JSX.Element {
       setMessage(en.profiles.restored);
     } catch (caught) {
       setError(getUserSafeErrorMessage(caught, en.profiles.unableImport));
+    }
+  };
+
+  const deleteAllProfiles = (): void => {
+    if (!window.confirm(en.profiles.deleteAllConfirm)) return;
+    try {
+      clearProfiles();
+      setProfiles([]);
+      setEditingId(null);
+      setQuery('');
+      setError('');
+      setMessage(en.profiles.allDeleted);
+    } catch (caught) {
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableClear));
     }
   };
 
@@ -271,19 +290,7 @@ export function ProfilesPage(): React.JSX.Element {
               )}
             </article>
           ))}
-          <button
-            type="button"
-            className="text-button danger-text"
-            onClick={() => {
-              if (window.confirm(en.profiles.deleteAllConfirm)) {
-                clearProfiles();
-                setProfiles([]);
-                setEditingId(null);
-                setQuery('');
-                setMessage(en.profiles.allDeleted);
-              }
-            }}
-          >
+          <button type="button" className="text-button danger-text" onClick={deleteAllProfiles}>
             {en.profiles.deleteAll}
           </button>
         </section>
