@@ -5,6 +5,7 @@ import {
   importProfiles,
   loadProfiles,
   MAX_BACKUP_FILE_BYTES,
+  restoreProfile,
   saveProfile,
   updateProfile,
 } from '../src/storage/profiles';
@@ -42,6 +43,21 @@ describe('local profiles', () => {
     expect(() => updateProfile('missing', { name: 'Example', birthDate: '2001-02-03' })).toThrow(
       'Profile not found.',
     );
+  });
+
+  it('restores a removed profile without changing its identity or timestamps', () => {
+    const original = saveProfile({ name: 'Recover me', birthDate: '2000-01-01' });
+    clearProfiles();
+
+    expect(restoreProfile(original)).toEqual([original]);
+    expect(loadProfiles()).toEqual([original]);
+  });
+
+  it('rejects restoring a profile whose identity already exists', () => {
+    const original = saveProfile({ name: 'Existing', birthDate: '2000-01-01' });
+
+    expect(() => restoreProfile(original)).toThrow('Profile already exists.');
+    expect(loadProfiles()).toEqual([original]);
   });
 
   it('round-trips backup data', () => {
