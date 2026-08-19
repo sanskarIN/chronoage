@@ -9,6 +9,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { Icon } from './components/Icons';
 import { Logo } from './components/Logo';
 import { Onboarding } from './components/Onboarding';
+import { project } from './config/project';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useSettings } from './hooks/useSettings';
 import { en } from './i18n/en';
@@ -100,15 +101,10 @@ export default function App(): React.JSX.Element {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <a
-            className="bmc-mini"
-            href="https://buymeacoffee.com/sanskarIN"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className="bmc-mini" href={project.fundingUrl} target="_blank" rel="noreferrer">
             {en.app.buyMeACoffee}
           </a>
-          <span>{en.credit}</span>
+          <span>{project.credit}</span>
         </div>
       </aside>
       {mobileNavOpen && (
@@ -142,7 +138,9 @@ export default function App(): React.JSX.Element {
           {pageContent}
         </main>
         <footer className="site-footer">
-          <span>ChronoAge v1.0.0</span>
+          <span>
+            {project.name} v{project.version}
+          </span>
           <span>{en.app.footerMeta}</span>
         </footer>
       </div>
