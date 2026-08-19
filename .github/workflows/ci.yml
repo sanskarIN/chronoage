@@ -43,6 +43,8 @@ jobs:
         run: npm run docs:links
       - name: Production build
         run: npm run build
+      - name: Enforce production bundle budgets
+        run: npm run performance:check
       - name: Audit high-severity runtime vulnerabilities
         run: npm audit --omit=dev --audit-level=high
       - name: Upload production build
