@@ -16,11 +16,11 @@ Email `sanskarin@outlook.in` with:
 - realistic impact,
 - suggested mitigation if known.
 
-Do not include unrelated personal data in a report.
+Do not include unrelated personal data, real profile backups, localStorage dumps, credentials, or personal birth dates in a report unless they are strictly necessary and you have first agreed on a private handling method with the maintainer.
 
 ## Security model
 
-ChronoAge is a static client-side PWA. It has no built-in server, authentication system, payment system, or cloud database. The primary security boundaries are browser input validation, local persistence integrity, safe rendering, user-safe error handling, privacy-safe diagnostics, dependency supply-chain hygiene, browser content policy, and PWA cache behavior.
+ChronoAge is a static client-side PWA. It has no built-in server, authentication system, payment system, or cloud database. The primary security boundaries are browser input validation, local persistence integrity, public-route versus private-state separation, safe rendering, user-safe error handling, privacy-safe diagnostics, dependency supply-chain hygiene, browser content policy, and PWA cache behavior.
 
 The application:
 
@@ -29,10 +29,15 @@ The application:
 - scans both application source and public JavaScript for the selected dangerous source patterns;
 - ships a same-origin-first Content Security Policy and `no-referrer` browser metadata;
 - documents stronger host-level headers, including anti-framing and permissions policy, in `docs/security-headers.md`;
+- confines app routing to a finite public `#/page` namespace and does not intentionally serialize calculator dates/times, profile names, saved birth dates, search text, backup data, or results into route URLs;
+- reserves non-`#/` fragments such as `#main-content` for ordinary document-anchor behavior rather than application routes;
+- canonicalizes unknown application-style route fragments to the Age route rather than interpreting arbitrary fragment data as a page;
+- keeps PWA shortcut launch URLs inside the same public route set and verifies they contain no query-style data parameters;
 - validates imported profile data before persistence;
 - rejects oversized backups before the UI reads them and rechecks the UTF-8 byte limit at the storage boundary;
 - limits backup profile count and rejects duplicate imported profile ids and malformed profile timestamps;
 - converts malformed backup JSON into a stable user-safe error instead of exposing parser implementation text;
+- requires confirmation before a backup import replaces an existing non-empty profile collection;
 - validates and normalizes profile names and calendar dates at the storage boundary;
 - rejects unsupported control characters in persisted profile names;
 - ignores independently corrupted local profile entries rather than trusting their shape;
@@ -46,6 +51,7 @@ The application:
 - limits the service worker cache to same-origin GET requests;
 - restricts the cached `index.html` offline fallback to document navigations rather than serving HTML for missing assets;
 - requires explicit user action before applying a waiting service-worker update;
+- versions the ChronoAge cache namespace and precaches the manifest used for installed-app metadata/shortcuts;
 - commits no credentials and provides only placeholder `.env.example` values;
 - runs static security invariants, runtime dependency audit, dependency review, and CodeQL in repository automation;
 - reruns browser journeys and automated accessibility checks on release tags before creating the release artifact.
@@ -61,6 +67,10 @@ The host should send an HTTP CSP that is at least as restrictive as the HTML bas
 ChronoAge has no crash-reporting or analytics backend. Runtime diagnostics are written only to the local browser console through `src/utils/logger.ts`.
 
 The logger is defense in depth, not permission to log personal data. Callers should provide event categories, error types, and aggregate counts rather than profile values, dates, times, backup content, or other user data. The redactor removes common sensitive patterns if they appear accidentally, but new logging must still be reviewed for data minimization.
+
+## Repository security boundary
+
+The documented target configuration for `main` includes required automated checks and force-push/deletion protection. GitHub's branch API reported `main` as unprotected on 2026-08-19, so repository ruleset/protection remains an explicit release-hardening task rather than a completed security claim. See `docs/github.md` and `ROADMAP.md`.
 
 ## Native desktop boundary
 
