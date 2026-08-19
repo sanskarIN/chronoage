@@ -11,6 +11,7 @@
 - Put normal user-facing English UI copy in `src/i18n/en.ts` rather than scattering literals through components.
 - Put runtime project identity, contacts, repository/funding URLs, license name, and version in `src/config/project.ts`.
 - Do not duplicate a domain rule in the presentation layer to make a screen easier to implement.
+- Treat unexpected exception messages as implementation details; expose only `DateCalculationError` or `UserVisibleError` messages through `getUserSafeErrorMessage`.
 
 ## Commands
 
@@ -21,9 +22,12 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run performance:check
 npm run test:e2e
 npm run check
 ```
+
+`npm run performance:check` expects an existing `dist/` build and enforces the documented gzip budgets for first-party JavaScript and CSS.
 
 ## Adding a domain feature
 
@@ -52,15 +56,22 @@ Do not bypass the supported civil-year range of `0001` through `9999` with raw J
 - Local corrupted records may be ignored when valid neighboring records can be recovered safely.
 - Never coerce unknown JSON types into security/privacy/accessibility settings merely because JavaScript considers them truthy.
 - Keep exported backup formats language-neutral.
+- Wrap expected storage/import failures in `UserVisibleError`; do not expose raw JSON parser, browser, or storage-engine errors to the UI.
 
 ## Internationalization
 
 Read [internationalization.md](internationalization.md) before adding or changing visible product copy. English remains the only advertised locale until another locale receives a complete human review and UI validation.
 
+Crash-recovery copy currently lives in `src/i18n/errors.ts`; if locale packs are introduced, move it into the same locale-selection mechanism rather than duplicating literals in the error boundary.
+
 ## Project metadata
 
 Use `src/config/project.ts` for runtime metadata. When preparing a release, update the package version and runtime project version together, then verify every displayed version through tests/release review.
 
-## Logging
+## Logging and runtime failures
 
-Use `logger` rather than ad-hoc logging for application events. Do not log profile names, dates of birth, tokens, emails, secrets, raw imported content, or full backup payloads. Aggregate non-sensitive counts are acceptable when they help diagnose local data corruption.
+Use `logger` rather than ad-hoc `console` calls for application events. `npm run security:check` enforces that runtime source does not bypass the privacy-safe logger.
+
+Do not log profile names, dates of birth, times, tokens, emails, authorization values, secrets, raw imported content, or full backup payloads. The logger additionally redacts common email, bearer-token, date, and clock-time text patterns and guards against circular/deep objects. Aggregate non-sensitive counts are acceptable when they help diagnose local data corruption.
+
+The application root is wrapped by `AppErrorBoundary`, and global `error`/`unhandledrejection` events are routed through the sanitized logger. Recovery UI must remain local-only and must not imply that crash reports are uploaded.
