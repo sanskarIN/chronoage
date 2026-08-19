@@ -25,6 +25,21 @@ test('saved profile remains local and can be removed', async ({ page }) => {
   await expect(page.getByText('No profiles saved')).toBeVisible();
 });
 
+test('saved profile deletion can be undone', async ({ page }) => {
+  await page.goto('/');
+  await navigateTo(page, 'Profiles');
+  await page.getByLabel('Name').fill('Recoverable');
+  await page.getByLabel('Birth date').fill('2000-01-01');
+  await page.getByRole('button', { name: 'Save profile' }).click();
+
+  await page.getByRole('button', { name: 'Delete Recoverable' }).click();
+  await expect(page.getByText('No profiles saved')).toBeVisible();
+  await page.getByRole('button', { name: 'Undo delete' }).click();
+
+  await expect(page.getByText('Recoverable')).toBeVisible();
+  await expect(page.getByText('Deleted profile restored.')).toBeVisible();
+});
+
 test('saved profile can prefill the age calculator', async ({ page }) => {
   await page.goto('/');
   await navigateTo(page, 'Profiles');
