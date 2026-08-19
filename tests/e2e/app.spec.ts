@@ -24,3 +24,16 @@ test('saved profile remains local and can be removed', async ({ page }) => {
   await page.getByRole('button', { name: 'Delete Example' }).click();
   await expect(page.getByText('No profiles saved')).toBeVisible();
 });
+
+test('saved profile can prefill the age calculator', async ({ page }) => {
+  await page.goto('/');
+  await navigateTo(page, 'Profiles');
+  await page.getByLabel('Name').fill('Calculator person');
+  await page.getByLabel('Birth date').fill('2004-05-06');
+  await page.getByRole('button', { name: 'Save profile' }).click();
+
+  await page.getByRole('button', { name: 'Age: Calculator person' }).click();
+
+  await expect(page.getByRole('heading', { name: 'How much time has passed?' })).toBeVisible();
+  await expect(page.getByLabel('Birth date')).toHaveValue('2004-05-06');
+});
