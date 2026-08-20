@@ -25,9 +25,28 @@ npm run build
 npm run performance:check
 npm run test:e2e
 npm run check
+npm run native:format:check
+npm run native:lint
+npm run native:check
 ```
 
 `npm run performance:check` expects an existing `dist/` build and enforces the documented gzip budgets for first-party JavaScript and CSS.
+
+`npm run native:format:check` verifies Rust formatting with `rustfmt`. `npm run native:lint` runs Clippy across all native targets/features and treats warnings as failures. `npm run native:check` regenerates native icons, checks Rust formatting, performs `cargo check`, and runs Clippy.
+
+## Native Rust toolchain
+
+The native shell uses the exact Rust toolchain declared in the repository-root `rust-toolchain.toml`. The pin also installs `rustfmt` and Clippy so local development and CI use the same native quality tools.
+
+Do not add `rustup update stable` to permanent CI. That would make an unchanged commit compile against different Rust versions over time and would weaken reproducibility. To intentionally upgrade Rust:
+
+1. Change the exact `channel` in `rust-toolchain.toml` after reviewing the Rust release notes.
+2. Run `rustup show active-toolchain` from the repository root and confirm it resolves to the intended version.
+3. Run `npm run native:check` on a supported desktop host.
+4. Run the complete Native CI matrix for Windows, macOS, Linux, Android, and iOS simulator targets.
+5. Record the toolchain change in `CHANGELOG.md` when it affects release engineering or compatibility.
+
+The repository metadata check rejects non-exact Rust channels, missing `rustfmt`/Clippy components, and Native CI that reintroduces an unpinned stable update.
 
 ## Adding a domain feature
 
