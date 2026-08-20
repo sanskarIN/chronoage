@@ -83,6 +83,8 @@ jobs:
         run: npm install --no-fund --no-audit
       - name: Update Rust stable toolchain
         run: rustup update stable
+      - name: Install Android Rust target
+        run: rustup target add aarch64-linux-android
       - name: Select hosted Android NDK
         shell: bash
         run: |
@@ -120,7 +122,10 @@ jobs:
         run: |
           if [ "$(uname -m)" = "arm64" ]; then
             TARGET="aarch64-sim"
+            RUST_TARGET="aarch64-apple-ios-sim"
           else
             TARGET="x86_64"
+            RUST_TARGET="x86_64-apple-ios"
           fi
+          rustup target add "$RUST_TARGET"
           npm run native:ios:build -- --debug --ci -t "$TARGET"
