@@ -4,6 +4,7 @@ version = "2.0.12"
 description = "Privacy-first, timezone-aware age and date calculator"
 authors = ["Sanskar <sanskarin@outlook.in>"]
 edition = "2021"
+rust-version = "1.97.1"
 license = "MIT"
 repository = "https://github.com/sanskarIN/chronoage"
 homepage = "https://github.com/sanskarIN/chronoage"
