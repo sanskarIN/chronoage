@@ -15,11 +15,30 @@ describe('MilestonesPage', () => {
     expect(screen.getByText(/Wednesday · 2025-01-01/)).toBeInTheDocument();
   });
 
-  it('shows validation feedback for invalid custom milestone amounts', () => {
+  it('shows custom validation feedback without hiding built-in milestones', () => {
     render(<MilestonesPage settings={DEFAULT_SETTINGS} />);
+
+    fireEvent.change(screen.getByLabelText('Birth date'), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByLabelText('As of'), { target: { value: '2026-01-01' } });
+    expect(screen.getByText('1,000 days')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
 
     expect(screen.getByRole('alert')).toHaveTextContent('positive whole number');
+    expect(screen.getByText('1,000 days')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Calculated milestones' })).toBeInTheDocument();
+  });
+
+  it('keeps the supported timeline usable near year 9999', () => {
+    render(<MilestonesPage settings={DEFAULT_SETTINGS} />);
+
+    fireEvent.change(screen.getByLabelText('Birth date'), { target: { value: '9998-01-01' } });
+    fireEvent.change(screen.getByLabelText('As of'), { target: { value: '9999-01-01' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Milestone unit'), { target: { value: 'years' } });
+
+    expect(screen.getAllByText('1st birthday')).toHaveLength(2);
+    expect(screen.getByText(/9999-01-01/)).toBeInTheDocument();
+    expect(screen.queryByText(/Unable to calculate milestones/)).not.toBeInTheDocument();
   });
 });
