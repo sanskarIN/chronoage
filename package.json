@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.12",
   "type": "module",
-  "description": "A privacy-first, timezone-aware age and date calculator PWA.",
+  "description": "A privacy-first, timezone-aware age and date calculator for web, desktop, Android, and iOS.",
   "author": "Sanskar <sanskarin@outlook.in>",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,8 @@
   "engines": { "node": ">=22.13.0" },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:web",
+    "build:web": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings=0",
@@ -33,13 +34,32 @@
     "release:check": "node scripts/check-release-tag.mjs",
     "check": "npm run format:check && npm run metadata:check && npm run security:check && npm run lint && npm run typecheck && npm run test && npm run docs:links && npm run build && npm run performance:check",
     "docs:links": "node scripts/check-links.mjs",
-    "bench": "vitest bench tests/dateMath.bench.ts"
+    "bench": "vitest bench tests/dateMath.bench.ts",
+    "native": "tauri",
+    "native:info": "tauri info",
+    "native:dev": "tauri dev",
+    "native:build": "tauri build",
+    "native:check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "native:icons": "tauri icon public/logo.svg",
+    "native:android:init": "tauri android init --ci",
+    "native:android:dev": "tauri android dev",
+    "native:android:build": "tauri android build",
+    "native:android:apk": "tauri android build -- --apk",
+    "native:android:aab": "tauri android build -- --aab",
+    "native:ios:init": "tauri ios init --ci",
+    "native:ios:dev": "tauri ios dev",
+    "native:ios:build": "tauri ios build"
   },
-  "dependencies": { "react": "19.2.8", "react-dom": "19.2.8" },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.62.1",
+    "@tauri-apps/cli": "2.11.4",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.1",
