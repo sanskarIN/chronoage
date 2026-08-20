@@ -2,6 +2,7 @@ import type { SavedProfile } from '../types/models';
 import { validateBirthDateString, validateProfileName } from '../domain/validation';
 import { UserVisibleError } from '../errors';
 import { logger } from '../utils/logger';
+import { createRandomUuid } from '../utils/randomId';
 
 const STORAGE_KEY = 'chronoage.profiles.v1';
 const MAX_PROFILES = 100;
@@ -20,6 +21,12 @@ function isIsoTimestamp(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function nextUpdateTimestamp(profile: SavedProfile): string {
+  const previous = new Date(profile.updatedAt).getTime();
+  const created = new Date(profile.createdAt).getTime();
+  return new Date(Math.max(Date.now(), previous, created)).toISOString();
 }
 
 function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
@@ -126,7 +133,7 @@ export function saveProfile(input: { name: string; birthDate: string }): SavedPr
   }
   const now = new Date().toISOString();
   const profile: SavedProfile = {
-    id: crypto.randomUUID(),
+    id: createRandomUuid(),
     name: validateProfileName(input.name),
     birthDate: validateBirthDateString(input.birthDate),
     createdAt: now,
@@ -144,7 +151,7 @@ export function updateProfile(id: string, input: { name: string; birthDate: stri
     ...current,
     name: validateProfileName(input.name),
     birthDate: validateBirthDateString(input.birthDate),
-    updatedAt: new Date().toISOString(),
+    updatedAt: nextUpdateTimestamp(current),
   };
   persist(profiles.map((profile) => (profile.id === id ? updated : profile)));
   return updated;
