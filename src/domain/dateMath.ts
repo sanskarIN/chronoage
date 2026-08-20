@@ -21,7 +21,14 @@ export function isLeapYear(year: number): boolean {
 }
 
 export function daysInMonth(year: number, month: number): number {
-  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+  if (
+    !Number.isInteger(year) ||
+    year < 1 ||
+    year > 9999 ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  ) {
     throw new DateCalculationError('Invalid year or month.');
   }
   const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -74,6 +81,7 @@ export function parseTimeInput(value: string): Pick<LocalDateTime, 'hour' | 'min
 }
 
 export function formatDateInput(date: LocalDate): string {
+  if (!isValidLocalDate(date)) throw new DateCalculationError('Invalid calendar date.');
   return `${String(date.year).padStart(4, '0')}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
 }
 
@@ -117,6 +125,8 @@ export function addYearsClamped(
   years: number,
   leapDayPolicy: LeapDayPolicy = 'feb28',
 ): LocalDate {
+  if (!isValidLocalDate(date)) throw new DateCalculationError('Invalid calendar date.');
+  if (!Number.isInteger(years)) throw new DateCalculationError('Years must be an integer.');
   const targetYear = date.year + years;
   if (targetYear < 1 || targetYear > 9999) {
     throw new DateCalculationError('Resulting year is outside the supported range.');
@@ -134,6 +144,8 @@ export function addYearsClamped(
 }
 
 export function addMonthsClamped(date: LocalDate, months: number): LocalDate {
+  if (!isValidLocalDate(date)) throw new DateCalculationError('Invalid calendar date.');
+  if (!Number.isInteger(months)) throw new DateCalculationError('Months must be an integer.');
   const zeroBased = date.year * 12 + (date.month - 1) + months;
   const year = Math.floor(zeroBased / 12);
   const month = ((zeroBased % 12) + 12) % 12 + 1;
@@ -375,6 +387,7 @@ export function intervalDays(start: LocalDate, end: LocalDate, inclusive: boolea
 }
 
 export function weekdayName(date: LocalDate, locale = 'en-US'): string {
+  if (!isValidLocalDate(date)) throw new DateCalculationError('Invalid calendar date.');
   const timestamp = civilUtcMilliseconds({ ...date, hour: 12, minute: 0 });
   return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(timestamp);
 }
