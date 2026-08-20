@@ -12,13 +12,13 @@ ChronoAge remains source version **2.0.12** on `main`.
 - Exact Rust pin: `1.97.1`
 - Native identifier: `in.sanskar.chronoage`
 - License: MIT
-- Current handoff head after this continuation: `83aff9e0d0821c46ad9ef90ea22debd5597a561f`
+- Implementation checkpoint before this handoff refresh: `83aff9e0d0821c46ad9ef90ea22debd5597a561f`
 
 This handoff reports implemented repository state only. It does **not** claim green hosted CI, signed installers, notarization, mobile-store publication, or protected-branch enforcement unless those items have separately been verified.
 
 ## Continuation completed on 2026-08-20
 
-This continuation added **20 focused commits** after the previous cross-platform checkpoint.
+This continuation added **20 focused implementation/documentation commits** after the previous cross-platform checkpoint, followed by handoff-maintenance commits.
 
 ### Native reproducibility and Rust quality
 
@@ -190,7 +190,7 @@ Updated:
 19. `test(date): cover derived timezone gap anchors`
 20. `docs(date): define derived anniversary gap semantics`
 
-The handoff update itself is the next focused documentation commit after those twenty implementation/documentation commits.
+The handoff-maintenance commits come after this implementation checkpoint and intentionally are not self-referenced by SHA inside this file.
 
 ## Existing cross-platform architecture retained
 
@@ -260,7 +260,7 @@ The shared TypeScript domain remains authoritative for age/date calculations, ti
 - `main` is currently reported as **unprotected** and required status checks are reported as **off**.
 - The connected GitHub surface did not expose a branch-protection/ruleset write action.
 - The connected GitHub surface did not expose a workflow-dispatch/listing action suitable for proving the new direct-push CI runs.
-- Combined commit status for the current continuation head returned no statuses through the available status API.
+- Combined commit status for the continuation head returned no statuses through the available status API.
 
 ### Not claimed
 
