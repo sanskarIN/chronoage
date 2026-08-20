@@ -11,6 +11,8 @@ import type {
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
+const NONEXISTENT_LOCAL_TIME_MESSAGE = 'That local time does not exist in the selected timezone.';
+const OFFSET_SAMPLE_HOURS = [-48, -36, -24, -18, -12, -6, 0, 6, 12, 18, 24, 36, 48];
 
 export class DateCalculationError extends Error {
   override name = 'DateCalculationError';
@@ -94,6 +96,21 @@ function civilUtcMilliseconds(value: LocalDateTime): number {
   date.setUTCFullYear(value.year, value.month - 1, value.day);
   date.setUTCHours(value.hour, value.minute, 0, 0);
   return date.getTime();
+}
+
+function comparableToLocalDateTime(timestamp: number): LocalDateTime {
+  const date = new Date(timestamp);
+  const result = {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+  };
+  if (!isValidLocalDateTime(result)) {
+    throw new DateCalculationError('Resulting date is outside the supported range.');
+  }
+  return result;
 }
 
 export function toEpochDay(date: LocalDate): number {
@@ -203,6 +220,10 @@ function offsetMinutesAt(timestamp: number, timeZone: string): number {
   return Math.round((localComparable - timestamp) / MS_PER_MINUTE);
 }
 
+function nearbyOffsetMinutes(timestamp: number, timeZone: string): number[] {
+  return OFFSET_SAMPLE_HOURS.map((hours) => offsetMinutesAt(timestamp + hours * MS_PER_HOUR, timeZone));
+}
+
 export function isValidTimeZone(timeZone: string): boolean {
   try {
     new Intl.DateTimeFormat('en', { timeZone }).format();
@@ -232,13 +253,10 @@ export function zonedLocalToUtcCandidates(value: LocalDateTime, timeZone: string
 
   const roundTrip = formatToZonedParts(guess, timeZone);
   if (!sameLocalDateTime(roundTrip, value)) {
-    throw new DateCalculationError('That local time does not exist in the selected timezone.');
+    throw new DateCalculationError(NONEXISTENT_LOCAL_TIME_MESSAGE);
   }
 
-  const sampleDeltas = [-36, -24, -12, -6, 0, 6, 12, 24, 36].map((hours) => hours * MS_PER_HOUR);
-  const offsets = new Set<number>();
-  for (const delta of sampleDeltas) offsets.add(offsetMinutesAt(guess + delta, timeZone));
-
+  const offsets = new Set<number>(nearbyOffsetMinutes(guess, timeZone));
   const candidates = new Set<number>([guess]);
   for (const offsetMinutes of offsets) {
     const candidate = desired - offsetMinutes * MS_PER_MINUTE;
@@ -262,6 +280,35 @@ export function zonedLocalToUtc(
   const candidate = ambiguityPolicy === 'later' ? candidates.at(-1) : candidates[0];
   if (candidate === undefined) throw new DateCalculationError('Unable to resolve timezone instant.');
   return candidate;
+}
+
+/**
+ * Resolves a calendar-derived local anchor. User-entered gap times remain invalid, but a derived
+ * anniversary can land in a gap that did not exist in the birth year. In that case the anchor is
+ * shifted forward by the actual offset increase, matching compatible civil-time semantics.
+ */
+function derivedZonedLocalToUtc(
+  value: LocalDateTime,
+  timeZone: string,
+  ambiguityPolicy: DstAmbiguityPolicy,
+): number {
+  try {
+    return zonedLocalToUtc(value, timeZone, ambiguityPolicy);
+  } catch (error) {
+    if (!(error instanceof DateCalculationError) || error.message !== NONEXISTENT_LOCAL_TIME_MESSAGE) {
+      throw error;
+    }
+  }
+
+  const desired = dateTimeToComparable(value);
+  const offsets = nearbyOffsetMinutes(desired, timeZone);
+  const gapMinutes = Math.max(...offsets) - Math.min(...offsets);
+  if (!Number.isInteger(gapMinutes) || gapMinutes <= 0 || gapMinutes > 24 * 60) {
+    throw new DateCalculationError(NONEXISTENT_LOCAL_TIME_MESSAGE);
+  }
+
+  const shifted = comparableToLocalDateTime(desired + gapMinutes * MS_PER_MINUTE);
+  return zonedLocalToUtc(shifted, timeZone, ambiguityPolicy);
 }
 
 function calendarDifference(
@@ -315,14 +362,14 @@ export function calculateAge(input: AgeInput): AgeBreakdown {
   let anchorDate = calendar.anchor;
   let anchorDateTime = withTime(anchorDate, birth);
   let anchorMs = input.includeTime
-    ? zonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy)
+    ? derivedZonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy)
     : dateTimeToComparable(anchorDateTime);
 
   if (input.includeTime && anchorMs > endMs && calendarDays > 0) {
     calendarDays -= 1;
     anchorDate = addDays(anchorDate, -1);
     anchorDateTime = withTime(anchorDate, birth);
-    anchorMs = zonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy);
+    anchorMs = derivedZonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy);
   }
 
   if (input.includeTime && anchorMs > endMs) {
@@ -331,7 +378,7 @@ export function calculateAge(input: AgeInput): AgeBreakdown {
     calendarDays = adjusted.days;
     anchorDate = adjusted.anchor;
     anchorDateTime = withTime(anchorDate, birth);
-    anchorMs = zonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy);
+    anchorMs = derivedZonedLocalToUtc(anchorDateTime, input.timeZone, ambiguityPolicy);
     calendar.years = adjusted.years;
     calendar.months = adjusted.months;
   }
