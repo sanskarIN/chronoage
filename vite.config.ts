@@ -1,15 +1,24 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
+const tauriDevHost = process.env.TAURI_DEV_HOST;
+
 export default defineConfig({
   plugins: [react()],
+  clearScreen: false,
   build: {
     target: 'es2022',
     sourcemap: true,
     cssCodeSplit: true,
     chunkSizeWarningLimit: 500,
   },
-  server: { port: 5173, strictPort: true },
+  server: {
+    host: tauriDevHost || false,
+    port: 5173,
+    strictPort: true,
+    hmr: tauriDevHost ? { protocol: 'ws', host: tauriDevHost, port: 5174 } : undefined,
+    watch: { ignored: ['**/src-tauri/**'] },
+  },
   preview: { port: 4173, strictPort: true },
   test: {
     environment: 'jsdom',
