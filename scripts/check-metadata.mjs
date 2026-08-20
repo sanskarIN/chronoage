@@ -16,6 +16,10 @@ const rustToolchain = await readFile(
   new URL('../rust-toolchain.toml', import.meta.url),
   'utf8',
 );
+const dependabotConfig = await readFile(
+  new URL('../.github/dependabot.yml', import.meta.url),
+  'utf8',
+);
 const nodeVersion = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const nativeWorkflow = await readFile(
@@ -111,6 +115,15 @@ if (!nativeWorkflow.includes('rustup show active-toolchain')) {
   failures.push('Native CI workflow: must report the active pinned Rust toolchain');
 }
 
+const cargoDependabotBlock = dependabotConfig.match(
+  /-\s+package-ecosystem:\s*["']?cargo["']?([\s\S]*?)(?=\n\s*-\s+package-ecosystem:|$)/,
+)?.[1];
+if (!cargoDependabotBlock) {
+  failures.push('Dependabot: missing Cargo dependency update configuration');
+} else if (!/^\s*directory:\s*["']?\/src-tauri["']?\s*$/m.test(cargoDependabotBlock)) {
+  failures.push('Dependabot: Cargo dependency updates must target /src-tauri');
+}
+
 const changelogHeading = `## [${packageJson.version}] - `;
 if (!changelog.includes(changelogHeading)) {
   failures.push(`changelog: missing released-version heading beginning ${JSON.stringify(changelogHeading)}`);
@@ -164,6 +177,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Project metadata, native versions, release documentation, PWA cache version, and runtime pins are consistent.',
+    'Project metadata, native versions, dependency monitoring, release documentation, PWA cache version, and runtime pins are consistent.',
   );
 }
