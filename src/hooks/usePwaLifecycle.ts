@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { logger } from '../utils/logger';
+import { isNativeRuntime } from '../utils/platform';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -24,11 +25,14 @@ function isStandalone(): boolean {
 }
 
 export function usePwaLifecycle(): PwaLifecycle {
+  const nativeRuntime = isNativeRuntime();
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(isStandalone);
+  const [installed, setInstalled] = useState(() => nativeRuntime || isStandalone());
   const [updateStatus, setUpdateStatus] = useState<PwaUpdateStatus>('idle');
 
   useEffect(() => {
+    if (nativeRuntime) return;
+
     const onInstallPrompt = (event: Event): void => {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -48,10 +52,10 @@ export function usePwaLifecycle(): PwaLifecycle {
       window.removeEventListener('appinstalled', onInstalled);
       navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
     };
-  }, []);
+  }, [nativeRuntime]);
 
   const install = useCallback(async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
-    if (!installPrompt) return 'unavailable';
+    if (nativeRuntime || !installPrompt) return 'unavailable';
     try {
       await installPrompt.prompt();
       const choice = await installPrompt.userChoice;
@@ -64,10 +68,10 @@ export function usePwaLifecycle(): PwaLifecycle {
       setInstallPrompt(null);
       return 'unavailable';
     }
-  }, [installPrompt]);
+  }, [installPrompt, nativeRuntime]);
 
   const checkForUpdate = useCallback(async (): Promise<void> => {
-    if (!('serviceWorker' in navigator)) {
+    if (nativeRuntime || !('serviceWorker' in navigator)) {
       setUpdateStatus('current');
       return;
     }
@@ -86,10 +90,10 @@ export function usePwaLifecycle(): PwaLifecycle {
       });
       setUpdateStatus('error');
     }
-  }, []);
+  }, [nativeRuntime]);
 
   const applyUpdate = useCallback(async (): Promise<boolean> => {
-    if (!('serviceWorker' in navigator)) return false;
+    if (nativeRuntime || !('serviceWorker' in navigator)) return false;
     try {
       const registration = await navigator.serviceWorker.getRegistration();
       if (!registration?.waiting) return false;
@@ -102,10 +106,10 @@ export function usePwaLifecycle(): PwaLifecycle {
       setUpdateStatus('error');
       return false;
     }
-  }, []);
+  }, [nativeRuntime]);
 
   return {
-    canInstall: Boolean(installPrompt) && !installed,
+    canInstall: !nativeRuntime && Boolean(installPrompt) && !installed,
     installed,
     updateStatus,
     install,
