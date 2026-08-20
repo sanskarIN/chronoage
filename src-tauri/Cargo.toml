@@ -1,0 +1,19 @@
+[package]
+name = "chronoage"
+version = "2.0.12"
+description = "Privacy-first, timezone-aware age and date calculator"
+authors = ["Sanskar <sanskarin@outlook.in>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/sanskarIN/chronoage"
+homepage = "https://github.com/sanskarIN/chronoage"
+
+[lib]
+name = "chronoage_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = [] }
