@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { logger } from '../utils/logger';
 import { isNativeRuntime } from '../utils/platform';
 
@@ -29,6 +29,39 @@ export function usePwaLifecycle(): PwaLifecycle {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(() => nativeRuntime || isStandalone());
   const [updateStatus, setUpdateStatus] = useState<PwaUpdateStatus>('idle');
+  const reloadOnControllerChange = useRef(false);
+  const updateTrackerCleanup = useRef<(() => void) | null>(null);
+
+  const clearUpdateTracker = useCallback((): void => {
+    updateTrackerCleanup.current?.();
+    updateTrackerCleanup.current = null;
+  }, []);
+
+  const trackInstallingWorker = useCallback(
+    (registration: ServiceWorkerRegistration, worker: ServiceWorker): void => {
+      clearUpdateTracker();
+
+      const finish = (status: PwaUpdateStatus): void => {
+        setUpdateStatus(status);
+        clearUpdateTracker();
+      };
+
+      const onStateChange = (): void => {
+        if (registration.waiting) {
+          finish('update-ready');
+          return;
+        }
+        if (worker.state === 'activated' || worker.state === 'redundant') {
+          finish('current');
+        }
+      };
+
+      worker.addEventListener('statechange', onStateChange);
+      updateTrackerCleanup.current = () => worker.removeEventListener('statechange', onStateChange);
+      onStateChange();
+    },
+    [clearUpdateTracker],
+  );
 
   useEffect(() => {
     if (nativeRuntime) return;
@@ -41,7 +74,11 @@ export function usePwaLifecycle(): PwaLifecycle {
       setInstalled(true);
       setInstallPrompt(null);
     };
-    const onControllerChange = (): void => window.location.reload();
+    const onControllerChange = (): void => {
+      if (!reloadOnControllerChange.current) return;
+      reloadOnControllerChange.current = false;
+      window.location.reload();
+    };
 
     window.addEventListener('beforeinstallprompt', onInstallPrompt);
     window.addEventListener('appinstalled', onInstalled);
@@ -51,8 +88,9 @@ export function usePwaLifecycle(): PwaLifecycle {
       window.removeEventListener('beforeinstallprompt', onInstallPrompt);
       window.removeEventListener('appinstalled', onInstalled);
       navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
+      clearUpdateTracker();
     };
-  }, [nativeRuntime]);
+  }, [clearUpdateTracker, nativeRuntime]);
 
   const install = useCallback(async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
     if (nativeRuntime || !installPrompt) return 'unavailable';
@@ -75,6 +113,7 @@ export function usePwaLifecycle(): PwaLifecycle {
       setUpdateStatus('current');
       return;
     }
+    clearUpdateTracker();
     setUpdateStatus('checking');
     try {
       const registration = await navigator.serviceWorker.getRegistration();
@@ -83,23 +122,34 @@ export function usePwaLifecycle(): PwaLifecycle {
         return;
       }
       await registration.update();
-      setUpdateStatus(registration.waiting ? 'update-ready' : 'current');
+      if (registration.waiting) {
+        setUpdateStatus('update-ready');
+        return;
+      }
+      if (registration.installing) {
+        trackInstallingWorker(registration, registration.installing);
+        return;
+      }
+      setUpdateStatus('current');
     } catch (error) {
+      clearUpdateTracker();
       logger.warn('Service worker update check failed.', {
         errorType: error instanceof Error ? error.name : 'unknown',
       });
       setUpdateStatus('error');
     }
-  }, [nativeRuntime]);
+  }, [clearUpdateTracker, nativeRuntime, trackInstallingWorker]);
 
   const applyUpdate = useCallback(async (): Promise<boolean> => {
     if (nativeRuntime || !('serviceWorker' in navigator)) return false;
     try {
       const registration = await navigator.serviceWorker.getRegistration();
       if (!registration?.waiting) return false;
+      reloadOnControllerChange.current = true;
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       return true;
     } catch (error) {
+      reloadOnControllerChange.current = false;
       logger.warn('Service worker update application failed.', {
         errorType: error instanceof Error ? error.name : 'unknown',
       });
