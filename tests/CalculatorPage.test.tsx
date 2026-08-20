@@ -71,6 +71,17 @@ describe('CalculatorPage', () => {
     expect(screen.getByText('26 years old')).toBeInTheDocument();
   });
 
+  it('preserves a valid age when the next birthday would exceed year 9999', () => {
+    render(<CalculatorPage settings={{ ...DEFAULT_SETTINGS, defaultTimeZone: 'UTC' }} />);
+
+    fireEvent.change(screen.getByLabelText('Birth date'), { target: { value: '9990-01-01' } });
+    fireEvent.change(screen.getByLabelText('Reference date'), { target: { value: '9999-12-31' } });
+
+    expect(screen.getByText('9 years old')).toBeInTheDocument();
+    expect(screen.queryByText(/next birthday/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('reports a nonexistent local wall-clock time instead of normalizing it', () => {
     render(
       <CalculatorPage
