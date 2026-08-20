@@ -12,6 +12,10 @@ const tauriConfig = JSON.parse(
   await readFile(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
 );
 const cargoToml = await readFile(new URL('../src-tauri/Cargo.toml', import.meta.url), 'utf8');
+const rustToolchain = await readFile(
+  new URL('../rust-toolchain.toml', import.meta.url),
+  'utf8',
+);
 const nodeVersion = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const nativeWorkflow = await readFile(
@@ -40,12 +44,26 @@ function readCargoPackageVersion(source) {
   return version;
 }
 
+function readRustToolchainChannel(source) {
+  const channel = source.match(/^\s*channel\s*=\s*["']([^"']+)["']/m)?.[1];
+  if (!channel) throw new Error('Unable to read Rust channel from rust-toolchain.toml.');
+  return channel;
+}
+
+function readRustToolchainComponents(source) {
+  const rawComponents = source.match(/^\s*components\s*=\s*\[([^\]]*)\]/m)?.[1];
+  if (!rawComponents) return [];
+  return [...rawComponents.matchAll(/["']([^"']+)["']/g)].map((match) => match[1]);
+}
+
 const projectName = readProjectString('name');
 const projectVersion = readProjectString('version');
 const projectLicense = readProjectString('license');
 const repositoryUrl = readProjectString('repositoryUrl');
 const fundingUrl = readProjectString('fundingUrl');
 const cargoVersion = readCargoPackageVersion(cargoToml);
+const rustChannel = readRustToolchainChannel(rustToolchain);
+const rustComponents = readRustToolchainComponents(rustToolchain);
 
 const checks = [
   ['name', packageJson.name, projectName.toLowerCase()],
@@ -71,6 +89,26 @@ if (tauriConfig.productName !== projectName) {
   failures.push(
     `Tauri product name: tauri.conf.json=${JSON.stringify(tauriConfig.productName)} project=${JSON.stringify(projectName)}`,
   );
+}
+
+if (!/^\d+\.\d+\.\d+$/.test(rustChannel)) {
+  failures.push(
+    `Rust toolchain: channel must be an exact MAJOR.MINOR.PATCH pin, received ${JSON.stringify(rustChannel)}`,
+  );
+}
+
+for (const component of ['clippy', 'rustfmt']) {
+  if (!rustComponents.includes(component)) {
+    failures.push(`Rust toolchain: missing required ${component} component`);
+  }
+}
+
+if (nativeWorkflow.includes('rustup update stable')) {
+  failures.push('Native CI workflow: must not update to an unpinned stable Rust toolchain');
+}
+
+if (!nativeWorkflow.includes('rustup show active-toolchain')) {
+  failures.push('Native CI workflow: must report the active pinned Rust toolchain');
 }
 
 const changelogHeading = `## [${packageJson.version}] - `;
