@@ -13,6 +13,26 @@ describe('milestones', () => {
     expect(item?.reached).toBe(false);
   });
 
+  it('keeps supported built-in milestones near the maximum civil year', () => {
+    const values = calculateMilestones(
+      { year: 9998, month: 1, day: 1 },
+      { year: 9999, month: 1, day: 1 },
+    );
+
+    expect(values).toEqual([
+      expect.objectContaining({ label: '1st birthday', date: { year: 9999, month: 1, day: 1 } }),
+    ]);
+  });
+
+  it('rejects a birth date after the reference date', () => {
+    expect(() =>
+      calculateMilestones(
+        { year: 2027, month: 1, day: 1 },
+        { year: 2026, month: 1, day: 1 },
+      ),
+    ).toThrow('Birth date must not be after the reference date');
+  });
+
   it('calculates a custom day milestone', () => {
     const item = calculateCustomMilestone(
       { year: 2000, month: 1, day: 1 },
@@ -44,10 +64,13 @@ describe('milestones', () => {
     expect(march.date).toEqual({ year: 2001, month: 3, day: 1 });
   });
 
-  it('rejects non-positive or fractional custom amounts', () => {
+  it('rejects non-positive, fractional, or unsafe custom amounts', () => {
     const birth = { year: 2000, month: 1, day: 1 };
     const reference = { year: 2026, month: 8, day: 19 };
     expect(() => calculateCustomMilestone(birth, reference, 0, 'days')).toThrow('positive whole number');
     expect(() => calculateCustomMilestone(birth, reference, 1.5, 'years')).toThrow('positive whole number');
+    expect(() =>
+      calculateCustomMilestone(birth, reference, Number.MAX_SAFE_INTEGER + 1, 'days'),
+    ).toThrow('positive whole number');
   });
 });
