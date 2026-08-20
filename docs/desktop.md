@@ -1,62 +1,112 @@
 # Desktop Delivery
 
-ChronoAge supports Windows, macOS, and Linux through the installable Progressive Web App and standard modern browsers. The current architecture intentionally does not ship an unsigned native wrapper.
+ChronoAge supports Windows, macOS, and Linux in two ways:
 
-See [ADR 0006](adr/0006-pwa-first-desktop-delivery.md) for the decision record.
+1. standard browser/PWA delivery; and
+2. a native Tauri 2 shell built from the same React + TypeScript frontend.
 
-## Supported desktop path
+The native implementation supersedes the earlier PWA-only delivery decision. See [ADR 0007](adr/0007-tauri-cross-platform-native-delivery.md).
 
-1. Deploy the production `dist/` bundle over HTTPS.
-2. Open ChronoAge in a browser with PWA installation support.
-3. Use the browser's install UI or the in-app **Install app** control when the browser exposes the installation prompt.
-4. Launch the installed app from the operating system like another application.
-5. Use **Settings → Check for updates** to ask the active service worker to check the deployed app shell.
-6. Apply a waiting update explicitly when ChronoAge reports one is ready.
+## Shared desktop workflow
 
-The browser remains responsible for the secure web runtime, origin identity, TLS validation, and PWA container.
+After installing the Tauri prerequisites for your host operating system:
+
+```bash
+npm install
+npm run native:info
+npm run native:dev
+```
+
+Build the native application for the current host with:
+
+```bash
+npm run native:build
+```
+
+For a compile-only validation that skips installer bundling, CI uses Tauri's `--no-bundle` option.
 
 ## Windows
 
-Chromium-based browsers can install ChronoAge as a desktop PWA. The installed experience can appear in Start/search and run in a standalone window according to browser behavior.
+Tauri uses Microsoft Edge WebView2 for rendering on Windows and requires the Microsoft C++ build toolchain for development. On supported modern Windows installations, WebView2 is commonly already present; install the Evergreen runtime if it is missing.
 
-ChronoAge does not currently publish an `.msi`, `.msix`, or `.exe` installer. If a native wrapper is introduced later, production installers should use an appropriate code-signing certificate and the release process must keep private signing material outside Git.
+Build on Windows:
+
+```powershell
+npm install
+npm run native:info
+npm run native:build
+```
+
+Tauri can produce Windows installer formats such as MSI/NSIS when configured and built on an appropriate host. Public installers should be Authenticode-signed. Keep the signing certificate/private key and password outside Git.
 
 ## macOS
 
-Use a browser/PWA installation path supported by the target macOS version. ChronoAge does not currently publish a `.dmg` or signed `.app` bundle.
+Install Xcode Command Line Tools for desktop-only development, or full Xcode when iOS development is also required.
 
-A future native wrapper must document Apple code signing, hardened runtime requirements where applicable, notarization, entitlements, and credential storage before release artifacts are advertised to users.
+```bash
+xcode-select --install
+npm install
+npm run native:info
+npm run native:build
+```
+
+Public macOS distribution should use Apple code signing and notarization. Direct distribution commonly uses an application bundle/DMG; Mac App Store distribution has additional entitlement and store requirements.
 
 ## Linux
 
-Use ChronoAge in a supported browser or install it through the browser's PWA capability. Distribution behavior differs by desktop environment and browser.
+Tauri uses WebKitGTK on Linux and requires the distribution's WebKitGTK/build dependencies. On Debian/Ubuntu-family systems, the required development packages include WebKitGTK 4.1 and the standard build dependencies documented by Tauri.
 
-ChronoAge does not currently publish AppImage, Flatpak, Snap, Debian, or RPM packages. A future native packaging decision should choose formats based on real user demand instead of multiplying unmaintained release targets.
+After installing the host packages:
 
-## Native-wrapper gate
+```bash
+npm install
+npm run native:info
+npm run native:build
+```
 
-Do not add Tauri or another native wrapper only to create more artifacts. A wrapper should be considered when at least one concrete requirement cannot be met safely and maintainably by the PWA, such as a justified native integration.
+Tauri can bundle Linux applications into formats such as AppImage, Debian packages, or RPM packages depending on the host and selected bundle target.
 
-Before adoption, document and verify:
+## Native security model
 
-- required operating-system permissions;
-- filesystem/network scope and least privilege;
-- application identifier and bundle metadata;
-- Windows/macOS signing and macOS notarization;
-- Linux packaging targets;
-- native updater trust/signature design;
-- rollback behavior;
-- release-key storage and rotation;
-- CI secret boundaries;
-- security review for every native plugin/API;
-- parity of shared date-domain tests across web and wrapped builds.
+The committed shell intentionally starts small:
 
-## Update strategy
+- `withGlobalTauri` is disabled;
+- only `core:default` is granted in `src-tauri/capabilities/default.json`;
+- there are no filesystem, shell/process, updater, notification, clipboard, or unrestricted HTTP plugins;
+- the frontend remains protected by a restrictive Content Security Policy;
+- application data remains local unless the user explicitly exports it.
 
-The current desktop update strategy is the same as the PWA strategy documented in [pwa.md](pwa.md): a new web deployment installs a new service worker, the existing app can detect a waiting worker, and the user chooses when to apply it.
+Add native plugins only for a concrete requirement and review their permission scopes before release.
 
-If a native wrapper is adopted, native binary updates must not bypass platform trust controls. The project should use the wrapper framework's maintained signed-update mechanism rather than a custom downloader/executor.
+## PWA behavior inside native builds
 
-## Release artifacts
+The browser/PWA service worker and install/update prompts are useful on the web but are not the update mechanism for installed native binaries. ChronoAge detects the Tauri runtime and disables those PWA-specific flows inside the native shell.
 
-The existing tag workflow produces the verified web build archive. Do not label that archive as a native installer. Platform-native artifacts should only be attached to releases after the corresponding native target exists, passes clean CI builds, and satisfies signing requirements.
+Native application updates must follow platform signing/trust requirements. Do not create a custom downloader/executor that bypasses platform security controls.
+
+## Build outputs and generated files
+
+Tauri native build output lives under `src-tauri/target/`. The directory is ignored by Git.
+
+Mobile-generated projects live under `src-tauri/gen/` and are also treated as generated build state. The committed sources of truth are:
+
+- `src-tauri/Cargo.toml`;
+- `src-tauri/build.rs`;
+- `src-tauri/src/`;
+- `src-tauri/tauri.conf.json`;
+- `src-tauri/capabilities/`;
+- the shared frontend source.
+
+## Release requirements
+
+Before publishing a desktop installer:
+
+1. run the normal web quality suite;
+2. compile the native shell on the target operating system;
+3. validate the packaged application on a clean machine/account;
+4. verify local persistence, import/export, printing/sharing behavior, keyboard access, scaling, and offline startup;
+5. sign/notarize the package according to platform policy;
+6. verify the signature/notarization result independently;
+7. attach only verified artifacts to the GitHub release.
+
+See [platforms.md](platforms.md), [mobile.md](mobile.md), and [release.md](release.md).
