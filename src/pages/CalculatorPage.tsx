@@ -74,8 +74,10 @@ export function CalculatorPage({
     if (!calculation.result) return;
     const result = calculation.result;
     const text = `${en.appName} ${en.result.exactAge.toLowerCase()}: ${result.years} ${en.result.years.toLowerCase()}, ${result.months} ${en.result.months.toLowerCase()}, ${result.days} ${en.result.days.toLowerCase()}${includeTime ? `, ${result.hours} ${en.result.hours.toLowerCase()}, ${result.minutes} ${en.result.minutes.toLowerCase()}` : ''}.`;
+    setStatus('');
     try {
       const mode = await shareText(en.result.exactAge, text);
+      if (mode === 'cancelled') return;
       setStatus(mode === 'copied' ? en.calculator.copied : en.calculator.shared);
     } catch {
       setStatus(en.calculator.shareUnavailable);
