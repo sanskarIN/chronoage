@@ -4,10 +4,13 @@ import {
   addYearsClamped,
   ageDifference,
   calculateAge,
+  daysInMonth,
+  formatDateInput,
   intervalDays,
   isLeapYear,
   nextBirthday,
   parseDateInput,
+  weekdayName,
   zonedLocalToUtc,
   zonedLocalToUtcCandidates,
 } from '../src/domain/dateMath';
@@ -18,6 +21,17 @@ describe('date math', () => {
     expect(isLeapYear(1900)).toBe(false);
     expect(isLeapYear(2024)).toBe(true);
     expect(isLeapYear(2025)).toBe(false);
+  });
+
+  it('rejects unsupported years in month-length calculations', () => {
+    expect(() => daysInMonth(0, 2)).toThrow('Invalid year or month');
+    expect(() => daysInMonth(10_000, 2)).toThrow('Invalid year or month');
+  });
+
+  it('rejects invalid dates before formatting or weekday normalization', () => {
+    const invalid = { year: 2026, month: 2, day: 30 };
+    expect(() => formatDateInput(invalid)).toThrow('Invalid calendar date');
+    expect(() => weekdayName(invalid)).toThrow('Invalid calendar date');
   });
 
   it('handles four-digit years below 0100 without JavaScript Date remapping', () => {
