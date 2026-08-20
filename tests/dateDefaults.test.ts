@@ -6,17 +6,17 @@ afterEach(() => {
 });
 
 describe('date input defaults', () => {
-  it('uses a valid February 28 default when twenty years before a leap day is not leap', () => {
+  it('preserves February 29 when the twenty-year target remains a leap year', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2024, 1, 29, 12, 0, 0));
 
     expect(defaultBirthInputValue()).toBe('2004-02-29');
   });
 
-  it('clamps February 29 when the twenty-year target is not a leap year', () => {
+  it('clamps February 29 across a non-leap Gregorian century target', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2048, 1, 29, 12, 0, 0));
+    vi.setSystemTime(new Date(2120, 1, 29, 12, 0, 0));
 
-    expect(defaultBirthInputValue()).toBe('2028-02-29');
+    expect(defaultBirthInputValue()).toBe('2100-02-28');
   });
 });
