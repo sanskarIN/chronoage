@@ -4,11 +4,31 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
+### Added
+- Tauri 2 native shell targeting Windows, macOS, Linux, Android, and iOS/iPadOS while reusing the existing React + TypeScript frontend and deterministic date-domain implementation.
+- Shared Rust desktop/mobile entrypoint, Tauri bundle configuration, and least-privilege `core:default` capability for the main native window.
+- Native runtime detection so browser-only PWA installation, service-worker registration, and PWA update controls are disabled inside installed Tauri applications.
+- Native build commands for desktop development/builds, Android APK/AAB development and builds, and iOS/iPadOS development and builds.
+- Reproducible native icon generation from the existing ChronoAge SVG logo for Windows, macOS, Linux, Android, and iOS assets.
+- Native CI covering Windows, macOS, and Linux compile builds plus Android debug APK and iOS simulator smoke builds.
+- Cross-platform platform matrix, mobile guide, native desktop guide, native release gates, and ADR 0007 documenting the Tauri architecture.
+- Metadata consistency checks for Tauri/Cargo versions and Native CI Node runtime pins.
+- Static security checks for the native CSP, local frontend bundle, disabled global Tauri API injection, loopback-only development URL, and minimal native capability set.
+
+### Changed
+- Desktop delivery now supports native Tauri packages in addition to the existing PWA/browser path.
+- Vite development networking honors `TAURI_DEV_HOST` for native mobile-device development while retaining the existing local web workflow.
+- Repository lint/format tooling ignores reproducibly generated Tauri mobile projects, build output, and native icon assets.
+- Native generated projects, build artifacts, and signing credentials are explicitly excluded from Git.
+- Release documentation now distinguishes source-supported native targets from signed/published installers and store artifacts.
+- Architecture and roadmap documentation now describe one shared product implementation delivered through web/PWA and native shells.
+
 ### Planned
 - Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate CI/release installs to `npm ci`.
-- Record a passing clean-checkout full quality/E2E run after reproducible dependency installation is available.
+- Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution.
+- Record passing clean-checkout full quality/E2E/native CI evidence for the final release candidate.
+- Produce and verify signed/notarized/store-ready native artifacts when platform release credentials are configured.
 - Additional locale packs after complete human translation review.
-- A native wrapper only if a concrete native-only requirement justifies its additional signing, update, permission, and security surface.
 
 ## [2.0.12] - 2026-08-19
 
