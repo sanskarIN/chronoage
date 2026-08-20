@@ -1,134 +1,231 @@
-# ChronoAge — Final 2.0.12 Work Handoff
+# ChronoAge — Current 2.0.12 Work Handoff
 
-## Current source release
+## Current source state
 
-ChronoAge is now finalized on `main` as source version **2.0.12**.
+ChronoAge is on `main` as source version **2.0.12** with a shared web/PWA application and a Tauri 2 native delivery layer.
 
 - Repository: `https://github.com/sanskarIN/chronoage`
 - Source version: `2.0.12`
 - Matching semantic tag: `v2.0.12`
-- Release date recorded in the changelog/release notes: `2026-08-19`
+- Release date recorded for 2.0.12: `2026-08-19`
 - License: MIT
-- Runtime: React + TypeScript + Vite + native service worker/PWA
+- Shared frontend/runtime: React + TypeScript + Vite
+- Native shell: Tauri 2 + Rust
 - Exact Node pin: `22.13.0`
 - Package Node engine floor: `>=22.13.0`
-- Commit identity used throughout the repository work: `Sanskar <sanskarin@outlook.in>`
+- Native application identifier: `in.sanskar.chronoage`
+- Commit identity used for repository work: `Sanskar <sanskarin@outlook.in>`
 
-The repository source version is 2.0.12, but this file does **not** claim that a `v2.0.12` GitHub tag or release artifact has been published. Tagging remains evidence-gated by the release-hardening items below.
+This file distinguishes implemented source support from external release evidence. It does **not** claim that signed native installers, App Store/Google Play submissions, or the `v2.0.12` GitHub release have been published unless those external steps have separately been verified.
 
-## Final 2.0.12 continuation completed
+## Full cross-platform support added
 
-### Canonical version metadata
+ChronoAge is no longer PWA-only at the source-architecture level.
 
-`package.json` and `src/config/project.ts` now both use `2.0.12`.
+| Platform | Browser/PWA | Native source support | Native path |
+| --- | --- | --- | --- |
+| Windows | Yes | Yes | Tauri desktop |
+| macOS | Yes | Yes | Tauri desktop |
+| Linux | Yes | Yes | Tauri desktop |
+| Android | Yes | Yes | Tauri Android APK/AAB |
+| iOS / iPadOS | Yes | Yes | Tauri iOS |
 
-The change was committed atomically so the metadata consistency gate never intentionally received a package/runtime version mismatch on `main`.
+The same TypeScript date-domain logic, React UI, storage validation, accessibility behavior, routing, and privacy model are reused across every target. There is no second calculator implementation in Rust, Kotlin, Swift, C#, or another platform-specific language.
 
-### 2.0.12 changelog publication
+## Native shell implementation
 
-`CHANGELOG.md` now contains:
+Added the committed Tauri source-of-truth under `src-tauri/`:
 
-- an empty/future-facing `Unreleased` section containing only genuinely unfinished/deferred work;
-- a dated `2.0.12` release section containing the completed profile, navigation, PWA, accessibility, reliability, security, testing, documentation, and release-hardening work;
-- the historical `1.0.0` baseline entry.
+- `src-tauri/Cargo.toml`
+- `src-tauri/build.rs`
+- `src-tauri/src/lib.rs`
+- `src-tauri/src/main.rs`
+- `src-tauri/tauri.conf.json`
+- `src-tauri/capabilities/default.json`
 
-### Dedicated release notes
+The native configuration includes:
 
-Added:
+- product name `ChronoAge`;
+- version `2.0.12`;
+- identifier `in.sanskar.chronoage`;
+- shared frontend output `../dist`;
+- desktop window defaults with a 360 px minimum width for responsive layouts;
+- Android minimum SDK 24;
+- iOS minimum system version 14.0;
+- restrictive native Content Security Policy;
+- native bundle metadata and ChronoAge icon paths.
 
-- `docs/releases/2.0.12.md`
-- `docs/releases/README.md`
+## Native runtime behavior
 
-The 2.0.12 notes distinguish the source release from a published GitHub tag/artifact and list the remaining evidence-gated release boundaries.
+Added `src/utils/platform.ts` using Tauri runtime detection rather than user-agent guessing.
 
-### Public README alignment
+When ChronoAge runs inside Tauri:
 
-`README.md` now:
+- browser service-worker registration is skipped;
+- the browser PWA installation prompt is disabled;
+- browser PWA update checks/application are disabled;
+- the native package is treated as an installed application.
 
-- shows a 2.0.12 version badge;
-- identifies `2.0.12` as the current source version;
-- links the 2.0.12 release notes;
-- uses `npm run release:check -- v2.0.12` in the release command example;
-- explicitly warns that version metadata alone does not mean the GitHub release has been published;
-- documents rejection of impossible saved-profile timestamp histories.
+When ChronoAge runs in a normal browser, the existing PWA behavior remains available.
 
-### Roadmap alignment
+This keeps browser service-worker lifecycle logic separate from native binary distribution/signing.
 
-`ROADMAP.md` now identifies `v2.0.12` as the current release line while preserving the historical v1.0/v1.1/v1.2 implementation phases.
+## Cross-platform build commands
 
-The roadmap continues to leave evidence-gated dependency/release installation and GitHub branch protection unchecked.
+The npm command surface now includes:
 
-### Release guide alignment
-
-`docs/release.md` now contains a current 2.0.12 release-candidate section and the exact matching tag `v2.0.12`.
-
-It explicitly prohibits tagging merely because package metadata changed and requires actual release evidence first.
-
-### Version-documentation invariant
-
-`scripts/check-metadata.mjs` was strengthened so a version bump cannot silently omit its release documentation.
-
-The metadata gate now requires:
-
-- package/project name consistency;
-- package/project version consistency;
-- package/project license consistency;
-- repository URL consistency;
-- homepage consistency;
-- issues URL consistency;
-- funding URL consistency;
-- primary author/business-email consistency;
-- package engine floor matching `.nvmrc`;
-- permanent CI/release `node-version` values matching `.nvmrc`;
-- a dated `## [VERSION] - ...` heading in `CHANGELOG.md`;
-- `docs/releases/VERSION.md` to exist;
-- that release-note file to identify the same ChronoAge version.
-
-### PWA cache/version invariant
-
-The service-worker cache generation is now tied directly to the app version:
-
-```text
-chronoage-2.0.12
+```bash
+npm run build:web
+npm run native:info
+npm run native:icons
+npm run native:dev
+npm run native:build
+npm run native:check
+npm run native:android:init
+npm run native:android:dev
+npm run native:android:build
+npm run native:android:apk
+npm run native:android:aab
+npm run native:ios:init
+npm run native:ios:dev
+npm run native:ios:build
 ```
 
-`npm run metadata:check` now reads `public/sw.js` and requires `CACHE_NAME` to equal:
+### Desktop
 
-```text
-chronoage-${package.json version}
-```
+`npm run native:dev` and `npm run native:build` regenerate ChronoAge platform icons from `public/logo.svg` before starting the Tauri command.
 
-A future application version bump therefore fails the quality gate if the offline cache namespace is left stale.
+Desktop native targets are:
 
-This replaces the need to remember a separate manual cache-generation counter.
+- Windows;
+- macOS;
+- Linux.
 
-### Security/PWA documentation synchronization
+### Android
 
-`SECURITY.md` now records:
+`npm run native:android:init` creates the generated Android project and then regenerates the Android icon assets from the shared ChronoAge logo.
 
-- current source version 2.0.12 without claiming an unpublished tag;
-- rejection of impossible `updatedAt < createdAt` profile histories;
-- version-bound PWA cache namespace verification through `metadata:check`.
+Android build paths include:
 
-`docs/pwa.md` now documents the same 2.0.12 cache/version relationship and adds it to manual release testing guidance.
+- debug/development build;
+- APK;
+- Android App Bundle (AAB) for store-oriented distribution.
 
-## Final data-integrity fix retained
+### iOS / iPadOS
 
-Saved-profile normalization rejects an imported/restored record when:
+`npm run native:ios:init` creates the generated Xcode project and then regenerates Apple mobile icon assets from the same logo source.
 
-```text
-updatedAt < createdAt
-```
+Native iOS/iPadOS compilation requires macOS/Xcode at build time.
 
-This is checked after ISO timestamp validation and before the record is accepted.
+## Vite mobile-device integration
 
-A focused regression test in `tests/profiles.test.ts` verifies the invalid backup is rejected and local profile state remains empty.
+`vite.config.ts` now honors `TAURI_DEV_HOST`.
 
-Persisted profile schema remains `schemaVersion: 1`; no migration is required for valid existing data.
+This allows Tauri Android/iOS development to expose the Vite development server to a physical device when required while preserving localhost-only behavior for ordinary web development.
 
-## Product feature audit
+Tauri-generated native source/build directories are excluded from Vite watch processing.
 
-The ChronoAge master-prompt product scope has been audited repeatedly against the final source tree. Implemented functionality includes the following.
+## Native branding
+
+`public/logo.svg` remains the single editable logo source.
+
+`npm run native:icons` uses the Tauri icon generator to create:
+
+- Windows icon assets;
+- macOS icon assets;
+- Linux icon assets;
+- Android project icon assets after Android initialization;
+- iOS project icon assets after iOS initialization.
+
+Generated icon output is reproducible and excluded from Git. The Tauri bundle configuration references the generated desktop icon paths.
+
+## Native security baseline
+
+ChronoAge starts with deliberately minimal native privilege.
+
+- `withGlobalTauri` is disabled.
+- `src-tauri/capabilities/default.json` is scoped to the `main` window.
+- The only default capability is `core:default`.
+- No optional filesystem plugin is enabled.
+- No shell/process execution plugin is enabled.
+- No unrestricted remote HTTP plugin is enabled.
+- No updater plugin is enabled by default.
+- No analytics/crash-reporting native service is introduced.
+- Production native packages load the local `dist/` frontend.
+- Native CSP remains restrictive.
+
+`scripts/check-security.mjs` now fails if important native invariants are weakened, including:
+
+- global Tauri API injection becoming enabled;
+- production `frontendDist` changing away from the local build;
+- native development URL changing away from the expected loopback endpoint;
+- required CSP protections being removed;
+- the default capability expanding beyond exactly `core:default`;
+- the capability losing its main-window scope.
+
+Future native plugins/permissions must be added by least privilege and documented/tested as real product requirements.
+
+## Native CI
+
+Added `.github/workflows/native.yml`.
+
+The workflow contains separate smoke-build coverage for:
+
+- Linux desktop native compile;
+- Windows desktop native compile;
+- macOS desktop native compile;
+- Android ARM64 debug APK;
+- iOS simulator.
+
+The existing web CI remains responsible for the shared product quality gates: formatting, metadata, static security, linting, TypeScript checks, tests, documentation links, web production build, bundle budgets, runtime audit, browser E2E, accessibility, offline PWA behavior, and release-candidate screenshots.
+
+A native target is not treated as a published artifact merely because source support exists. Final platform artifacts remain gated on successful hosted/target-host builds and platform release requirements.
+
+## Metadata and quality tooling expanded
+
+`scripts/check-metadata.mjs` now verifies native metadata in addition to the existing web/project invariants.
+
+It checks:
+
+- `package.json` version;
+- `src/config/project.ts` version;
+- `src-tauri/tauri.conf.json` version;
+- `src-tauri/Cargo.toml` package version;
+- Tauri product name;
+- `.nvmrc` Node pin;
+- CI Node pin;
+- Native CI Node pins;
+- release-workflow Node pin;
+- project identity/repository/funding metadata;
+- release documentation;
+- PWA cache/version relationship.
+
+Repository-wide tooling was also corrected for generated native projects:
+
+- format checking ignores `src-tauri/gen/` and `src-tauri/target/`;
+- ESLint ignores generated Tauri project/build directories;
+- `.gitignore` excludes `src-tauri/gen/`, `src-tauri/target/`, and generated native icons;
+- native signing files such as Android keystores and Apple/Windows certificate containers are excluded from Git.
+
+## Documentation completed for native delivery
+
+The following documentation now describes the implemented cross-platform architecture:
+
+- `README.md`
+- `ROADMAP.md`
+- `CHANGELOG.md`
+- `docs/platforms.md`
+- `docs/mobile.md`
+- `docs/desktop.md`
+- `docs/architecture.md`
+- `docs/release.md`
+- `docs/adr/0007-tauri-cross-platform-native-delivery.md`
+
+ADR 0007 supersedes ADR 0006 for the native-delivery decision. ADR 0006 remains historical documentation of the earlier PWA-first state.
+
+## Existing 2.0.12 product functionality retained
+
+The cross-platform work does not replace or fork the existing product features. The shared application still includes:
 
 ### Age and date calculations
 
@@ -147,227 +244,88 @@ The ChronoAge master-prompt product scope has been audited repeatedly against th
 
 ### Timezone and DST behavior
 
-- browser-supported IANA timezones through native `Intl`;
+- runtime-supported IANA timezones through native `Intl`;
 - free-form timezone entry with suggestions/validation;
 - nonexistent spring-forward local-time rejection;
 - repeated fall-back time candidate discovery;
 - explicit earlier/later repeated-time policy;
-- consistent persisted ambiguity policy across timezone-aware age calculations.
+- consistent persisted ambiguity policy across timezone-aware calculations.
 
 ### Saved profiles
 
 - local-only save/load;
-- editing;
-- deletion;
+- editing and deletion;
 - one-step delete undo;
-- exact identity/timestamp restoration;
-- restoration at original list position;
-- stale-undo expiration after replacement creation;
+- identity/timestamp restoration;
 - search/filter;
 - deterministic sorting without mutating storage order;
-- progressive 20-card rendering;
-- 100-profile capacity;
-- strict validated import/export;
-- 1 MB UTF-8 backup limit;
-- duplicate-id rejection;
-- malformed timestamp rejection;
-- reversed timestamp-history rejection;
-- corrupted-local-entry recovery;
+- progressive rendering;
+- validated import/export;
+- profile-cap enforcement;
+- malformed/duplicate/reversed-history validation;
 - blocked/quota-limited storage handling;
-- confirmation before replacing an existing collection during import;
-- direct saved-profile handoff into the Age calculator.
+- confirmation before replacement import;
+- direct profile handoff to the calculator.
 
-### Privacy and routing
+### Privacy and reliability
 
-- client-only calculations;
 - no account requirement;
-- no analytics/crash-reporting backend/cloud sync;
-- public page-only hash routes;
-- private dates/times/profile values omitted from URLs;
-- print/share results that do not add private profile names;
-- structured diagnostics redaction;
-- aggregate-only corruption logging.
-
-### PWA and offline behavior
-
-- installable web app manifest;
-- editable SVG branding source;
-- privacy-safe installed-app shortcuts;
-- install prompt UX;
-- explicit update checks;
-- waiting-worker apply action;
-- controlled `SKIP_WAITING` flow;
-- versioned release cache namespace;
-- old ChronoAge cache cleanup only;
-- navigation-only HTML offline fallback;
-- missing non-navigation assets do not receive HTML;
-- same-origin GET cache restriction;
-- desktop/mobile offline Playwright coverage.
+- no application backend;
+- no analytics/cloud sync requirement;
+- private values omitted from public route state;
+- privacy-safe structured diagnostics;
+- curated user-visible error classes;
+- root crash-recovery boundary;
+- restrictive browser/native security policy;
+- local-only persistence by default.
 
 ### Accessibility and responsive UX
 
 - keyboard-first controls;
-- visible focus states;
-- skip navigation;
-- route-change main-content focus transfer;
-- route-change document titles;
-- blocking-dialog focus containment/restoration;
-- onboarding background-shortcut isolation;
-- semantic labels and status regions;
+- focus management;
+- route titles and main-content focus transfer;
+- dialog focus containment/restoration;
+- semantic labels/status regions;
 - light/dark/system theme;
 - reduced-motion/high-contrast preferences;
-- desktop/mobile responsive navigation;
-- maintained axe WCAG A/AA automated audits;
-- release-candidate screenshot automation.
+- responsive phone/tablet/desktop layouts;
+- axe/browser accessibility regression coverage.
 
-### Reliability, security, and performance
+## Dependency/reproducibility evidence still gated
 
-- central curated user-visible error classification;
-- root React crash-recovery boundary;
-- global browser error/unhandled-rejection logging;
-- sensitive-key/email/bearer/date/time/circular/deep-object diagnostic redaction;
-- blocked browser-storage recovery;
-- stable malformed-backup messages;
-- PWA install/update promise containment;
-- restrictive CSP and no-referrer metadata;
-- static dangerous-browser-primitive scan;
-- direct runtime `console.*` rejection outside the privacy-safe logger;
-- production gzip JavaScript/CSS bundle budgets;
-- exact Node runtime pin enforcement;
-- release-tag/package-version identity gate.
+These are not hidden or falsely marked complete:
 
-### Testing and automation
+1. Generate and review a real registry-resolved `package-lock.json`.
+2. Switch permanent npm CI/release installs to `npm ci` after that lockfile is accepted.
+3. Generate and review a real `src-tauri/Cargo.lock` from a successful native dependency resolution.
+4. Record a passing clean-checkout shared quality/E2E run against the final release candidate.
+5. Record a completely green Native CI run for the final release candidate.
+6. Verify the documented `main` branch protection/ruleset in GitHub settings.
 
-- deterministic domain unit tests;
-- date invariant/property-style tests;
-- storage integration tests;
-- component/hook tests;
-- desktop Chromium E2E;
-- Pixel-class mobile Chromium E2E;
-- accessibility smoke checks;
-- axe WCAG audits;
-- offline PWA tests;
-- release-candidate screenshot tests;
-- CI;
-- CodeQL;
-- dependency review;
-- Dependabot;
-- release workflow;
-- metadata/security/docs-link/bundle-budget executable invariants.
+Lock metadata must not be hand-authored or fabricated.
 
-## Documentation audit
+## Native publication evidence still gated
 
-The final repository includes and maintains:
+Source/build support is implemented, but public release artifacts require external platform evidence:
 
-- `README.md`
-- `LICENSE`
-- `CONTRIBUTING.md`
-- `CODE_OF_CONDUCT.md`
-- `SECURITY.md`
-- `SUPPORT.md`
-- `PRIVACY.md`
-- `CHANGELOG.md`
-- `ROADMAP.md`
-- `what_changed.md`
-- `.gitignore`
-- `.editorconfig`
-- `.gitattributes`
-- `.env.example`
-- `docs/architecture.md`
-- `docs/setup.md`
-- `docs/development.md`
-- `docs/testing.md`
-- `docs/release.md`
-- `docs/troubleshooting.md`
-- `docs/accessibility.md`
-- `docs/performance.md`
-- `docs/date-semantics.md`
-- `docs/pwa.md`
-- `docs/security-headers.md`
-- `docs/internationalization.md`
-- `docs/desktop.md`
-- `docs/github.md`
-- `docs/github-maintenance.md`
-- `docs/releases/README.md`
-- `docs/releases/2.0.12.md`
-- architecture decision records under `docs/adr/`
-- source-controlled preview artwork under `docs/screenshots/`.
+- Windows installer signing and clean-machine verification;
+- macOS code signing and notarization/App Store requirements;
+- Linux package builds and clean-target testing;
+- Android release keystore/signing and Play Console submission;
+- iOS/iPadOS Apple Developer signing/provisioning and App Store Connect/TestFlight submission.
 
-## Stale verification PR retired
-
-PR #17 (`chore: verify final reproducible npm lockfile`) was created before the 2.0.12 version and release-hardening changes landed.
-
-It was closed without merge on 2026-08-19 and its body now explicitly states that it is superseded.
-
-Do not use PR #17 as release evidence for 2.0.12.
-
-## Fresh 2.0.12 verification branch
-
-The dedicated replacement branch is:
-
-```text
-chore/release-lockfile-2.0.12
-```
-
-It is created from the frozen 2.0.12 `main` handoff commit immediately after this file is committed.
-
-Its only intended branch-specific file is:
-
-```text
-.github/workflows/release-lockfile.yml
-```
-
-The workflow must remain temporary branch tooling and must not be merged into `main`.
-
-The workflow sequence is designed to run:
-
-```bash
-npm install --package-lock-only --ignore-scripts --no-fund --no-audit
-npm ci --no-fund --no-audit
-npm run check
-npm audit --omit=dev --audit-level=high
-npx playwright install --with-deps chromium
-npm run test:e2e
-git diff --exit-code -- package.json
-```
-
-If all checks succeed and the lockfile changes, the branch workflow commits only `package-lock.json` with:
-
-```text
-Sanskar <sanskarin@outlook.in>
-build: add reproducible npm lockfile
-```
-
-After successful verification, copy/rebase only the reviewed generated lockfile onto the then-current `main`; do not merge temporary branch-only workflow machinery.
-
-## Remaining evidence-gated release blockers
-
-These are the only known release-hardening blockers that remain intentionally incomplete:
-
-1. **Generate and review a real registry-resolved `package-lock.json`.**
-2. **Migrate permanent CI/release dependency installation from `npm install` to `npm ci` after the lockfile is accepted.**
-3. **Record a passing clean-checkout reproducible install + complete quality + browser E2E + accessibility + offline-PWA + bundle-budget release gate.**
-4. **Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings.**
-
-None may be marked complete without real evidence.
-
-## Intentional non-blocking deferrals
-
-These are not defects or missing 2.0.12 functionality:
-
-- Additional locale packs require complete human translation review; do not machine-fill them merely to close a roadmap checkbox.
-- Native/Tauri packaging remains deferred by ADR until a concrete native-only requirement justifies signing, updater, permissions, platform packaging, security surface, and CI-secret handling.
+Signing credentials, keystores, provisioning files, private keys, passwords, and store tokens must remain outside Git.
 
 ## Release-tag rule
 
-When—and only when—all required release gates pass, the version identity must be checked with:
+When—and only when—the required release gates pass:
 
 ```bash
 npm run metadata:check
 npm run release:check -- v2.0.12
 ```
 
-Then the matching tag is:
+The matching source tag remains:
 
 ```text
 v2.0.12
@@ -375,35 +333,42 @@ v2.0.12
 
 Do not publish a different tag for this source version.
 
-## Main commits created in this 2.0.12 continuation
+## Cross-platform commits created in this continuation
 
-Newest-to-oldest before this final handoff commit:
+The cross-platform work was intentionally split into many focused commits. Major commits include:
 
-- `e633455d` — `docs: bind PWA cache guidance to release version`
-- `73852b95` — `docs: align security model with 2.0.12 invariants`
-- `51d73d0f` — `build: bind PWA cache generation to app version`
-- `3f94da75` — `pwa: advance cache generation for 2.0.12`
-- `c6896c80` — `docs: index ChronoAge release notes`
-- `7c403911` — `build: enforce version release documentation metadata`
-- `8377d9ac` — `docs: publish ChronoAge 2.0.12 in README`
-- `6245a129` — `docs: add ChronoAge 2.0.12 release notes`
-- `9cabd2bf` — `docs: prepare release guide for v2.0.12`
-- `71abc60d` — `docs: align roadmap with ChronoAge 2.0.12`
-- `2c30d36d` — `docs: publish ChronoAge 2.0.12 changelog`
-- `8eff3b3c` — `release: set ChronoAge version to 2.0.12`
-
-The preceding final-audit commits also remain on `main`, including the saved-profile timestamp-integrity fix and its regression coverage.
-
-## Migration notes
-
-- Saved-profile persistence remains `schemaVersion: 1`.
-- Existing valid local profiles/settings remain compatible.
-- No browser-data migration is required for 2.0.12.
-- No backend/database migration exists because ChronoAge remains client-only.
-- The PWA cache namespace changes to `chronoage-2.0.12`; activation removes older `chronoage-*` caches while preserving unrelated same-origin cache namespaces.
+- `6eb8acac` — `build(native): add Tauri build script`
+- `ba3f9152` — `build(native): add Rust package metadata`
+- `8d2a1264` — `feat(native): add shared Tauri application entrypoint`
+- `8593dcb8` — `feat(desktop): add native desktop entrypoint`
+- `bf2c771f` — `security(native): add least-privilege default capability`
+- `c13da501` — `feat(native): configure cross-platform Tauri packaging`
+- `e6ed9482` — `build(native): add Tauri runtime and cross-platform scripts`
+- `a82cc2aa` — `build(native): expose Vite dev server to Tauri mobile`
+- `1480acd1` — `feat(runtime): add native versus web runtime detection`
+- `9180a0ab` — `fix(native): skip browser service worker inside native shell`
+- `f4315ef4` — `fix(native): disable PWA install and update controls in Tauri`
+- `85c481c5` — `fix(android): pass APK and AAB flags directly to Tauri`
+- `6c5d8b0e` — `chore(native): ignore build outputs and signing credentials`
+- `ab6014a1` — `docs(platforms): add complete cross-platform support matrix`
+- `e0ef31a0` — `docs(mobile): add Android and iOS build guide`
+- `b64886b9` — `docs(desktop): replace PWA-only policy with Tauri native delivery`
+- `cf190da8` — `docs(adr): adopt Tauri 2 cross-platform native architecture`
+- `091a2242` — `ci(native): add desktop Android and iOS smoke builds`
+- `5c955d5f` — `docs(release): add native cross-platform release gates`
+- `66b12275` — `test(metadata): enforce native version and runtime consistency`
+- `01675ba2` — `docs(roadmap): mark native cross-platform delivery implemented`
+- `f86fafd8` — `docs(architecture): document shared web and Tauri native architecture`
+- `21357448` — `fix(tooling): ignore generated Tauri output in format checks`
+- `9a8f4ffc` — `fix(tooling): ignore generated Tauri projects in ESLint`
+- `bfd8dc8b` — `security(native): enforce least-privilege Tauri invariants`
+- `b9ff5715` — `build(native): generate branded icons for every native build`
+- `3ad1ed56` — `build(native): configure generated ChronoAge platform icons`
+- `33b0765c` — `chore(native): ignore reproducibly generated platform icons`
+- `f06b844b` — `docs(changelog): record full cross-platform native implementation`
 
 ## Final accuracy boundary
 
-This handoff intentionally distinguishes implemented source from external release evidence.
+ChronoAge now contains first-class source/build support for web/PWA, Windows, macOS, Linux, Android, and iOS/iPadOS from one shared product codebase.
 
-Do not claim that `npm ci`, a registry-resolved lockfile, a clean full release gate, branch protection, or the `v2.0.12` GitHub release has succeeded until GitHub or another clean network-enabled environment provides actual verifiable evidence.
+Do not convert that statement into a claim that every signed installer/store artifact is already published. Distribution remains evidence-gated on real target-host builds, signing/notarization/store configuration, and final CI/release verification.
