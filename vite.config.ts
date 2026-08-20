@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   clearScreen: false,
   build: {
-    target: 'es2022',
+    target: 'es2020',
     sourcemap: true,
     cssCodeSplit: true,
     chunkSizeWarningLimit: 500,
