@@ -38,7 +38,7 @@ describe('MilestonesPage', () => {
     fireEvent.change(screen.getByLabelText('Milestone unit'), { target: { value: 'years' } });
 
     expect(screen.getAllByText('1st birthday')).toHaveLength(2);
-    expect(screen.getByText(/9999-01-01/)).toBeInTheDocument();
+    expect(screen.getAllByText(/9999-01-01/)).toHaveLength(2);
     expect(screen.queryByText(/Unable to calculate milestones/)).not.toBeInTheDocument();
   });
 });
