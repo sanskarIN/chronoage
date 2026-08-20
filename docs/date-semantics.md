@@ -20,6 +20,8 @@ Timezone fields are free-form inputs with common suggestions rather than a close
 
 Some local wall-clock times never occur during a spring-forward transition. ChronoAge verifies timezone conversion by round-tripping the requested civil fields and rejects a nonexistent time instead of silently changing the user's input.
 
+A calendar-derived anniversary anchor is different from a directly entered time. A valid birth time can map to a nonexistent local time on the same anniversary date in a later year because timezone rules change. When that happens, ChronoAge shifts only the derived anchor forward by the actual offset increase, preserving compatible civil-time semantics while keeping the user's original birth/reference inputs unchanged. The implementation derives the real gap width from the browser's timezone data, so non-one-hour transitions such as Lord Howe's 30-minute spring-forward are handled without a hard-coded assumption.
+
 ## Fall-back ambiguity
 
 A repeated local hour during a fall-back transition can refer to two distinct UTC instants. ChronoAge discovers matching instants from the browser's IANA timezone data and exposes a setting with two policies:
@@ -58,3 +60,5 @@ Inclusive interval = elapsed calendar days + 1, so both endpoints are counted.
 ## Supported civil-year range
 
 Date input validation supports years `0001` through `9999`. Calendar-year arithmetic rejects results outside that range. Domain code avoids JavaScript's historical `Date.UTC` remapping of years 0-99.
+
+Exported calendar helpers enforce the same supported range and reject malformed dates or fractional month/year arithmetic rather than relying on JavaScript date normalization.
