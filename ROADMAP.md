@@ -2,7 +2,7 @@
 
 ## Current release — v2.0.12
 
-ChronoAge `2.0.12` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, and release-hardening work described below. Remaining unchecked items are deliberately evidence-gated or intentionally deferred; they are not silently treated as complete for the `2.0.12` source tree.
+ChronoAge `2.0.12` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, release-hardening, and cross-platform native-delivery work described below. Remaining unchecked items are deliberately evidence-gated; they are not silently treated as complete for the `2.0.12` source tree.
 
 ## v1.0 — Core production PWA
 
@@ -60,23 +60,40 @@ ChronoAge `2.0.12` consolidates the completed core PWA, polish, advanced date to
 - [x] Release tag/package-version identity gate
 - [x] Pin permanent CI/release Node runtime to `.nvmrc` and enforce runtime-pin consistency
 - [x] Reject saved-profile histories whose update timestamp precedes creation
+- [x] Enforce native Tauri/Cargo version consistency and Native CI Node runtime pins in metadata checks
 - [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
 - [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
-- [ ] Execute the complete clean-checkout install/check/E2E release gate in a network-enabled environment and record the passing run
+- [ ] Generate and review `src-tauri/Cargo.lock` from a successful clean native dependency resolution
+- [ ] Execute the complete clean-checkout install/check/E2E/native release gate in a network-enabled environment and record the passing run
 - [ ] Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings
 
-The three dependency-installation items above depend on a real npm registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfile, but these items remain unchecked until the resulting dependency graph and quality runs are actually verified.
+The dependency-lock items above depend on real registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfiles, but these items remain unchecked until the resulting dependency graphs and quality runs are actually verified.
 
 `main` branch protection is a separate GitHub repository-setting task. The GitHub API reported the branch as unprotected on 2026-08-19; see [docs/github.md](docs/github.md) for the intended ruleset. Do not mark that item complete until GitHub reports an effective protection/ruleset configuration.
 
-## Desktop delivery decision
+## Cross-platform native delivery
 
-- [x] Evaluate Tauri/native wrapper in a dedicated ADR
-- [x] Document Windows/macOS/Linux delivery, signing, and packaging requirements
-- [x] Define the desktop update strategy without changing the local-first privacy model
-- [ ] Add a native wrapper only after a justified native-only requirement exists
+- [x] Adopt Tauri 2 in a dedicated architecture decision
+- [x] Add a shared native Rust entrypoint and Tauri application configuration
+- [x] Support Windows native builds
+- [x] Support macOS native builds
+- [x] Support Linux native builds
+- [x] Support Android native project generation, development, APK, and AAB builds
+- [x] Support iOS/iPadOS native project generation, development, and builds
+- [x] Keep the existing web/PWA build as a first-class delivery target
+- [x] Disable browser-only PWA install/update behavior inside the native runtime
+- [x] Start native permissions at Tauri `core:default` only
+- [x] Add Windows/macOS/Linux native compile CI
+- [x] Add Android debug APK smoke-build CI
+- [x] Add iOS simulator smoke-build CI
+- [x] Document desktop/mobile prerequisites, signing, packaging, privacy, and release boundaries
+- [ ] Record a completely green Native CI run for the final release candidate
+- [ ] Generate reviewed platform icon sets from the source logo before public store submission
+- [ ] Produce, sign, verify, and publish platform installers/store artifacts when release credentials are configured
 
-The current supported desktop delivery is the installable PWA. Native-wrapper work is intentionally deferred by [ADR 0006](docs/adr/0006-pwa-first-desktop-delivery.md), not blocked by missing implementation.
+The native-delivery architecture is defined by [ADR 0007](docs/adr/0007-tauri-cross-platform-native-delivery.md), which supersedes ADR 0006 for native-delivery policy. The product now shares one React + TypeScript frontend and deterministic date-domain implementation across web, Windows, macOS, Linux, Android, and iOS rather than maintaining separate feature implementations.
+
+A platform being source-supported does not mean a signed installer or store listing has already been published. Public native artifacts remain evidence-gated on target-host builds, signing/notarization/store configuration, and release verification.
 
 Additional locale packs are intentionally gated on complete human translation review; the English-first architecture is already externalized and documented.
 
