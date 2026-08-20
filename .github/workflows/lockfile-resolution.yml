@@ -1,0 +1,83 @@
+name: Resolve dependency lockfiles
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/lockfile-resolution.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lockfiles-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve:
+    name: Resolve and verify lockfiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Resolve npm lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit
+
+      - name: Verify npm lockfile with clean install
+        run: npm ci --ignore-scripts --no-fund --no-audit
+
+      - name: Run shared quality suite
+        run: npm run check
+
+      - name: Audit production npm dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Report pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Install Linux Tauri prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Resolve Cargo lockfile
+        run: cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+
+      - name: Verify Cargo lockfile
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml
+
+      - name: Run Rust formatting gate
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+
+      - name: Run Rust Clippy gate
+        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+
+      - name: Upload resolved lockfiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronoage-resolved-lockfiles
+          path: |
+            package-lock.json
+            src-tauri/Cargo.lock
+          if-no-files-found: error
+          retention-days: 7
