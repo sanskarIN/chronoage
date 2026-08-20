@@ -162,6 +162,38 @@ describe('date math', () => {
     ).toThrow('does not exist');
   });
 
+  it('shifts a derived anniversary anchor forward through a one-hour DST gap', () => {
+    const result = calculateAge({
+      birth: { year: 2000, month: 3, day: 8, hour: 2, minute: 30 },
+      reference: { year: 2026, month: 3, day: 8, hour: 3, minute: 30 },
+      timeZone: 'America/New_York',
+      includeTime: true,
+      leapDayPolicy: 'feb28',
+    });
+
+    expect(result.years).toBe(26);
+    expect(result.months).toBe(0);
+    expect(result.days).toBe(0);
+    expect(result.hours).toBe(0);
+    expect(result.minutes).toBe(0);
+  });
+
+  it('uses the actual thirty-minute gap for derived Lord Howe anniversary anchors', () => {
+    const result = calculateAge({
+      birth: { year: 2000, month: 10, day: 4, hour: 2, minute: 15 },
+      reference: { year: 2026, month: 10, day: 4, hour: 2, minute: 45 },
+      timeZone: 'Australia/Lord_Howe',
+      includeTime: true,
+      leapDayPolicy: 'feb28',
+    });
+
+    expect(result.years).toBe(26);
+    expect(result.months).toBe(0);
+    expect(result.days).toBe(0);
+    expect(result.hours).toBe(0);
+    expect(result.minutes).toBe(0);
+  });
+
   it('counts exclusive and inclusive intervals', () => {
     const start = parseDateInput('2026-08-19');
     const end = parseDateInput('2026-08-20');
