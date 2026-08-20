@@ -20,6 +20,7 @@ const checkedExtensions = new Set([
   '.json',
   '.css',
   '.md',
+  '.toml',
   '.yml',
   '.yaml',
   '.html',
