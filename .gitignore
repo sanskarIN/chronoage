@@ -13,9 +13,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Tauri native build outputs and generated mobile projects
+# Tauri native build outputs and reproducibly generated platform assets
 src-tauri/target/
 src-tauri/gen/
+src-tauri/icons/
 
 # Native signing credentials must never be committed
 *.jks
