@@ -15,9 +15,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.13.0
       - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
       - name: Generate release checksum
         run: sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz" > "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
       - name: Stage verified release package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chronoage-release-package
           path: |
@@ -55,7 +55,7 @@ jobs:
       contents: write
     steps:
       - name: Download verified release package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: chronoage-release-package
       - name: Create GitHub Release
