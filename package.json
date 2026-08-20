@@ -44,8 +44,8 @@
     "native:android:init": "tauri android init --ci",
     "native:android:dev": "tauri android dev",
     "native:android:build": "tauri android build",
-    "native:android:apk": "tauri android build -- --apk",
-    "native:android:aab": "tauri android build -- --aab",
+    "native:android:apk": "tauri android build --apk",
+    "native:android:aab": "tauri android build --aab",
     "native:ios:init": "tauri ios init --ci",
     "native:ios:dev": "tauri ios dev",
     "native:ios:build": "tauri ios build"
