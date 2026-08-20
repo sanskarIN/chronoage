@@ -52,6 +52,25 @@ describe('CalculatorPage', () => {
     expect(screen.getByLabelText('Timezone')).toHaveAttribute('aria-invalid', 'true');
   });
 
+  it('ignores invalid hidden clock and timezone drafts after time precision is disabled', () => {
+    render(<CalculatorPage settings={{ ...DEFAULT_SETTINGS, defaultTimeZone: 'UTC' }} />);
+
+    fireEvent.change(screen.getByLabelText('Birth date'), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByLabelText('Reference date'), { target: { value: '2026-01-01' } });
+    const includeTime = screen.getByRole('checkbox', { name: 'Include time of day' });
+    fireEvent.click(includeTime);
+    fireEvent.change(screen.getByLabelText('Timezone'), { target: { value: 'Not/AZone' } });
+    fireEvent.change(screen.getByLabelText('Birth time'), { target: { value: '' } });
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+
+    fireEvent.click(includeTime);
+
+    expect(screen.queryByLabelText('Timezone')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('26 years old')).toBeInTheDocument();
+  });
+
   it('reports a nonexistent local wall-clock time instead of normalizing it', () => {
     render(
       <CalculatorPage
