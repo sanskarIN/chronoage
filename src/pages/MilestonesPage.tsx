@@ -22,21 +22,34 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
     try {
       const birth = parseDateInput(birthDate);
       const reference = parseDateInput(referenceDate);
-      return {
-        milestones: calculateMilestones(birth, reference, settings.leapDayPolicy),
-        custom: calculateCustomMilestone(
-          birth,
-          reference,
-          Number(customAmount),
-          customUnit,
-          settings.leapDayPolicy,
-        ),
-        error: '',
-      };
+      const milestones = calculateMilestones(birth, reference, settings.leapDayPolicy);
+
+      try {
+        return {
+          milestones,
+          custom: calculateCustomMilestone(
+            birth,
+            reference,
+            Number(customAmount),
+            customUnit,
+            settings.leapDayPolicy,
+          ),
+          customError: '',
+          error: '',
+        };
+      } catch (error) {
+        return {
+          milestones,
+          custom: null,
+          customError: getUserSafeErrorMessage(error, en.milestones.unable),
+          error: '',
+        };
+      }
     } catch (error) {
       return {
         milestones: [],
         custom: null,
+        customError: '',
         error: getUserSafeErrorMessage(error, en.milestones.unable),
       };
     }
@@ -56,12 +69,14 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
             type="date"
             value={birthDate}
             onChange={(event) => setBirthDate(event.target.value)}
+            max="9999-12-31"
           />
           <Field
             label={en.milestones.asOf}
             type="date"
             value={referenceDate}
             onChange={(event) => setReferenceDate(event.target.value)}
+            max="9999-12-31"
           />
         </div>
       </section>
@@ -103,6 +118,11 @@ export function MilestonesPage({ settings }: { settings: AppSettings }): React.J
             <p>
               {value.custom.weekday} · {formatDateInput(value.custom.date)}
             </p>
+          </div>
+        )}
+        {value.customError && (
+          <div className="alert error" role="alert">
+            {value.customError}
           </div>
         )}
       </section>
