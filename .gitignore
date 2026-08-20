@@ -12,3 +12,14 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Tauri native build outputs and generated mobile projects
+src-tauri/target/
+src-tauri/gen/
+
+# Native signing credentials must never be committed
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.mobileprovision
