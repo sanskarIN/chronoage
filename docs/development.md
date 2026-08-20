@@ -34,6 +34,8 @@ npm run native:check
 
 `npm run native:format:check` verifies Rust formatting with `rustfmt`. `npm run native:lint` runs Clippy across all native targets/features and treats warnings as failures. `npm run native:check` regenerates native icons, checks Rust formatting, performs `cargo check`, and runs Clippy.
 
+For the complete native quality, dependency-pin, CI, and lockfile policy, read [Native Quality and Reproducibility](native-quality.md).
+
 ## Native Rust toolchain
 
 The native shell uses the exact Rust toolchain declared in the repository-root `rust-toolchain.toml`. The pin also installs `rustfmt` and Clippy so local development and CI use the same native quality tools.
@@ -41,12 +43,13 @@ The native shell uses the exact Rust toolchain declared in the repository-root `
 Do not add `rustup update stable` to permanent CI. That would make an unchanged commit compile against different Rust versions over time and would weaken reproducibility. To intentionally upgrade Rust:
 
 1. Change the exact `channel` in `rust-toolchain.toml` after reviewing the Rust release notes.
-2. Run `rustup show active-toolchain` from the repository root and confirm it resolves to the intended version.
-3. Run `npm run native:check` on a supported desktop host.
-4. Run the complete Native CI matrix for Windows, macOS, Linux, Android, and iOS simulator targets.
-5. Record the toolchain change in `CHANGELOG.md` when it affects release engineering or compatibility.
+2. Keep `rust-version` in `src-tauri/Cargo.toml` synchronized with the same exact version.
+3. Run `rustup show active-toolchain` from the repository root and confirm it resolves to the intended version.
+4. Run `npm run native:check` on a supported desktop host.
+5. Run the complete Native CI matrix for Windows, macOS, Linux, Android, and iOS simulator targets.
+6. Record the toolchain change in `CHANGELOG.md` when it affects release engineering or compatibility.
 
-The repository metadata check rejects non-exact Rust channels, missing `rustfmt`/Clippy components, and Native CI that reintroduces an unpinned stable update.
+The repository metadata check rejects non-exact Rust channels, Cargo/toolchain Rust-version drift, non-exact direct Tauri crate versions, missing `rustfmt`/Clippy components, missing Cargo Dependabot coverage, and Native CI that reintroduces an unpinned stable update.
 
 ## Adding a domain feature
 
