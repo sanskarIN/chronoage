@@ -41,10 +41,25 @@ function workflowNodeVersions(source) {
   return [...source.matchAll(/node-version:\s*["']?([^\s"']+)/g)].map((match) => match[1]);
 }
 
-function readCargoPackageVersion(source) {
-  const packageSection = source.match(/\[package\]([\s\S]*?)(?:\n\[|$)/)?.[1];
-  const version = packageSection?.match(/^version\s*=\s*["']([^"']+)["']/m)?.[1];
-  if (!version) throw new Error('Unable to read [package] version from src-tauri/Cargo.toml.');
+function readCargoSection(source, section) {
+  return source.match(new RegExp(`\\[${section.replaceAll('-', '\\-')}\\]([\\s\\S]*?)(?:\\n\\[|$)`))?.[1];
+}
+
+function readCargoPackageString(source, key) {
+  const packageSection = readCargoSection(source, 'package');
+  const value = packageSection?.match(new RegExp(`^${key}\\s*=\\s*["']([^"']+)["']`, 'm'))?.[1];
+  if (!value) throw new Error(`Unable to read [package] ${key} from src-tauri/Cargo.toml.`);
+  return value;
+}
+
+function readCargoDependencyVersion(source, section, dependency) {
+  const dependencySection = readCargoSection(source, section);
+  const escapedDependency = dependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const line = dependencySection?.match(new RegExp(`^${escapedDependency}\\s*=\\s*\\{([^}]*)\\}`, 'm'))?.[1];
+  const version = line?.match(/\bversion\s*=\s*["']([^"']+)["']/)?.[1];
+  if (!version) {
+    throw new Error(`Unable to read [${section}] ${dependency} version from src-tauri/Cargo.toml.`);
+  }
   return version;
 }
 
@@ -65,7 +80,10 @@ const projectVersion = readProjectString('version');
 const projectLicense = readProjectString('license');
 const repositoryUrl = readProjectString('repositoryUrl');
 const fundingUrl = readProjectString('fundingUrl');
-const cargoVersion = readCargoPackageVersion(cargoToml);
+const cargoVersion = readCargoPackageString(cargoToml, 'version');
+const cargoRustVersion = readCargoPackageString(cargoToml, 'rust-version');
+const tauriCrateVersion = readCargoDependencyVersion(cargoToml, 'dependencies', 'tauri');
+const tauriBuildVersion = readCargoDependencyVersion(cargoToml, 'build-dependencies', 'tauri-build');
 const rustChannel = readRustToolchainChannel(rustToolchain);
 const rustComponents = readRustToolchainComponents(rustToolchain);
 
@@ -80,6 +98,7 @@ const checks = [
   ['node engine', packageJson.engines?.node, `>=${nodeVersion}`],
   ['Tauri version', tauriConfig.version, packageJson.version],
   ['Cargo package version', cargoVersion, packageJson.version],
+  ['Cargo rust-version', cargoRustVersion, rustChannel],
 ];
 
 const failures = checks
@@ -99,6 +118,17 @@ if (!/^\d+\.\d+\.\d+$/.test(rustChannel)) {
   failures.push(
     `Rust toolchain: channel must be an exact MAJOR.MINOR.PATCH pin, received ${JSON.stringify(rustChannel)}`,
   );
+}
+
+for (const [label, version] of [
+  ['tauri', tauriCrateVersion],
+  ['tauri-build', tauriBuildVersion],
+]) {
+  if (!/^=\d+\.\d+\.\d+$/.test(version)) {
+    failures.push(
+      `Cargo dependency ${label}: version must use an exact =MAJOR.MINOR.PATCH pin, received ${JSON.stringify(version)}`,
+    );
+  }
 }
 
 for (const component of ['clippy', 'rustfmt']) {
