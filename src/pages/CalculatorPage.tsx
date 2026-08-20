@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   calculateAge,
+  DateCalculationError,
   isValidTimeZone,
   nextBirthday,
   parseDateInput,
@@ -16,6 +17,10 @@ import { ResultCard } from '../components/ResultCard';
 import { TimeZoneField } from '../components/TimeZoneField';
 import { en } from '../i18n/en';
 import { sharedText } from '../i18n/shared';
+
+function isBirthdayRangeOverflow(error: unknown): boolean {
+  return error instanceof DateCalculationError && error.message.includes('outside the supported range');
+}
 
 export function CalculatorPage({
   settings,
@@ -47,9 +52,17 @@ export function CalculatorPage({
         leapDayPolicy: settings.leapDayPolicy,
         dstAmbiguityPolicy: settings.dstAmbiguityPolicy,
       });
+
+      let birthday;
+      try {
+        birthday = nextBirthday(birth, reference, settings.leapDayPolicy);
+      } catch (error) {
+        if (!isBirthdayRangeOverflow(error)) throw error;
+      }
+
       return {
         result,
-        birthday: nextBirthday(birth, reference, settings.leapDayPolicy),
+        birthday,
         error: '',
       };
     } catch (error) {
