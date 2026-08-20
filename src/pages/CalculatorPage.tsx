@@ -37,12 +37,12 @@ export function CalculatorPage({
     try {
       const birth = parseDateInput(birthDate);
       const reference = parseDateInput(referenceDate);
-      const birthClock = parseTimeInput(birthTime);
-      const referenceClock = parseTimeInput(referenceTime);
+      const birthClock = includeTime ? parseTimeInput(birthTime) : { hour: 0, minute: 0 };
+      const referenceClock = includeTime ? parseTimeInput(referenceTime) : { hour: 0, minute: 0 };
       const result = calculateAge({
         birth: { ...birth, ...birthClock },
         reference: { ...reference, ...referenceClock },
-        timeZone,
+        timeZone: includeTime ? timeZone : 'UTC',
         includeTime,
         leapDayPolicy: settings.leapDayPolicy,
         dstAmbiguityPolicy: settings.dstAmbiguityPolicy,
