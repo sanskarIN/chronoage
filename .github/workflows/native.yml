@@ -1,0 +1,126 @@
+name: Native CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - '.github/workflows/native.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - '.github/workflows/native.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: Desktop compile (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Install frontend dependencies
+        run: npm install --no-fund --no-audit
+      - name: Update Rust stable toolchain
+        run: rustup update stable
+      - name: Install Linux Tauri prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      - name: Compile native application without installer bundling
+        run: npm run native:build -- --no-bundle --ci
+
+  android:
+    name: Android debug APK smoke build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install frontend dependencies
+        run: npm install --no-fund --no-audit
+      - name: Update Rust stable toolchain
+        run: rustup update stable
+      - name: Select hosted Android NDK
+        shell: bash
+        run: |
+          if [ -n "${ANDROID_NDK_LATEST_HOME:-}" ]; then
+            echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          elif [ -n "${ANDROID_NDK_HOME:-}" ]; then
+            echo "NDK_HOME=$ANDROID_NDK_HOME" >> "$GITHUB_ENV"
+          fi
+      - name: Initialize generated Android project
+        run: npm run native:android:init
+      - name: Build unsigned debug APK for ARM64
+        run: npm run native:android:build -- --debug --apk --ci -t aarch64
+
+  ios:
+    name: iOS simulator smoke build
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Install frontend dependencies
+        run: npm install --no-fund --no-audit
+      - name: Update Rust stable toolchain
+        run: rustup update stable
+      - name: Verify CocoaPods
+        run: pod --version
+      - name: Initialize generated iOS project
+        run: npm run native:ios:init
+      - name: Build simulator target without distribution signing
+        shell: bash
+        run: |
+          if [ "$(uname -m)" = "arm64" ]; then
+            TARGET="aarch64-sim"
+          else
+            TARGET="x86_64"
+          fi
+          npm run native:ios:build -- --debug --ci -t "$TARGET"
