@@ -13,30 +13,59 @@ const YEAR_MILESTONES = [1, 5, 10, 13, 16, 18, 21, 25, 30, 40, 50, 60, 75, 100];
 
 export type CustomMilestoneUnit = 'days' | 'years';
 
+function isRangeOverflow(error: unknown): boolean {
+  return error instanceof DateCalculationError && error.message.includes('outside the supported range');
+}
+
+function assertMilestoneDates(birth: LocalDate, reference: LocalDate): void {
+  if (!isValidLocalDate(birth) || !isValidLocalDate(reference)) {
+    throw new DateCalculationError('Enter valid milestone dates.');
+  }
+  if (compareLocalDate(birth, reference) > 0) {
+    throw new DateCalculationError('Birth date must not be after the reference date.');
+  }
+}
+
 export function calculateMilestones(
   birth: LocalDate,
   reference: LocalDate,
   leapDayPolicy: LeapDayPolicy = 'feb28',
   locale = 'en-US',
 ): Milestone[] {
-  const byDays = DAY_MILESTONES.map((days) => {
-    const date = addDays(birth, days);
-    return {
-      label: `${days.toLocaleString(locale)} days`,
-      date,
-      weekday: weekdayName(date, locale),
-      reached: compareLocalDate(date, reference) <= 0,
-    };
+  assertMilestoneDates(birth, reference);
+
+  const byDays = DAY_MILESTONES.flatMap((days): Milestone[] => {
+    try {
+      const date = addDays(birth, days);
+      return [
+        {
+          label: `${days.toLocaleString(locale)} days`,
+          date,
+          weekday: weekdayName(date, locale),
+          reached: compareLocalDate(date, reference) <= 0,
+        },
+      ];
+    } catch (error) {
+      if (isRangeOverflow(error)) return [];
+      throw error;
+    }
   });
 
-  const byYears = YEAR_MILESTONES.map((years) => {
-    const date = addYearsClamped(birth, years, leapDayPolicy);
-    return {
-      label: `${years}${ordinalSuffix(years)} birthday`,
-      date,
-      weekday: weekdayName(date, locale),
-      reached: compareLocalDate(date, reference) <= 0,
-    };
+  const byYears = YEAR_MILESTONES.flatMap((years): Milestone[] => {
+    try {
+      const date = addYearsClamped(birth, years, leapDayPolicy);
+      return [
+        {
+          label: `${years}${ordinalSuffix(years)} birthday`,
+          date,
+          weekday: weekdayName(date, locale),
+          reached: compareLocalDate(date, reference) <= 0,
+        },
+      ];
+    } catch (error) {
+      if (isRangeOverflow(error)) return [];
+      throw error;
+    }
   });
 
   return [...byDays, ...byYears].sort((a, b) => compareLocalDate(a.date, b.date));
@@ -50,12 +79,10 @@ export function calculateCustomMilestone(
   leapDayPolicy: LeapDayPolicy = 'feb28',
   locale = 'en-US',
 ): Milestone {
-  if (!Number.isInteger(amount) || amount < 1) {
+  if (!Number.isSafeInteger(amount) || amount < 1) {
     throw new DateCalculationError('Milestone amount must be a positive whole number.');
   }
-  if (!isValidLocalDate(birth) || !isValidLocalDate(reference)) {
-    throw new DateCalculationError('Enter valid milestone dates.');
-  }
+  assertMilestoneDates(birth, reference);
 
   const date = unit === 'days' ? addDays(birth, amount) : addYearsClamped(birth, amount, leapDayPolicy);
   if (!isValidLocalDate(date)) {
