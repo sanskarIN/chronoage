@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  addMonthsClamped,
   addYearsClamped,
   ageDifference,
   calculateAge,
@@ -45,6 +46,18 @@ describe('date math', () => {
     const leapDay = { year: 2000, month: 2, day: 29 };
     expect(addYearsClamped(leapDay, 1, 'feb28')).toEqual({ year: 2001, month: 2, day: 28 });
     expect(addYearsClamped(leapDay, 1, 'mar1')).toEqual({ year: 2001, month: 3, day: 1 });
+  });
+
+  it('rejects invalid and fractional calendar arithmetic inputs', () => {
+    const invalid = { year: 2026, month: 4, day: 31 };
+    expect(() => addYearsClamped(invalid, 1)).toThrow('Invalid calendar date');
+    expect(() => addMonthsClamped(invalid, 1)).toThrow('Invalid calendar date');
+    expect(() => addYearsClamped({ year: 2026, month: 4, day: 30 }, 1.5)).toThrow(
+      'Years must be an integer',
+    );
+    expect(() => addMonthsClamped({ year: 2026, month: 4, day: 30 }, 1.5)).toThrow(
+      'Months must be an integer',
+    );
   });
 
   it('keeps the month component below twelve before a March 1 leap-day anniversary', () => {
