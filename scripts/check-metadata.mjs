@@ -145,6 +145,10 @@ if (!nativeWorkflow.includes('rustup show active-toolchain')) {
   failures.push('Native CI workflow: must report the active pinned Rust toolchain');
 }
 
+if (!nativeWorkflow.includes("'package-lock.json'")) {
+  failures.push('Native CI workflow: package-lock.json changes must trigger native verification');
+}
+
 const cargoDependabotBlock = dependabotConfig.match(
   /-\s+package-ecosystem:\s*["']?cargo["']?([\s\S]*?)(?=\n\s*-\s+package-ecosystem:|$)/,
 )?.[1];
@@ -152,6 +156,31 @@ if (!cargoDependabotBlock) {
   failures.push('Dependabot: missing Cargo dependency update configuration');
 } else if (!/^\s*directory:\s*["']?\/src-tauri["']?\s*$/m.test(cargoDependabotBlock)) {
   failures.push('Dependabot: Cargo dependency updates must target /src-tauri');
+}
+
+const expectedReleaseScripts = {
+  'release:locks:check': 'node scripts/check-lockfiles.mjs --all',
+  'release:npm-lock:check': 'node scripts/check-lockfiles.mjs --npm',
+  'release:cargo-lock:check': 'node scripts/check-lockfiles.mjs --cargo',
+};
+for (const [script, expected] of Object.entries(expectedReleaseScripts)) {
+  if (packageJson.scripts?.[script] !== expected) {
+    failures.push(
+      `package scripts: ${script}=${JSON.stringify(packageJson.scripts?.[script])} expected=${JSON.stringify(expected)}`,
+    );
+  }
+}
+
+if (!releaseWorkflow.includes('npm run release:npm-lock:check')) {
+  failures.push('Release workflow: must verify the npm lockfile before installing dependencies');
+}
+
+if (!releaseWorkflow.includes('npm ci --no-fund --no-audit')) {
+  failures.push('Release workflow: must install dependencies reproducibly with npm ci');
+}
+
+if (/\brun:\s*npm install\b/.test(releaseWorkflow)) {
+  failures.push('Release workflow: npm install is forbidden after the release lockfile gate');
 }
 
 const changelogHeading = `## [${packageJson.version}] - `;
@@ -207,6 +236,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Project metadata, native versions, dependency monitoring, release documentation, PWA cache version, and runtime pins are consistent.',
+    'Project metadata, native versions, dependency monitoring, release reproducibility policy, release documentation, PWA cache version, and runtime pins are consistent.',
   );
 }
