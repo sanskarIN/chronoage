@@ -25,12 +25,17 @@ npm run build
 npm run performance:check
 npm run test:e2e
 npm run check
+npm run release:npm-lock:check
+npm run release:cargo-lock:check
+npm run release:locks:check
 npm run native:format:check
 npm run native:lint
 npm run native:check
 ```
 
 `npm run performance:check` expects an existing `dist/` build and enforces the documented gzip budgets for first-party JavaScript and CSS.
+
+The release lockfile commands validate committed npm/Cargo lockfile identity and consistency. They intentionally fail while a required lockfile is absent rather than inventing dependency state. For generation, review, `npm ci`, locked Cargo, deterministic archive, and evidence requirements, read [Reproducible Builds and Lockfiles](reproducible-builds.md).
 
 `npm run native:format:check` verifies Rust formatting with `rustfmt`. `npm run native:lint` runs Clippy across all native targets/features and treats warnings as failures. `npm run native:check` regenerates native icons, checks Rust formatting, performs `cargo check`, and runs Clippy.
 
