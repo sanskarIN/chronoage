@@ -73,9 +73,21 @@ The logger is defense in depth, not permission to log personal data. Callers sho
 
 The documented target configuration for `main` includes required automated checks and force-push/deletion protection. GitHub's branch API reported `main` as unprotected on 2026-08-19, so repository ruleset/protection remains an explicit release-hardening task rather than a completed security claim. See `docs/github.md` and `ROADMAP.md`.
 
-## Native desktop boundary
+## Native application boundary
 
-ChronoAge currently uses PWA installation for Windows, macOS, and Linux rather than shipping an unsigned native wrapper. Any future native wrapper must receive a separate permissions, signing, updater, and CI-secret review before release. See `docs/adr/0006-pwa-first-desktop-delivery.md`.
+ChronoAge now includes a Tauri 2 native shell for Windows, macOS, Linux, Android, and iOS/iPadOS while reusing the shared React + TypeScript product implementation. Browser-only PWA installation, service-worker registration, and browser update controls are disabled when the official Tauri runtime detector reports an installed native runtime.
+
+The committed native baseline intentionally remains narrow:
+
+- the main capability grants only `core:default`;
+- global Tauri API injection is disabled;
+- the frontend is built locally rather than loaded from a production remote origin;
+- native Content Security Policy and loopback-only development URL invariants are checked by `npm run security:check`;
+- generated Android/iOS projects, signing material, credentials, and native build output are excluded from Git;
+- direct Tauri Rust dependencies and the repository Rust toolchain are exact-pinned and checked by `npm run metadata:check`;
+- native formatting, compile, and Clippy checks are available through `npm run native:check` and run in Native CI where applicable.
+
+Source support is not equivalent to a signed, notarized, or store-published binary. Any change that adds Tauri plugins, widens capabilities, enables remote content, introduces an updater, changes deep-link/file-system/network permissions, or adds release secrets must receive a fresh native threat and permissions review before release. See `docs/native-quality.md`, `docs/native-desktop.md`, `docs/mobile.md`, and `docs/native-release-gates.md`.
 
 ## Disclosure
 
