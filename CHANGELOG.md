@@ -14,6 +14,9 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Cross-platform platform matrix, mobile guide, native desktop guide, native release gates, and ADR 0007 documenting the Tauri architecture.
 - Metadata consistency checks for Tauri/Cargo versions and Native CI Node runtime pins.
 - Static security checks for the native CSP, local frontend bundle, disabled global Tauri API injection, loopback-only development URL, and minimal native capability set.
+- npm/Cargo release lockfile preflight commands with regression coverage for missing, inconsistent, and malformed release dependency state.
+- A dedicated static release-workflow policy check covering lockfile-only release installation, deterministic packaging, checksums, and verify-before-publish ordering.
+- Reproducible-build documentation covering real lockfile generation/review, `npm ci`, Cargo `--locked`, deterministic archives, and release-candidate evidence.
 
 ### Changed
 - Desktop delivery now supports native Tauri packages in addition to the existing PWA/browser path.
@@ -22,10 +25,17 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Native generated projects, build artifacts, and signing credentials are explicitly excluded from Git.
 - Release documentation now distinguishes source-supported native targets from signed/published installers and store artifacts.
 - Architecture and roadmap documentation now describe one shared product implementation delivered through web/PWA and native shells.
+- Tag-triggered web releases now fail before installation when the npm lockfile is absent/inconsistent and use `npm ci` rather than resolving dependencies with `npm install`.
+- Web release archives now normalize entry ordering, timestamps, ownership, and gzip metadata before generating their SHA-256 checksum.
+- Native CI now reruns when `package-lock.json` changes because native builds consume the shared frontend dependency graph.
+- Native security documentation now describes the implemented Tauri 2 capability/runtime boundary instead of the superseded future-wrapper model.
+
+### Fixed
+- The lockfile preflight no longer lets `--all` mask an unknown command-line target.
 
 ### Planned
-- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate CI/release installs to `npm ci`.
-- Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution.
+- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate the remaining push/PR/native frontend installs to `npm ci`.
+- Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution, then use locked Cargo resolution in release/native verification.
 - Record passing clean-checkout full quality/E2E/native CI evidence for the final release candidate.
 - Produce and verify signed/notarized/store-ready native artifacts when platform release credentials are configured.
 - Additional locale packs after complete human translation review.
