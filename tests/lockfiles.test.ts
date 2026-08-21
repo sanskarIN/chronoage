@@ -148,4 +148,13 @@ describe('release lockfile preflight', () => {
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('Unknown lockfile target --unknown');
   });
+
+  it('does not let --all mask an unknown target', async () => {
+    const root = await createFixture();
+
+    const result = runPreflight(root, '--all', '--unknown');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('Unknown lockfile target --unknown');
+  });
 });
