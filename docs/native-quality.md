@@ -58,6 +58,8 @@ The repository-wide text-format checker also covers `.toml` files so line ending
 
 The Linux desktop job additionally runs the Rust formatting and Clippy quality gates before compiling the native application. All native jobs verify the pinned Rust toolchain before their platform-specific work. Android and iOS install only the extra Rust target required for that job.
 
+Changes to `package-lock.json` trigger Native CI because every native build also consumes the shared frontend dependency graph. Changes under `src-tauri/**`, including a future `src-tauri/Cargo.lock`, already trigger Native CI through the native path filter.
+
 A source-supported target is not considered a published target merely because its CI job exists. Signed installers, notarized packages, store artifacts, release credentials, and clean-device verification remain separate release evidence.
 
 ## Dependency monitoring
@@ -83,9 +85,19 @@ This protects the boundary that keeps browser-only PWA service-worker/install/up
 
 ChronoAge intentionally does not contain a hand-authored or guessed `package-lock.json` or `src-tauri/Cargo.lock`.
 
-Those files must be produced by real package-manager resolution in a network-enabled clean checkout, reviewed, and validated before they are committed. After a valid npm lockfile exists, permanent npm CI/release installation should move from `npm install` to `npm ci`. After a valid Cargo lockfile exists, native dependency resolution should be reviewed from that lockfile as part of release preparation.
+Those files must be produced by real package-manager resolution in a network-enabled clean checkout, reviewed, and validated before they are committed. The repository now exposes:
 
-Do not mark either lockfile roadmap item complete based only on direct version pins.
+```bash
+npm run release:npm-lock:check
+npm run release:cargo-lock:check
+npm run release:locks:check
+```
+
+The tag-triggered web release workflow already requires the npm lockfile preflight and then installs with `npm ci`; until `package-lock.json` is genuinely generated and committed, a release tag therefore fails safely before dependency installation instead of resolving an unpinned graph.
+
+Normal push/PR CI and native frontend installation still use `npm install` until the genuine npm lockfile exists. After that checkpoint, those permanent installs should migrate to `npm ci`. After a genuine Cargo lockfile exists, release/native verification should use Cargo's `--locked` mode where dependency resolution must not drift.
+
+Do not mark either lockfile roadmap item complete based only on direct version pins or on the presence of the preflight script. See [Reproducible Builds and Lockfiles](reproducible-builds.md) for generation, review, deterministic packaging, and evidence procedures.
 
 ## Rust upgrade procedure
 
@@ -118,6 +130,8 @@ The following items remain evidence-gated and must not be inferred from source q
 
 - a reviewed npm lockfile from genuine registry resolution;
 - a reviewed Cargo lockfile from genuine registry resolution;
+- migration of permanent push/PR/native frontend dependency installs to `npm ci` after the npm lockfile is committed;
+- locked Cargo release/native resolution after the Cargo lockfile is committed;
 - a completely green clean-checkout shared quality/E2E run for the release candidate;
 - a completely green Native CI matrix for the release candidate;
 - effective `main` branch protection/ruleset verification;
