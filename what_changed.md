@@ -1,6 +1,6 @@
 # ChronoAge — Current Work Handoff
 
-## Current source state
+## Current version and milestone
 
 ChronoAge remains source version **2.0.12** on `main`.
 
@@ -8,316 +8,298 @@ ChronoAge remains source version **2.0.12** on `main`.
 - Shared product runtime: React + TypeScript + Vite
 - Native delivery: Tauri 2 + Rust
 - Supported source targets: Web/PWA, Windows, macOS, Linux, Android, iOS/iPadOS
-- Exact Node pin: `22.13.0`
+- Exact Node pin used by permanent workflows: `22.13.0`
 - Exact Rust pin: `1.97.1`
 - Native identifier: `in.sanskar.chronoage`
 - License: MIT
-- Implementation checkpoint before this handoff refresh: `83aff9e0d0821c46ad9ef90ea22debd5597a561f`
+- Implementation checkpoint before this handoff refresh: `09b27d0ea56a8fa4c328410e7c0eeaa423dbc477`
+- Current milestone: release reproducibility and evidence hardening
 
-This handoff reports implemented repository state only. It does **not** claim green hosted CI, signed installers, notarization, mobile-store publication, or protected-branch enforcement unless those items have separately been verified.
+This file reports implemented and directly checked repository state only. It does **not** claim green hosted CI, signed installers, notarization, store publication, real dependency lockfiles, or protected-branch enforcement unless those items have separately been verified.
 
-## Continuation completed on 2026-08-20
+## Continuation completed on 2026-08-21
 
-This continuation added **20 focused implementation/documentation commits** after the previous cross-platform checkpoint, followed by handoff-maintenance commits.
+This continuation added **16 focused implementation/test/documentation commits** after the prior checkpoint, followed by this handoff-maintenance commit.
 
-### Native reproducibility and Rust quality
+The work intentionally stayed on release-quality hardening because the remaining highest-value blockers are reproducibility/evidence items rather than duplicate cross-platform feature code.
 
-Added repository-root `rust-toolchain.toml` with:
+## Release lockfile preflight
 
-```toml
-[toolchain]
-channel = "1.97.1"
-profile = "minimal"
-components = ["clippy", "rustfmt"]
-```
-
-`src-tauri/Cargo.toml` now declares the same Rust requirement:
-
-```toml
-rust-version = "1.97.1"
-```
-
-The direct native Tauri dependencies are exact-pinned:
-
-```toml
-tauri-build = { version = "=2.6.3", features = [] }
-tauri = { version = "=2.11.5", features = [] }
-```
-
-This reduces direct native dependency drift while the real Cargo lockfile remains pending. It does not pretend to replace transitive dependency locking.
-
-### Native developer quality commands
-
-`package.json` now includes:
+Added `scripts/check-lockfiles.mjs` and three package commands:
 
 ```bash
-npm run native:format:check
-npm run native:lint
-npm run native:check
+npm run release:npm-lock:check
+npm run release:cargo-lock:check
+npm run release:locks:check
 ```
 
-- `native:format:check` runs Rust formatting verification.
-- `native:lint` runs Clippy across native targets/features and denies warnings.
-- `native:check` regenerates icons, verifies Rust formatting, performs `cargo check`, and runs Clippy.
+The npm preflight verifies:
 
-Repository text-format checking now includes `.toml` files as well.
+- `package-lock.json` exists and parses as JSON;
+- lockfile format version is the expected current npm format;
+- root name/version match `package.json`;
+- root dependency specifications exactly match `package.json` dependencies and devDependencies.
 
-### Native CI hardening
+The Cargo preflight verifies:
 
-`.github/workflows/native.yml` no longer runs `rustup update stable`.
+- `src-tauri/Cargo.lock` exists;
+- Cargo's generated-file header is present;
+- the lockfile uses a supported modern format;
+- the native root package name/version from `src-tauri/Cargo.toml` is present.
 
-Every native job now reports the active pinned repository toolchain with:
+The checker deliberately fails while a required real lockfile is absent. It does not generate, guess, or hand-author dependency state.
+
+A CLI edge case was also fixed: `--all` can no longer mask an unknown option such as `--unknown`.
+
+## Lockfile regression coverage
+
+Added `tests/lockfiles.test.ts`.
+
+Coverage includes:
+
+- valid npm lockfile acceptance;
+- missing npm lockfile rejection;
+- npm root dependency drift rejection;
+- valid Cargo lockfile acceptance;
+- missing Cargo lockfile rejection;
+- default all-lockfile checking;
+- unknown target rejection;
+- unknown target rejection even when combined with `--all`.
+
+The tests execute a copied preflight script inside isolated temporary fixture repositories so the repository does not need real lockfiles merely to test the validator logic.
+
+## Tag release dependency hardening
+
+`.github/workflows/release.yml` now fails before dependency installation unless the npm lockfile preflight succeeds.
+
+Release dependency installation is now:
 
 ```bash
-rustup show active-toolchain
+npm ci --no-fund --no-audit
 ```
 
-The Linux desktop job additionally runs:
+The tag workflow no longer falls back to `npm install`. Because a real `package-lock.json` is still absent, this means release tags fail safely rather than resolving an unpinned dependency graph.
 
-- native icon generation;
-- `cargo fmt --check` through the npm helper;
-- Clippy with warnings denied;
-- native compile/build verification.
+Normal push/PR and native frontend CI still use `npm install` until the genuine npm lockfile has been generated, reviewed, and committed. That remaining migration is explicitly open.
 
-The existing platform smoke-build matrix remains:
+## Deterministic web release packaging
 
-- Linux desktop;
-- Windows desktop;
-- macOS desktop;
-- Android ARM64 debug APK;
-- iOS simulator.
+The release archive is no longer created with one opaque `tar -czf` step.
 
-### Native dependency monitoring
+The workflow now:
 
-`.github/dependabot.yml` now monitors Cargo dependencies under `/src-tauri` in addition to npm and GitHub Actions.
+- sorts archive entries by name;
+- normalizes archive timestamps to the tagged commit timestamp;
+- normalizes owner/group to numeric `0`;
+- creates the tar archive separately;
+- compresses with `gzip -n` to remove filename/timestamp gzip metadata;
+- generates the existing SHA-256 checksum after deterministic packaging.
 
-`scripts/check-metadata.mjs` now fails if:
+This improves repeatability of the final web archive when `dist/` content is identical.
 
-- the Rust toolchain is not an exact `MAJOR.MINOR.PATCH` pin;
-- `rustfmt` or Clippy is removed from the toolchain components;
-- `Cargo.toml` and `rust-toolchain.toml` disagree about the Rust version;
-- direct `tauri` or `tauri-build` dependencies stop using exact Cargo pins;
-- Native CI reintroduces `rustup update stable`;
-- Native CI stops reporting its active toolchain;
-- Cargo Dependabot coverage is removed or no longer targets `/src-tauri`.
+## Static release workflow policy gate
 
-### Native runtime regression coverage
+Added `scripts/check-release-workflow.mjs` and:
 
-Added `tests/platform.test.ts`.
+```bash
+npm run release:workflow:check
+```
 
-It verifies both runtime states by mocking Tauri's official detector:
+The command is now part of `npm run check`.
 
-- Tauri runtime -> native=true, web=false;
-- normal browser runtime -> native=false, web=true.
+It prevents accidental removal/reordering of release safeguards by checking for:
 
-This protects the boundary that prevents browser-only PWA install/service-worker/update behavior from running inside installed Tauri applications.
+- npm lockfile preflight;
+- `npm ci` release installation;
+- absence of release `npm install` fallback;
+- deterministic tar ordering/timestamp/ownership flags;
+- explicit `gzip -n`;
+- SHA-256 checksum generation;
+- verified-tag release creation;
+- verify-before-publish job ordering/dependency.
 
-## Date-domain correctness improvements
+The existing metadata checker also enforces the release npm lockfile gate, `npm ci`, release script identities, Cargo monitoring, and Native CI lockfile-trigger behavior.
 
-### Exported helper validation
+## Native CI lockfile trigger
 
-Exported calendar helpers now enforce the same domain invariants as the UI/storage boundaries.
+`.github/workflows/native.yml` now explicitly reruns when `package-lock.json` changes because every native target consumes the shared frontend dependency graph.
 
-The following cases are rejected rather than silently normalized:
+`src-tauri/**` was already part of the path filter, so a future real `src-tauri/Cargo.lock` automatically triggers Native CI as well.
 
-- `daysInMonth` years outside `0001` through `9999`;
-- invalid dates passed to `formatDateInput`;
-- invalid dates passed to `weekdayName`;
-- invalid dates passed to `addYearsClamped`;
-- invalid dates passed to `addMonthsClamped`;
-- fractional year arithmetic;
-- fractional month arithmetic.
+Native builds intentionally have **not** been changed to Cargo `--locked` yet because the genuine Cargo lockfile is still absent.
 
-Regression tests were added for each of these boundary classes.
-
-### Derived anniversary DST-gap bug fixed
-
-A valid birth/reference pair could previously fail when its **derived calendar anniversary anchor** landed inside a spring-forward gap that did not exist in the birth year.
-
-Example class:
-
-- valid birth local time in an earlier year;
-- same date/time in a later anniversary year falls inside a DST gap;
-- valid reference time exists after the gap;
-- old behavior could throw while resolving the derived anchor.
-
-The date-domain implementation now distinguishes two cases:
-
-1. **User-entered nonexistent local time** — still rejected. ChronoAge does not silently rewrite the user's birth/reference input.
-2. **Internally derived anniversary anchor in a gap** — shifted forward by the actual timezone offset increase using the browser's IANA data.
-
-The gap is not hard-coded to one hour.
-
-New regressions cover:
-
-- a one-hour `America/New_York` spring-forward gap;
-- the real 30-minute `Australia/Lord_Howe` spring-forward gap.
-
-This behavior is documented in `docs/date-semantics.md`.
-
-## Documentation added/updated
+## Documentation corrections and additions
 
 Added:
 
-- `docs/native-quality.md` — native toolchain, exact dependency pins, CI quality gates, Dependabot, lockfile boundary, upgrade procedure, and release-evidence rules.
+- `docs/reproducible-builds.md` — real npm/Cargo lockfile generation/review, preflight commands, `npm ci`, Cargo `--locked`, deterministic web packaging, native release boundary, and release-candidate evidence.
 
 Updated:
 
-- `docs/development.md` — native quality commands, synchronized Rust pins, metadata enforcement, and link to the dedicated native quality guide.
-- `docs/date-semantics.md` — derived DST-gap semantics and exported-helper validation rules.
-- `what_changed.md` — this current handoff.
+- `docs/development.md` — lockfile commands and reproducible-build guide link;
+- `docs/native-quality.md` — current release lockfile gate, future push/PR/native `npm ci` migration, future Cargo `--locked` migration, and Native CI lockfile trigger behavior;
+- `SECURITY.md` — replaced the stale “future native wrapper” security section with the actually implemented Tauri 2 desktop/mobile capability/runtime boundary;
+- `CHANGELOG.md` — recorded lockfile preflight, release policy checking, deterministic packaging, native lockfile triggers, documentation correction, and the remaining migration plan;
+- `what_changed.md` — this handoff.
 
-## Focused commits in this continuation
+## Changed files/modules in this continuation
 
-1. `build(rust): pin native toolchain to 1.97.1`
-2. `build(native): add rust format and clippy quality scripts`
-3. `test(metadata): enforce exact rust toolchain pin`
-4. `ci(native): use pinned rust and enforce format clippy`
-5. `chore(deps): add cargo dependabot coverage`
-6. `test(runtime): cover tauri and web platform detection`
-7. `docs(dev): document pinned rust quality workflow`
-8. `test(metadata): require cargo dependency monitoring`
-9. `build(rust): declare exact minimum rust version`
-10. `build(rust): pin direct tauri crate versions exactly`
-11. `test(metadata): enforce cargo rust and dependency pins`
-12. `test(format): include rust toml configuration files`
-13. `docs(native): add quality and reproducibility guide`
-14. `docs(dev): link native quality policy and synchronized pins`
-15. `fix(date): validate exported calendar helper boundaries`
-16. `test(date): cover helper validation boundaries`
-17. `test(date): cover arithmetic input hardening`
-18. `fix(date): resolve derived age anchors across timezone gaps`
-19. `test(date): cover derived timezone gap anchors`
-20. `docs(date): define derived anniversary gap semantics`
+- `scripts/check-lockfiles.mjs`
+- `scripts/check-release-workflow.mjs`
+- `scripts/check-metadata.mjs`
+- `tests/lockfiles.test.ts`
+- `package.json`
+- `.github/workflows/release.yml`
+- `.github/workflows/native.yml`
+- `docs/reproducible-builds.md`
+- `docs/development.md`
+- `docs/native-quality.md`
+- `SECURITY.md`
+- `CHANGELOG.md`
+- `what_changed.md`
 
-The handoff-maintenance commits come after this implementation checkpoint and intentionally are not self-referenced by SHA inside this file.
+## Verification performed
 
-## Existing cross-platform architecture retained
+### Repository verification
 
-ChronoAge continues to use one shared product implementation rather than separate calculator engines per platform.
+Verified through GitHub after the implementation commits:
 
-| Platform | Browser/PWA | Native source support | Delivery path |
-| --- | --- | --- | --- |
-| Windows | Yes | Yes | Tauri desktop |
-| macOS | Yes | Yes | Tauri desktop |
-| Linux | Yes | Yes | Tauri desktop |
-| Android | Yes | Yes | Tauri Android APK/AAB |
-| iOS / iPadOS | Yes | Yes | Tauri iOS |
+- all repository writes succeeded on `main`;
+- `main` pointed at `09b27d0ea56a8fa4c328410e7c0eeaa423dbc477` before this handoff refresh;
+- the latest implementation commit was authored/committed with `sanskarin@outlook.in`;
+- `main` is still reported as `protected: false`;
+- required status-check enforcement is still reported as off;
+- combined commit status for the implementation checkpoint returned no statuses through the available status API.
 
-The shared TypeScript domain remains authoritative for age/date calculations, timezone behavior, storage validation, routing, privacy, and accessible UI behavior.
+The available connected GitHub surface still does not provide an action here to configure branch protection/rulesets.
 
-## Existing product functionality retained
+### Local static/synthetic verification
 
-### Age/date tools
+The execution environment could not resolve `github.com` for a clean clone and therefore could not perform real registry-backed npm/Cargo dependency resolution. No fake lockfile was committed.
 
-- exact calendar years/months/days;
-- optional time-of-day precision;
-- elapsed day/hour/minute totals;
-- next birthday date/weekday/countdown;
-- age difference;
-- inclusive/exclusive intervals;
-- Gregorian leap-year handling;
-- configurable February 29 policy;
-- built-in and custom milestones;
-- calendar-duration comparison visualization;
-- civil-year range `0001` through `9999`.
+Independent local checks were still run for the new dependency-free release tooling:
 
-### Timezone/DST
+1. `node --check` succeeded for `scripts/check-release-workflow.mjs` in an isolated fixture.
+2. Executing that policy checker against the current release workflow fixture succeeded with:
 
-- runtime-supported IANA timezones via `Intl`;
-- free-form timezone entry with suggestions/validation;
-- direct spring-forward gap rejection;
-- fall-back overlap candidate discovery;
-- earlier/later overlap policy;
-- derived-anniversary compatible forward resolution across timezone gaps.
+   `Release workflow preserves lockfile-only installation, deterministic packaging, checksum generation, and verify-before-publish policy.`
 
-### Local-first data and privacy
+3. `node --check` succeeded for `scripts/check-lockfiles.mjs` in an isolated fixture.
+4. Running the lockfile checker with `--all --unknown` returned exit code `2` and the expected unknown-target error.
+5. Running the lockfile checker against valid synthetic npm and Cargo fixture lockfiles succeeded for both targets.
 
-- saved profiles stored locally;
-- editing/deletion/undo;
-- validated import/export;
-- bounded profile collection/rendering;
-- privacy-safe runtime logging/redaction;
-- no analytics requirement for core functionality;
-- least-privilege native capability baseline.
-
-### Accessibility/PWA
-
-- keyboard/focus handling for modal flows;
-- route focus/title management;
-- Playwright accessibility audits in the existing web quality suite;
-- service-worker offline behavior;
-- controlled install/update lifecycle;
-- responsive desktop/mobile web UI.
-
-## Evidence checked during this continuation
-
-### Verified
-
-- Repository writes succeeded on `main`.
-- Current head and commit sequence were re-read from GitHub after the changes.
-- `main` branch metadata was read through GitHub.
-- `main` is currently reported as **unprotected** and required status checks are reported as **off**.
-- The connected GitHub surface did not expose a branch-protection/ruleset write action.
-- The connected GitHub surface did not expose a workflow-dispatch/listing action suitable for proving the new direct-push CI runs.
-- Combined commit status for the continuation head returned no statuses through the available status API.
+Synthetic fixtures were used only to exercise validation logic. They are not dependency-resolution evidence and were not committed as project lockfiles.
 
 ### Not claimed
 
 This continuation does **not** claim that:
 
-- the new web CI run is green;
-- the new Native CI matrix is green;
-- `main` branch protection has been enabled;
-- a real npm lockfile has been generated;
-- a real Cargo lockfile has been generated;
-- signed/notarized/store-ready artifacts have been produced.
+- the current hosted CI run is green;
+- the hosted Native CI matrix is green;
+- `npm test`, `npm run check`, or Playwright completed in a genuine dependency-installed clean checkout during this execution;
+- a real npm lockfile exists;
+- a real Cargo lockfile exists;
+- branch protection is enabled;
+- commits are cryptographically signed;
+- signed/notarized/store-ready artifacts exist.
 
-## Remaining release-quality blockers
+## Known limitations and open release blockers
 
 ### 1. Real npm lockfile
 
-A genuine `package-lock.json` still needs to be generated from a successful network-enabled clean dependency resolution, reviewed, and committed. After that, permanent CI/release installation should move from `npm install` to `npm ci`.
+`package-lock.json` is still absent.
 
-Do **not** hand-author or guess this file.
+Generate it only from successful npm resolution with the pinned Node toolchain, review it, run `npm run release:npm-lock:check`, prove `npm ci` works from a clean dependency directory, and commit the generated file.
 
-### 2. Real Cargo lockfile
+Do **not** hand-author it.
 
-A genuine `src-tauri/Cargo.lock` still needs to be generated from a successful native Cargo dependency resolution, reviewed, and committed.
+### 2. Remaining npm CI migration
 
-Exact direct dependency pins reduce drift but do not replace this lockfile.
+The tag release workflow is already lockfile-gated and uses `npm ci`.
 
-Do **not** hand-author or guess this file.
+Permanent push/PR CI and Native CI frontend installation still use `npm install`. Migrate those to `npm ci` only after the genuine npm lockfile is committed and verified.
 
-### 3. Hosted release-candidate evidence
+### 3. Real Cargo lockfile
 
-Record a clean-checkout passing run for:
+`src-tauri/Cargo.lock` is still absent and was rechecked during this continuation.
+
+Generate it with the pinned Rust/Cargo toolchain, review it, run `npm run release:cargo-lock:check`, then use Cargo `--locked` in release/native verification where resolution drift must be forbidden.
+
+Do **not** hand-author it.
+
+### 4. Hosted release-candidate evidence
+
+A real network-enabled clean checkout still needs recorded passing evidence for:
 
 ```bash
+npm run release:locks:check
 npm run check
 npm run test:e2e
 npm run native:check
 ```
 
-and the full hosted Native CI matrix.
+and the complete hosted Native CI matrix.
 
-### 4. Protect `main`
+### 5. Protect `main`
 
-GitHub currently reports `main` as unprotected. Configure an effective branch protection rule/ruleset that requires the project's release-quality status checks before merge and prevents accidental direct release-breaking changes.
+GitHub still reports `main` as unprotected and required status-check enforcement as off. Configure an effective ruleset/branch protection policy that requires the project release-quality checks and prevents accidental force-push/deletion/release-breaking direct changes.
 
-### 5. Signed platform artifacts
+### 6. Signed platform artifacts
 
-Complete platform-specific signing/notarization/store requirements only after credentials and release accounts are available. Source support is not equivalent to published binaries.
+Complete Windows/macOS/Linux packaging validation, macOS notarization where applicable, Android signing/store bundle requirements, and iOS provisioning/signing/store requirements only when release accounts and credentials are available.
 
-## Next safe continuation point
+## Exact next continuation tasks
 
-The best next work is evidence/release hardening rather than adding duplicate cross-platform code:
+1. In a network-enabled clean checkout using Node `22.13.0`, generate the real `package-lock.json` with npm and review the full dependency/integrity diff.
+2. Run `npm run release:npm-lock:check`, delete/recreate dependencies with `npm ci`, then run `npm run check` and `npm run test:e2e`.
+3. Commit the real npm lockfile.
+4. Migrate push/PR CI and Native CI frontend installs from `npm install` to `npm ci`, then enforce that migration with static policy checks.
+5. With Rust `1.97.1`, generate and review `src-tauri/Cargo.lock` using real Cargo resolution.
+6. Run `npm run release:cargo-lock:check`, add locked Cargo verification, and run the full Native CI matrix.
+7. Record hosted release-candidate evidence for the exact commit.
+8. Enable and verify effective `main` branch protection/rulesets.
+9. Proceed to signing/notarization/store artifacts only after the reproducibility/evidence gates above are green.
 
-1. generate and review the real npm lockfile in a network-enabled clean checkout;
-2. migrate npm CI/release installs to `npm ci` only after that lockfile exists;
-3. generate and review the real Cargo lockfile;
-4. run/record the complete web and native release-candidate checks;
-5. enable and verify effective `main` branch protection/rulesets;
-6. then proceed to signed platform release artifacts when credentials are available.
+## Migration notes
 
-Until those external/evidence steps are completed, keep them explicitly open rather than marking them done from source inspection alone.
+There is no runtime/user-data migration in this continuation.
+
+Release-engineering behavior changed:
+
+- release tags now require a valid npm lockfile before dependency installation;
+- release tags install with `npm ci`;
+- the final web archive is packaged with normalized deterministic metadata;
+- `npm run check` now includes the static release-workflow policy checker;
+- Native CI reacts to future npm lockfile changes.
+
+Contributors preparing a release should read `docs/reproducible-builds.md` before creating a tag.
+
+## Release-notes draft
+
+- Added explicit npm/Cargo lockfile preflight tooling and regression coverage.
+- Hardened tag releases to require the npm lockfile and install through `npm ci`.
+- Made web release archives deterministic and retained SHA-256 verification.
+- Added a static release-workflow policy gate to the normal quality suite.
+- Corrected native security documentation to the implemented Tauri 2 architecture.
+- Added complete reproducible-build and lockfile generation/review documentation.
+
+## Focused commits in this continuation
+
+1. `64ba45dc` — `build(release): add lockfile reproducibility preflight`
+2. `74c55086` — `build(release): expose lockfile preflight commands`
+3. `c3852d36` — `ci(release): require npm lockfile and use npm ci`
+4. `0317b2eb` — `ci(native): trigger verification on lockfile changes`
+5. `938980a6` — `test(release): cover lockfile reproducibility preflight`
+6. `867dd138` — `test(metadata): enforce release reproducibility safeguards`
+7. `3cdc4e88` — `ci(release): make web archive deterministic`
+8. `de5e32fc` — `docs(security): correct implemented native security boundary`
+9. `d7178588` — `docs(release): add reproducible build and lockfile guide`
+10. `c81e90b7` — `docs(dev): link reproducible release workflow`
+11. `33f5fa45` — `docs(native): align lockfile policy with release gate`
+12. `bf40edb2` — `test(release): add static release workflow policy check`
+13. `c9394913` — `build(check): enforce release workflow policy`
+14. `e41959b1` — `fix(release): reject unknown lockfile flags with all target`
+15. `ac382f82` — `test(release): cover all-target unknown flag rejection`
+16. `09b27d0e` — `docs(changelog): record release reproducibility hardening`
+
+The handoff-maintenance commit comes after the implementation checkpoint and is intentionally not self-referenced by SHA inside this file.
