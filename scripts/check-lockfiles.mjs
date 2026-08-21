@@ -5,15 +5,15 @@ const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'ut
 
 function selectedTargets(args) {
   const explicit = new Set(args.filter((arg) => arg.startsWith('--')));
-  if (explicit.size === 0 || explicit.has('--all')) return new Set(['npm', 'cargo']);
+  const allowed = new Set(['--all', '--npm', '--cargo']);
 
-  const allowed = new Set(['--npm', '--cargo']);
   for (const arg of explicit) {
     if (!allowed.has(arg)) {
       throw new Error(`Unknown lockfile target ${arg}. Use --npm, --cargo, or --all.`);
     }
   }
 
+  if (explicit.size === 0 || explicit.has('--all')) return new Set(['npm', 'cargo']);
   return new Set([...explicit].map((arg) => arg.slice(2)));
 }
 
