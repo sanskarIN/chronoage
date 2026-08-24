@@ -1,10 +1,14 @@
 # ChronoAge — Current Work Handoff
 
-## Current version and milestone
+## Current version and release-preparation state
 
-ChronoAge remains source version **2.0.12** on `main`.
+ChronoAge is being prepared as **2.0.13** on branch `release/v2.0.13-prep` in open PR **#21**.
 
 - Repository: `https://github.com/sanskarIN/chronoage`
+- Base branch: `main`
+- Base checkpoint: `b69a88904d3c324662b662fad7c1c19bd026643c`
+- Release-preparation implementation checkpoint before this handoff refresh: `8f2c919e392e8121da54f11b8e889574bb0a4c5b`
+- Source/runtime/native version: `2.0.13`
 - Shared product runtime: React + TypeScript + Vite
 - Native delivery: Tauri 2 + Rust
 - Supported source targets: Web/PWA, Windows, macOS, Linux, Android, iOS/iPadOS
@@ -12,224 +16,228 @@ ChronoAge remains source version **2.0.12** on `main`.
 - Exact Rust pin: `1.97.1`
 - Native identifier: `in.sanskar.chronoage`
 - License: MIT
-- Implementation checkpoint before this handoff refresh: `09b27d0ea56a8fa4c328410e7c0eeaa423dbc477`
-- Current milestone: release reproducibility and evidence hardening
 
-This file reports implemented and directly checked repository state only. It does **not** claim green hosted CI, signed installers, notarization, store publication, real dependency lockfiles, or protected-branch enforcement unless those items have separately been verified.
+This handoff reports implemented repository state and directly observed workflow state only. It does **not** claim green hosted CI, reviewed real dependency lockfiles, a published `v2.0.13` release, signed installers, notarization, store publication, or effective `main` branch protection unless those items are separately verified.
 
-## Continuation completed on 2026-08-21
+## Continuation completed on 2026-08-24
 
-This continuation added **16 focused implementation/test/documentation commits** after the prior checkpoint, followed by this handoff-maintenance commit.
+This continuation created a dedicated release-preparation branch and PR instead of making a release-breaking dependency migration directly on `main`.
 
-The work intentionally stayed on release-quality hardening because the remaining highest-value blockers are reproducibility/evidence items rather than duplicate cross-platform feature code.
+PR #21 is intentionally not merged yet. The permanent CI/native changes now fail closed when required lockfiles are absent, so merging before genuine registry-generated lockfiles exist would break verification on `main`.
 
-## Release lockfile preflight
+## 2.0.13 release identity preparation
 
-Added `scripts/check-lockfiles.mjs` and three package commands:
+The following release identity was advanced from 2.0.12 to 2.0.13:
 
-```bash
-npm run release:npm-lock:check
-npm run release:cargo-lock:check
-npm run release:locks:check
-```
+- `package.json`
+- `src/config/project.ts`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+- `public/sw.js` cache generation
+- `README.md` version badge/current-version/release link/release-check example
+- `ROADMAP.md` current release-candidate heading
+- `CHANGELOG.md`
+- `docs/releases/2.0.13.md`
 
-The npm preflight verifies:
+The runtime, package, native crate, Tauri bundle, and PWA cache versions are therefore aligned for the release candidate.
 
-- `package-lock.json` exists and parses as JSON;
-- lockfile format version is the expected current npm format;
-- root name/version match `package.json`;
-- root dependency specifications exactly match `package.json` dependencies and devDependencies.
+## Genuine lockfile bootstrap workflow
 
-The Cargo preflight verifies:
+Added `.github/workflows/dependency-lock-bootstrap.yml` to the release-preparation PR.
 
-- `src-tauri/Cargo.lock` exists;
-- Cargo's generated-file header is present;
-- the lockfile uses a supported modern format;
-- the native root package name/version from `src-tauri/Cargo.toml` is present.
+The bootstrap is deliberately limited to same-repository pull requests and uses GitHub-hosted infrastructure so dependency state comes from real registry resolution rather than hand-authored content.
 
-The checker deliberately fails while a required real lockfile is absent. It does not generate, guess, or hand-author dependency state.
+It is designed to:
 
-A CLI edge case was also fixed: `--all` can no longer mask an unknown option such as `--unknown`.
+1. check out the pull-request branch;
+2. use Node `22.13.0`;
+3. generate `package-lock.json` through npm registry resolution;
+4. validate it with `npm run release:npm-lock:check`;
+5. prove `npm ci --ignore-scripts --no-fund --no-audit` can consume it;
+6. install/use Rust `1.97.1` with `clippy` and `rustfmt`;
+7. generate `src-tauri/Cargo.lock` through Cargo registry resolution;
+8. validate it with `npm run release:cargo-lock:check`;
+9. prove Cargo can read the graph with `--locked`;
+10. commit only the generated lockfiles back to the PR branch using `sanskarin@outlook.in`.
 
-## Lockfile regression coverage
+The bootstrap workflow no longer has a concurrency cancellation rule, because repeated release-preparation commits had caused earlier queued bootstrap attempts to be cancelled before execution.
 
-Added `tests/lockfiles.test.ts`.
+### Current hosted bootstrap evidence
 
-Coverage includes:
+At the latest direct check during this continuation, bootstrap workflow run `32732374771` remained **queued**.
 
-- valid npm lockfile acceptance;
-- missing npm lockfile rejection;
-- npm root dependency drift rejection;
-- valid Cargo lockfile acceptance;
-- missing Cargo lockfile rejection;
-- default all-lockfile checking;
-- unknown target rejection;
-- unknown target rejection even when combined with `--all`.
+A queued workflow is not passing evidence. Therefore this handoff does **not** claim that `package-lock.json` or `src-tauri/Cargo.lock` has been generated or reviewed.
 
-The tests execute a copied preflight script inside isolated temporary fixture repositories so the repository does not need real lockfiles merely to test the validator logic.
+## Permanent npm CI migration staged
 
-## Tag release dependency hardening
-
-`.github/workflows/release.yml` now fails before dependency installation unless the npm lockfile preflight succeeds.
-
-Release dependency installation is now:
+`.github/workflows/ci.yml` is staged to use:
 
 ```bash
 npm ci --no-fund --no-audit
 ```
 
-The tag workflow no longer falls back to `npm install`. Because a real `package-lock.json` is still absent, this means release tags fail safely rather than resolving an unpinned dependency graph.
+for both:
 
-Normal push/PR and native frontend CI still use `npm install` until the genuine npm lockfile has been generated, reviewed, and committed. That remaining migration is explicitly open.
+- the format/lint/types/tests/build quality job;
+- the Playwright E2E job.
 
-## Deterministic web release packaging
+`.github/workflows/native.yml` is staged to use the same lockfile-only npm install for:
 
-The release archive is no longer created with one opaque `tar -czf` step.
+- Windows/macOS/Linux desktop jobs;
+- Android smoke build;
+- iOS simulator smoke build.
 
-The workflow now:
+This migration is source-complete on the release-preparation branch but is not yet operationally proven because the real npm lockfile is still evidence-gated.
 
-- sorts archive entries by name;
-- normalizes archive timestamps to the tagged commit timestamp;
-- normalizes owner/group to numeric `0`;
-- creates the tar archive separately;
-- compresses with `gzip -n` to remove filename/timestamp gzip metadata;
-- generates the existing SHA-256 checksum after deterministic packaging.
+## Locked Cargo verification staged
 
-This improves repeatability of the final web archive when `dist/` content is identical.
-
-## Static release workflow policy gate
-
-Added `scripts/check-release-workflow.mjs` and:
+Added package command:
 
 ```bash
-npm run release:workflow:check
+npm run native:lock:check
 ```
 
-The command is now part of `npm run check`.
+which executes Cargo metadata with `--locked`.
 
-It prevents accidental removal/reordering of release safeguards by checking for:
+Native quality commands were hardened so:
 
-- npm lockfile preflight;
-- `npm ci` release installation;
-- absence of release `npm install` fallback;
-- deterministic tar ordering/timestamp/ownership flags;
-- explicit `gzip -n`;
-- SHA-256 checksum generation;
-- verified-tag release creation;
-- verify-before-publish job ordering/dependency.
+- `native:lint` uses `cargo clippy --locked`;
+- `native:check` runs the Cargo lockfile preflight;
+- `native:check` verifies locked Cargo metadata;
+- `native:check` runs `cargo check --locked`;
+- every Native CI job verifies the Cargo lockfile and locked Cargo metadata before platform-specific build work.
 
-The existing metadata checker also enforces the release npm lockfile gate, `npm ci`, release script identities, Cargo monitoring, and Native CI lockfile-trigger behavior.
+This is also fail-closed: the jobs are expected to fail if a genuine `src-tauri/Cargo.lock` is absent or stale.
 
-## Native CI lockfile trigger
+## CI reproducibility regression gate
 
-`.github/workflows/native.yml` now explicitly reruns when `package-lock.json` changes because every native target consumes the shared frontend dependency graph.
+Added `scripts/check-ci-reproducibility.mjs` and package command:
 
-`src-tauri/**` was already part of the path filter, so a future real `src-tauri/Cargo.lock` automatically triggers Native CI as well.
+```bash
+npm run ci:reproducibility:check
+```
 
-Native builds intentionally have **not** been changed to Cargo `--locked` yet because the genuine Cargo lockfile is still absent.
+The command is included in `npm run check`.
 
-## Documentation corrections and additions
+It prevents accidental regression by enforcing:
 
-Added:
+- no `npm install` dependency step in permanent CI, Native CI, or release verification;
+- at least two lockfile-only npm installs in normal CI;
+- at least three lockfile-only npm installs in Native CI;
+- lockfile-only installation in release verification;
+- Cargo lockfile preflight in every Native CI target;
+- locked Cargo metadata verification in every Native CI target;
+- exact identity of the `native:lock:check` package command;
+- `--locked` Clippy behavior;
+- Cargo lockfile/metadata/locked-check behavior in `native:check`.
 
-- `docs/reproducible-builds.md` — real npm/Cargo lockfile generation/review, preflight commands, `npm ci`, Cargo `--locked`, deterministic web packaging, native release boundary, and release-candidate evidence.
+Added `tests/ciReproducibility.test.ts` covering:
 
-Updated:
+- acceptance of the correct locked workflow shape;
+- rejection of `npm install` in permanent CI;
+- rejection of native lint without Cargo `--locked`;
+- rejection when Native CI loses locked Cargo metadata checks.
 
-- `docs/development.md` — lockfile commands and reproducible-build guide link;
-- `docs/native-quality.md` — current release lockfile gate, future push/PR/native `npm ci` migration, future Cargo `--locked` migration, and Native CI lockfile trigger behavior;
-- `SECURITY.md` — replaced the stale “future native wrapper” security section with the actually implemented Tauri 2 desktop/mobile capability/runtime boundary;
-- `CHANGELOG.md` — recorded lockfile preflight, release policy checking, deterministic packaging, native lockfile triggers, documentation correction, and the remaining migration plan;
-- `what_changed.md` — this handoff.
+A dependency-free local fixture run also confirmed the policy script parses and accepts a valid synthetic permanent-workflow shape. This is static/synthetic evidence only, not hosted project CI evidence.
 
-## Changed files/modules in this continuation
+## Complete release dependency gate
 
-- `scripts/check-lockfiles.mjs`
-- `scripts/check-release-workflow.mjs`
-- `scripts/check-metadata.mjs`
-- `tests/lockfiles.test.ts`
-- `package.json`
-- `.github/workflows/release.yml`
-- `.github/workflows/native.yml`
-- `docs/reproducible-builds.md`
-- `docs/development.md`
-- `docs/native-quality.md`
-- `SECURITY.md`
-- `CHANGELOG.md`
-- `what_changed.md`
+The tag-triggered release workflow was hardened from npm-only preflight to:
 
-## Verification performed
+```bash
+npm run release:locks:check
+npm ci --no-fund --no-audit
+```
 
-### Repository verification
+This means a 2.0.13 tag must contain consistent npm **and** Cargo dependency lockfiles before release verification can proceed.
 
-Verified through GitHub after the implementation commits:
+`scripts/check-release-workflow.mjs` and `scripts/check-metadata.mjs` were updated to enforce the complete lockfile gate and its ordering before `npm ci`.
 
-- all repository writes succeeded on `main`;
-- `main` pointed at `09b27d0ea56a8fa4c328410e7c0eeaa423dbc477` before this handoff refresh;
-- the latest implementation commit was authored/committed with `sanskarin@outlook.in`;
-- `main` is still reported as `protected: false`;
-- required status-check enforcement is still reported as off;
-- combined commit status for the implementation checkpoint returned no statuses through the available status API.
+The existing deterministic archive, SHA-256 checksum, verify-before-publish ordering, and verified-tag release safeguards remain intact.
 
-The available connected GitHub surface still does not provide an action here to configure branch protection/rulesets.
+## Documentation aligned with the new policy
 
-### Local static/synthetic verification
+Added/updated:
 
-The execution environment could not resolve `github.com` for a clean clone and therefore could not perform real registry-backed npm/Cargo dependency resolution. No fake lockfile was committed.
+- `docs/releases/2.0.13.md` — release-candidate status, highlights, compatibility, reproducibility boundary, quality/security gates, and publication blockers;
+- `docs/development.md` — `ci:reproducibility:check`, `native:lock:check`, locked native commands, and fail-closed CI behavior;
+- `docs/native-quality.md` — 2.0.13 `npm ci`/Cargo locked matrix behavior and evidence boundary;
+- `docs/reproducible-builds.md` — staged permanent lockfile-only CI, complete tag lockfile gate, generation/review procedure, and explicit blockers;
+- `README.md` — 2.0.13 source identity and release note link;
+- `ROADMAP.md` — 2.0.13 release-candidate identity while retaining evidence-gated unchecked items;
+- `CHANGELOG.md` — 2.0.13 release-candidate section.
 
-Independent local checks were still run for the new dependency-free release tooling:
+## Verification performed in this continuation
 
-1. `node --check` succeeded for `scripts/check-release-workflow.mjs` in an isolated fixture.
-2. Executing that policy checker against the current release workflow fixture succeeded with:
+### GitHub repository verification
 
-   `Release workflow preserves lockfile-only installation, deterministic packaging, checksum generation, and verify-before-publish policy.`
+Directly verified through the connected GitHub repository surface:
 
-3. `node --check` succeeded for `scripts/check-lockfiles.mjs` in an isolated fixture.
-4. Running the lockfile checker with `--all --unknown` returned exit code `2` and the expected unknown-target error.
-5. Running the lockfile checker against valid synthetic npm and Cargo fixture lockfiles succeeded for both targets.
+- `release/v2.0.13-prep` was created from the current `main` checkpoint;
+- PR #21 was opened against `main`;
+- PR #21 is open and GitHub reports it as mergeable at the last checked state;
+- before this handoff refresh the PR contained 24 focused commits and 20 changed files;
+- the implementation checkpoint before this handoff was `8f2c919e392e8121da54f11b8e889574bb0a4c5b`;
+- bootstrap, CI, Native CI, CodeQL, and Dependency Review workflows were created/queued for the PR as applicable.
 
-Synthetic fixtures were used only to exercise validation logic. They are not dependency-resolution evidence and were not committed as project lockfiles.
+### Local dependency-free verification
+
+The execution environment still cannot resolve `github.com`, so it cannot perform genuine npm/Cargo registry resolution or a clean dependency-installed project build locally.
+
+A local isolated fixture was used only to validate the new dependency-free CI reproducibility policy logic:
+
+- `node --check` succeeded for `scripts/check-ci-reproducibility.mjs`;
+- a valid synthetic CI/native/release fixture passed the policy gate.
+
+No synthetic lockfile was committed to the repository.
 
 ### Not claimed
 
 This continuation does **not** claim that:
 
-- the current hosted CI run is green;
-- the hosted Native CI matrix is green;
-- `npm test`, `npm run check`, or Playwright completed in a genuine dependency-installed clean checkout during this execution;
-- a real npm lockfile exists;
-- a real Cargo lockfile exists;
-- branch protection is enabled;
+- hosted CI is green for the current PR head;
+- the complete Native CI matrix is green;
+- the dependency-lock bootstrap has completed;
+- a real `package-lock.json` exists;
+- a real `src-tauri/Cargo.lock` exists;
+- registry-generated lockfile dependency graphs have been reviewed;
+- `npm ci` has passed against the final repository lockfile in hosted CI;
+- Cargo locked verification has passed against the final repository lockfile in hosted CI;
+- PR #21 is safe to merge yet;
+- `main` branch protection/rulesets are enabled;
 - commits are cryptographically signed;
-- signed/notarized/store-ready artifacts exist.
+- signed/notarized/store-ready artifacts exist;
+- a `v2.0.13` GitHub Release has been published.
 
-## Known limitations and open release blockers
+## Remaining release blockers
 
-### 1. Real npm lockfile
+### 1. Finish genuine npm lockfile generation and review
 
-`package-lock.json` is still absent.
+Wait for a GitHub-hosted bootstrap execution to produce the registry-generated `package-lock.json`, then review:
 
-Generate it only from successful npm resolution with the pinned Node toolchain, review it, run `npm run release:npm-lock:check`, prove `npm ci` works from a clean dependency directory, and commit the generated file.
+- root package version/dependency identity;
+- resolved package versions;
+- registry URLs;
+- integrity fields;
+- unexpected transitive additions;
+- lifecycle-sensitive packages.
 
-Do **not** hand-author it.
+Then require passing `npm run release:npm-lock:check` and clean `npm ci` evidence.
 
-### 2. Remaining npm CI migration
+### 2. Finish genuine Cargo lockfile generation and review
 
-The tag release workflow is already lockfile-gated and uses `npm ci`.
+Review the generated `src-tauri/Cargo.lock` for:
 
-Permanent push/PR CI and Native CI frontend installation still use `npm install`. Migrate those to `npm ci` only after the genuine npm lockfile is committed and verified.
+- generated-file identity;
+- root package version;
+- crate sources/checksums;
+- unexpected transitive crates/version changes.
 
-### 3. Real Cargo lockfile
+Then require passing `npm run release:cargo-lock:check`, `native:lock:check`, locked Cargo checks, and Native CI.
 
-`src-tauri/Cargo.lock` is still absent and was rechecked during this continuation.
+### 3. Record complete hosted release-candidate evidence
 
-Generate it with the pinned Rust/Cargo toolchain, review it, run `npm run release:cargo-lock:check`, then use Cargo `--locked` in release/native verification where resolution drift must be forbidden.
-
-Do **not** hand-author it.
-
-### 4. Hosted release-candidate evidence
-
-A real network-enabled clean checkout still needs recorded passing evidence for:
+For the exact accepted PR commit, require passing evidence for at least:
 
 ```bash
 npm run release:locks:check
@@ -238,68 +246,53 @@ npm run test:e2e
 npm run native:check
 ```
 
-and the complete hosted Native CI matrix.
+plus the complete hosted Native CI matrix, CodeQL, and dependency review.
 
-### 5. Protect `main`
+### 4. Remove the bootstrap workflow before merge
 
-GitHub still reports `main` as unprotected and required status-check enforcement as off. Configure an effective ruleset/branch protection policy that requires the project release-quality checks and prevents accidental force-push/deletion/release-breaking direct changes.
+`.github/workflows/dependency-lock-bootstrap.yml` is a release-preparation mechanism that can write generated lockfiles back to the same PR branch.
 
-### 6. Signed platform artifacts
+After the genuine lockfiles are committed and reviewed, remove this temporary bootstrap workflow before merging the release-preparation PR so normal future pull requests do not contain an automatic dependency-state writeback mechanism.
 
-Complete Windows/macOS/Linux packaging validation, macOS notarization where applicable, Android signing/store bundle requirements, and iOS provisioning/signing/store requirements only when release accounts and credentials are available.
+### 5. Update documentation after evidence changes
 
-## Exact next continuation tasks
+Once the real lockfiles and passing hosted checks exist:
 
-1. In a network-enabled clean checkout using Node `22.13.0`, generate the real `package-lock.json` with npm and review the full dependency/integrity diff.
-2. Run `npm run release:npm-lock:check`, delete/recreate dependencies with `npm ci`, then run `npm run check` and `npm run test:e2e`.
-3. Commit the real npm lockfile.
-4. Migrate push/PR CI and Native CI frontend installs from `npm install` to `npm ci`, then enforce that migration with static policy checks.
-5. With Rust `1.97.1`, generate and review `src-tauri/Cargo.lock` using real Cargo resolution.
-6. Run `npm run release:cargo-lock:check`, add locked Cargo verification, and run the full Native CI matrix.
-7. Record hosted release-candidate evidence for the exact commit.
-8. Enable and verify effective `main` branch protection/rulesets.
-9. Proceed to signing/notarization/store artifacts only after the reproducibility/evidence gates above are green.
+- mark only the proven lockfile/migration roadmap items complete;
+- change README installation examples to prefer `npm ci` where appropriate;
+- update the 2.0.13 changelog/release notes from staged migration wording to accepted dependency-state wording;
+- record exact passing hosted workflow evidence in this handoff.
+
+### 6. Protect `main`
+
+Enable and verify the documented GitHub branch protection/ruleset after release checks are stable. Do not mark it complete until GitHub reports an effective policy.
+
+### 7. Signing/notarization/store publication
+
+Complete Windows/macOS/Linux packaging validation, macOS notarization where applicable, Android signing/Play bundle requirements, and iOS provisioning/signing/store requirements only when platform credentials and release accounts are configured.
 
 ## Migration notes
 
-There is no runtime/user-data migration in this continuation.
+There is no user-data/runtime storage migration in this continuation.
 
-Release-engineering behavior changed:
+Release-engineering behavior on the 2.0.13 preparation branch changed materially:
 
-- release tags now require a valid npm lockfile before dependency installation;
-- release tags install with `npm ci`;
-- the final web archive is packaged with normalized deterministic metadata;
-- `npm run check` now includes the static release-workflow policy checker;
-- Native CI reacts to future npm lockfile changes.
+- permanent web/native verification now expects `npm ci`;
+- native verification expects a genuine Cargo lockfile and locked Cargo resolution;
+- release tags require both npm and Cargo lockfile preflight success;
+- a static CI reproducibility policy prevents permanent workflow regression;
+- the release branch intentionally fails closed until real registry-generated lockfiles are accepted.
 
-Contributors preparing a release should read `docs/reproducible-builds.md` before creating a tag.
+## Exact next continuation tasks
 
-## Release-notes draft
-
-- Added explicit npm/Cargo lockfile preflight tooling and regression coverage.
-- Hardened tag releases to require the npm lockfile and install through `npm ci`.
-- Made web release archives deterministic and retained SHA-256 verification.
-- Added a static release-workflow policy gate to the normal quality suite.
-- Corrected native security documentation to the implemented Tauri 2 architecture.
-- Added complete reproducible-build and lockfile generation/review documentation.
-
-## Focused commits in this continuation
-
-1. `64ba45dc` — `build(release): add lockfile reproducibility preflight`
-2. `74c55086` — `build(release): expose lockfile preflight commands`
-3. `c3852d36` — `ci(release): require npm lockfile and use npm ci`
-4. `0317b2eb` — `ci(native): trigger verification on lockfile changes`
-5. `938980a6` — `test(release): cover lockfile reproducibility preflight`
-6. `867dd138` — `test(metadata): enforce release reproducibility safeguards`
-7. `3cdc4e88` — `ci(release): make web archive deterministic`
-8. `de5e32fc` — `docs(security): correct implemented native security boundary`
-9. `d7178588` — `docs(release): add reproducible build and lockfile guide`
-10. `c81e90b7` — `docs(dev): link reproducible release workflow`
-11. `33f5fa45` — `docs(native): align lockfile policy with release gate`
-12. `bf40edb2` — `test(release): add static release workflow policy check`
-13. `c9394913` — `build(check): enforce release workflow policy`
-14. `e41959b1` — `fix(release): reject unknown lockfile flags with all target`
-15. `ac382f82` — `test(release): cover all-target unknown flag rejection`
-16. `09b27d0e` — `docs(changelog): record release reproducibility hardening`
+1. Recheck GitHub-hosted bootstrap run status and inspect logs if it starts/fails.
+2. If generated lockfiles appear, review both complete dependency graphs and verify the bootstrap commit identity.
+3. Remove `.github/workflows/dependency-lock-bootstrap.yml` after successful generation/review.
+4. Run/observe complete CI, E2E, CodeQL, dependency review, and Native CI for the exact final PR head.
+5. Fix any failures found by the reproducible install/locked native matrix.
+6. Update README, ROADMAP, CHANGELOG, release notes, and this handoff with only verified completion claims.
+7. Merge PR #21 only after the lockfile-dependent quality gates are green.
+8. Verify `main` after merge, then prepare/publish `v2.0.13` only when the tag release gate is green.
+9. Continue with branch protection and signed platform artifacts as separate evidence-backed release tasks.
 
 The handoff-maintenance commit comes after the implementation checkpoint and is intentionally not self-referenced by SHA inside this file.

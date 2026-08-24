@@ -46,10 +46,14 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22.13.0
-      - name: Install frontend dependencies
-        run: npm install --no-fund --no-audit
+      - name: Install frontend dependencies from lockfile
+        run: npm ci --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify Cargo lockfile
+        run: npm run release:cargo-lock:check
+      - name: Verify locked Cargo dependency metadata
+        run: npm run native:lock:check
       - name: Install Linux Tauri prerequisites
         if: runner.os == 'Linux'
         run: |
@@ -92,10 +96,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install frontend dependencies
-        run: npm install --no-fund --no-audit
+      - name: Install frontend dependencies from lockfile
+        run: npm ci --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify Cargo lockfile
+        run: npm run release:cargo-lock:check
+      - name: Verify locked Cargo dependency metadata
+        run: npm run native:lock:check
       - name: Install Android Rust target
         run: rustup target add aarch64-linux-android
       - name: Select hosted Android NDK
@@ -122,10 +130,14 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22.13.0
-      - name: Install frontend dependencies
-        run: npm install --no-fund --no-audit
+      - name: Install frontend dependencies from lockfile
+        run: npm ci --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify Cargo lockfile
+        run: npm run release:cargo-lock:check
+      - name: Verify locked Cargo dependency metadata
+        run: npm run native:lock:check
       - name: Verify CocoaPods
         run: pod --version
       - name: Initialize generated iOS project

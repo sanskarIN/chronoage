@@ -4,6 +4,8 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
+## [2.0.13] - 2026-08-24
+
 ### Added
 - Tauri 2 native shell targeting Windows, macOS, Linux, Android, and iOS/iPadOS while reusing the existing React + TypeScript frontend and deterministic date-domain implementation.
 - Shared Rust desktop/mobile entrypoint, Tauri bundle configuration, and least-privilege `core:default` capability for the main native window.
@@ -29,13 +31,13 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Web release archives now normalize entry ordering, timestamps, ownership, and gzip metadata before generating their SHA-256 checksum.
 - Native CI now reruns when `package-lock.json` changes because native builds consume the shared frontend dependency graph.
 - Native security documentation now describes the implemented Tauri 2 capability/runtime boundary instead of the superseded future-wrapper model.
+- Source/runtime/native release metadata now identifies the release candidate as `2.0.13`.
 
 ### Fixed
 - The lockfile preflight no longer lets `--all` mask an unknown command-line target.
 
 ### Planned
-- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate the remaining push/PR/native frontend installs to `npm ci`.
-- Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution, then use locked Cargo resolution in release/native verification.
+- Review the genuine npm and Cargo lockfiles produced by successful registry resolution, then migrate the remaining push/PR/native frontend installs to `npm ci` and locked Cargo verification.
 - Record passing clean-checkout full quality/E2E/native CI evidence for the final release candidate.
 - Produce and verify signed/notarized/store-ready native artifacts when platform release credentials are configured.
 - Additional locale packs after complete human translation review.
