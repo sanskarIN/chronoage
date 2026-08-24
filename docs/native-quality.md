@@ -6,12 +6,12 @@ ChronoAge uses one React + TypeScript product implementation and a Tauri 2 + Rus
 
 Native changes should be:
 
-- deterministic enough that an unchanged commit does not silently move to a different direct toolchain or direct Tauri dependency;
+- deterministic enough that an unchanged commit does not silently move to a different direct toolchain or dependency graph;
 - formatted and lint-clean before native compilation;
 - compiled on every supported desktop operating system in Native CI;
 - smoke-built for Android and the iOS simulator in Native CI;
 - least-privilege and local-first, matching the security model documented elsewhere in the repository;
-- honest about evidence that has not yet been produced, especially lockfiles, signing, notarization, and store publication.
+- honest about evidence that has not yet been produced, especially registry-generated lockfiles, signing, notarization, and store publication.
 
 ## Pinned Rust toolchain
 
@@ -23,26 +23,28 @@ Permanent CI must not use `rustup update stable`. A moving stable channel makes 
 
 ## Direct native dependency pins
 
-Until a reviewed `src-tauri/Cargo.lock` exists, direct native dependencies are pinned with Cargo's exact-version syntax:
+Direct native dependencies use Cargo's exact-version syntax:
 
 ```toml
 tauri-build = { version = "=2.6.3", features = [] }
 tauri = { version = "=2.11.5", features = [] }
 ```
 
-This does not replace a lockfile because transitive dependencies can still change. It does reduce avoidable direct-dependency drift. The metadata checker rejects direct Tauri versions that stop using an exact `=MAJOR.MINOR.PATCH` pin.
+Exact direct pins do not replace a Cargo lockfile because transitive dependencies can still change. The metadata checker rejects direct Tauri versions that stop using an exact `=MAJOR.MINOR.PATCH` pin.
 
 ## Local native quality commands
 
 From the repository root:
 
 ```bash
+npm run release:cargo-lock:check
+npm run native:lock:check
 npm run native:format:check
 npm run native:lint
 npm run native:check
 ```
 
-`native:format:check` runs `cargo fmt --check` for the Tauri manifest. `native:lint` runs Clippy across all targets and features and converts warnings into failures. `native:check` regenerates native icons, verifies Rust formatting, runs `cargo check`, and then runs Clippy.
+`release:cargo-lock:check` validates the committed Cargo lockfile identity and generated-file shape. `native:lock:check` asks Cargo to read the graph with `--locked`. `native:format:check` runs `cargo fmt --check` for the Tauri manifest. `native:lint` runs Clippy across all targets and features with `--locked` and converts warnings into failures. `native:check` performs the Cargo lockfile preflight, locked metadata verification, icon generation, formatting, locked `cargo check`, and locked Clippy.
 
 The repository-wide text-format checker also covers `.toml` files so line endings, tabs, final newlines, and trailing whitespace are checked for Rust configuration and manifests.
 
@@ -56,9 +58,11 @@ The repository-wide text-format checker also covers `.toml` files so line ending
 - Android ARM64 debug APK smoke builds;
 - iOS simulator smoke builds.
 
-The Linux desktop job additionally runs the Rust formatting and Clippy quality gates before compiling the native application. All native jobs verify the pinned Rust toolchain before their platform-specific work. Android and iOS install only the extra Rust target required for that job.
+For the 2.0.13 release candidate, every native job installs the shared frontend dependency graph with `npm ci --no-fund --no-audit`, validates `src-tauri/Cargo.lock`, verifies Cargo metadata with `--locked`, and reports the pinned Rust toolchain before platform-specific work. The Linux desktop job additionally runs Rust formatting and locked Clippy quality gates before compiling the native application. Android and iOS install only the extra Rust target required for that job.
 
-Changes to `package-lock.json` trigger Native CI because every native build also consumes the shared frontend dependency graph. Changes under `src-tauri/**`, including a future `src-tauri/Cargo.lock`, already trigger Native CI through the native path filter.
+This is intentionally fail-closed: while a genuine registry-generated npm or Cargo lockfile is absent, the corresponding job must fail instead of resolving a new dependency graph. The release-preparation PR must not be merged merely because the source policy is present; the generated lockfiles still require review and passing hosted evidence.
+
+Changes to `package-lock.json` trigger Native CI because every native build consumes the shared frontend dependency graph. Changes under `src-tauri/**`, including `src-tauri/Cargo.lock`, trigger Native CI through the native path filter.
 
 A source-supported target is not considered a published target merely because its CI job exists. Signed installers, notarized packages, store artifacts, release credentials, and clean-device verification remain separate release evidence.
 
@@ -83,9 +87,9 @@ This protects the boundary that keeps browser-only PWA service-worker/install/up
 
 ## Lockfile boundary
 
-ChronoAge intentionally does not contain a hand-authored or guessed `package-lock.json` or `src-tauri/Cargo.lock`.
+`package-lock.json` and `src-tauri/Cargo.lock` must be produced by real package-manager resolution using the repository's pinned toolchains, reviewed, and validated before they are accepted. They must never be hand-authored or inferred from direct dependency declarations.
 
-Those files must be produced by real package-manager resolution in a network-enabled clean checkout, reviewed, and validated before they are committed. The repository now exposes:
+The repository exposes:
 
 ```bash
 npm run release:npm-lock:check
@@ -93,11 +97,19 @@ npm run release:cargo-lock:check
 npm run release:locks:check
 ```
 
-The tag-triggered web release workflow already requires the npm lockfile preflight and then installs with `npm ci`; until `package-lock.json` is genuinely generated and committed, a release tag therefore fails safely before dependency installation instead of resolving an unpinned graph.
+The 2.0.13 release-preparation branch stages lockfile-only behavior across the permanent workflows:
 
-Normal push/PR CI and native frontend installation still use `npm install` until the genuine npm lockfile exists. After that checkpoint, those permanent installs should migrate to `npm ci`. After a genuine Cargo lockfile exists, release/native verification should use Cargo's `--locked` mode where dependency resolution must not drift.
+- normal web quality CI uses `npm ci`;
+- Playwright CI uses `npm ci`;
+- every Native CI job uses `npm ci`;
+- Native CI validates Cargo lockfile identity and locked Cargo metadata;
+- native lint/check scripts use Cargo `--locked` where dependency resolution must not drift;
+- the tag release checks both npm and Cargo lockfiles before `npm ci` and release verification;
+- `npm run ci:reproducibility:check` prevents permanent verification workflows from regressing to `npm install` or losing locked native checks.
 
-Do not mark either lockfile roadmap item complete based only on direct version pins or on the presence of the preflight script. See [Reproducible Builds and Lockfiles](reproducible-builds.md) for generation, review, deterministic packaging, and evidence procedures.
+These source changes are not themselves proof that the real dependency graphs have been resolved or that hosted CI is green. Until genuine registry-generated lockfiles are present and reviewed, the related roadmap evidence remains incomplete.
+
+See [Reproducible Builds and Lockfiles](reproducible-builds.md) for generation, review, deterministic packaging, and evidence procedures.
 
 ## Rust upgrade procedure
 
@@ -106,10 +118,11 @@ When intentionally upgrading Rust:
 1. Review the target Rust release and compatibility implications.
 2. Change the exact `channel` in `rust-toolchain.toml`.
 3. Change `rust-version` in `src-tauri/Cargo.toml` to the same exact version.
-4. Run `npm run metadata:check`.
-5. Run `npm run native:check` on a supported desktop development host.
-6. Run the full Native CI matrix.
-7. Record the change in release-facing documentation when it affects release engineering or compatibility.
+4. Regenerate/review `src-tauri/Cargo.lock` if resolution changes.
+5. Run `npm run metadata:check` and `npm run release:cargo-lock:check`.
+6. Run `npm run native:check` on a supported desktop development host.
+7. Run the full Native CI matrix.
+8. Record the toolchain change in release-facing documentation when it affects release engineering or compatibility.
 
 Do not loosen the pin to `stable`, `beta`, a major/minor-only channel, or another moving selector in permanent release infrastructure.
 
@@ -120,20 +133,19 @@ When upgrading `tauri` or `tauri-build`:
 1. Review Tauri release notes and security advisories.
 2. Keep direct Cargo versions exact using the leading `=` syntax.
 3. Keep JavaScript Tauri packages exact in `package.json`.
-4. Run metadata, security, web quality, and native quality checks.
-5. Run desktop, Android, and iOS Native CI coverage.
-6. Re-review native capability and CSP assumptions if the upgrade changes permissions, plugins, runtime APIs, or bundling behavior.
+4. Regenerate and review affected npm/Cargo lockfiles with the pinned toolchains.
+5. Run metadata, security, web quality, and native quality checks.
+6. Run desktop, Android, and iOS Native CI coverage.
+7. Re-review native capability and CSP assumptions if the upgrade changes permissions, plugins, runtime APIs, or bundling behavior.
 
 ## Release evidence still required
 
 The following items remain evidence-gated and must not be inferred from source quality alone:
 
-- a reviewed npm lockfile from genuine registry resolution;
-- a reviewed Cargo lockfile from genuine registry resolution;
-- migration of permanent push/PR/native frontend dependency installs to `npm ci` after the npm lockfile is committed;
-- locked Cargo release/native resolution after the Cargo lockfile is committed;
-- a completely green clean-checkout shared quality/E2E run for the release candidate;
-- a completely green Native CI matrix for the release candidate;
+- reviewed npm lockfile content from genuine registry resolution for the 2.0.13 graph;
+- reviewed Cargo lockfile content from genuine registry resolution for the 2.0.13 graph;
+- a completely green clean-checkout shared quality/E2E run using `npm ci`;
+- a completely green Native CI matrix using the accepted lockfiles;
 - effective `main` branch protection/ruleset verification;
 - signed/verified Windows, macOS, Linux, Android, and iOS distribution artifacts where applicable;
 - notarization, provisioning, store configuration, and release-account steps required by each target platform.
