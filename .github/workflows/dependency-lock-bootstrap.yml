@@ -13,10 +13,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: dependency-lock-bootstrap-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
-
 jobs:
   generate:
     name: Generate and validate real dependency lockfiles
