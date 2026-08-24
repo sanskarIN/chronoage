@@ -171,8 +171,8 @@ for (const [script, expected] of Object.entries(expectedReleaseScripts)) {
   }
 }
 
-if (!releaseWorkflow.includes('npm run release:npm-lock:check')) {
-  failures.push('Release workflow: must verify the npm lockfile before installing dependencies');
+if (!releaseWorkflow.includes('npm run release:locks:check')) {
+  failures.push('Release workflow: must verify both dependency lockfiles before installing dependencies');
 }
 
 if (!releaseWorkflow.includes('npm ci --no-fund --no-audit')) {
