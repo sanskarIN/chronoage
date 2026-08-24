@@ -8,7 +8,7 @@ const workflow = await readFile(
 const failures = [];
 
 const requiredFragments = [
-  ['npm lockfile preflight', 'npm run release:npm-lock:check'],
+  ['complete lockfile preflight', 'npm run release:locks:check'],
   ['lockfile-only npm install', 'npm ci --no-fund --no-audit'],
   ['deterministic tar ordering', '--sort=name'],
   ['normalized tar timestamp', '--mtime="@${source_date_epoch}"'],
@@ -37,10 +37,10 @@ if (/\btar\s+-czf\b/.test(workflow)) {
   );
 }
 
-const preflightIndex = workflow.indexOf('npm run release:npm-lock:check');
+const preflightIndex = workflow.indexOf('npm run release:locks:check');
 const npmCiIndex = workflow.indexOf('npm ci --no-fund --no-audit');
 if (preflightIndex >= 0 && npmCiIndex >= 0 && preflightIndex > npmCiIndex) {
-  failures.push('dependency installation: npm lockfile preflight must run before npm ci');
+  failures.push('dependency installation: complete lockfile preflight must run before npm ci');
 }
 
 const archiveIndex = workflow.indexOf('gzip -n "$archive"');
@@ -61,6 +61,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Release workflow preserves lockfile-only installation, deterministic packaging, checksum generation, and verify-before-publish policy.',
+    'Release workflow preserves complete dependency lockfile verification, lockfile-only installation, deterministic packaging, checksum generation, and verify-before-publish policy.',
   );
 }
