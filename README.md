@@ -4,7 +4,7 @@
   <p><strong>A privacy-first, timezone-aware age and date calculator for the web, Windows, macOS, Linux, Android, and iOS.</strong></p>
   <p><strong>Made by the Sanskar</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-2.0.12-6657e8.svg)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-2.0.13-6657e8.svg)](CHANGELOG.md)
   [![CI](https://github.com/sanskarIN/chronoage/actions/workflows/ci.yml/badge.svg)](https://github.com/sanskarIN/chronoage/actions/workflows/ci.yml)
   [![CodeQL](https://github.com/sanskarIN/chronoage/actions/workflows/codeql.yml/badge.svg)](https://github.com/sanskarIN/chronoage/actions/workflows/codeql.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -17,7 +17,7 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 
 **Privacy is the default:** calculations run locally, saved profiles use local browser/WebView storage, no account is required, and the project ships with no analytics, crash-reporting backend, or cloud sync.
 
-**Current source version:** `2.0.12`. See the [2.0.12 release notes](docs/releases/2.0.12.md) and [release guide](docs/release.md). The source version does not by itself imply that the `v2.0.12` GitHub tag/release artifact has been published; release tagging remains evidence-gated.
+**Current source version:** `2.0.13`. See the [2.0.13 release notes](docs/releases/2.0.13.md) and [release guide](docs/release.md). The source version does not by itself imply that the `v2.0.13` GitHub tag/release artifact has been published; release tagging remains evidence-gated.
 
 ## Interface preview
 
@@ -171,7 +171,7 @@ Web release candidate:
 npm install
 npm run check
 npm run build
-npm run release:check -- v2.0.12
+npm run release:check -- v2.0.13
 ```
 
 Native release candidates are built on the target platform:
