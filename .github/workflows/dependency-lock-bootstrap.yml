@@ -1,0 +1,72 @@
+name: Dependency lock bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'rust-toolchain.toml'
+      - '.nvmrc'
+      - '.github/workflows/dependency-lock-bootstrap.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dependency-lock-bootstrap-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: Generate and validate real dependency lockfiles
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.13.0
+
+      - name: Generate npm lockfile from registry resolution
+        run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit
+
+      - name: Validate npm lockfile
+        run: npm run release:npm-lock:check
+
+      - name: Verify reproducible npm install
+        run: npm ci --ignore-scripts --no-fund --no-audit
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component clippy --component rustfmt
+
+      - name: Verify pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Generate Cargo lockfile from registry resolution
+        run: cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+
+      - name: Validate Cargo lockfile
+        run: npm run release:cargo-lock:check
+
+      - name: Verify Cargo lockfile is consumable
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --no-deps --format-version 1 > /dev/null
+
+      - name: Commit generated lockfiles to the pull request branch
+        shell: bash
+        run: |
+          git config user.name 'Sanskar'
+          git config user.email 'sanskarin@outlook.in'
+          git add package-lock.json src-tauri/Cargo.lock
+          if git diff --cached --quiet; then
+            echo 'Lockfiles are already current.'
+            exit 0
+          fi
+          git commit -m 'build(deps): add reproducible dependency lockfiles'
+          git push origin HEAD:${{ github.head_ref }}
