@@ -4,7 +4,7 @@ ChronoAge treats dependency resolution and release packaging as part of the prod
 
 This guide documents the repository policy for npm, Cargo, release archives, and release-candidate evidence.
 
-## Current source state
+## Current release-candidate state
 
 The repository pins:
 
@@ -15,7 +15,7 @@ The repository pins:
 
 Those pins reduce drift, but they do not replace dependency lockfiles.
 
-At the current checkpoint, a real `package-lock.json` and a real `src-tauri/Cargo.lock` still need to be generated from successful dependency resolution. Do not hand-author either lockfile.
+The 2.0.13 release-preparation branch is intentionally fail-closed: permanent web/native/release verification has been staged to require lockfile-only dependency state, but genuine `package-lock.json` and `src-tauri/Cargo.lock` content still must come from successful registry resolution and review. Do not hand-author either lockfile, and do not merge a branch that requires them until those files and the associated hosted checks exist.
 
 ## Lockfile preflight commands
 
@@ -84,6 +84,7 @@ rustup show active-toolchain
 cargo --version
 cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
 npm run release:cargo-lock:check
+npm run native:lock:check
 cargo check --manifest-path src-tauri/Cargo.toml --locked
 npm run native:format:check
 npm run native:lint
@@ -95,24 +96,36 @@ Before committing the lockfile:
 2. Review new or changed crates, sources, checksums, and versions.
 3. Confirm the root `chronoage` package entry matches the native package version.
 4. Run the Cargo lockfile preflight.
-5. Run Cargo with `--locked` so the build fails rather than silently changing resolution.
+5. Run Cargo with `--locked` so verification fails rather than silently changing resolution.
 6. Run the complete Native CI matrix after the lockfile is committed.
 
 Do not manually synthesize or guess `Cargo.lock` content.
 
+## Permanent CI behavior
+
+The 2.0.13 release-preparation branch stages deterministic dependency consumption across permanent verification workflows:
+
+- the normal web quality job installs with `npm ci --no-fund --no-audit`;
+- the Playwright job installs with the same `npm ci` command;
+- Windows, macOS, Linux, Android, and iOS Native CI jobs install the shared frontend graph with `npm ci`;
+- every Native CI job validates the Cargo lockfile and reads Cargo metadata with `--locked`;
+- native lint/check commands use Cargo `--locked` for dependency-sensitive verification;
+- `npm run ci:reproducibility:check` rejects permanent workflow regressions to `npm install` and missing native lock checks.
+
+This policy means a missing or stale lockfile is a hard failure. That is intentional: CI must not repair dependency state by silently resolving a new graph.
+
 ## Release workflow behavior
 
-The tag-triggered web release workflow deliberately fails before dependency installation when `package-lock.json` is missing or inconsistent.
-
-Once the npm lockfile passes preflight, the release workflow installs dependencies with:
+The tag-triggered release workflow checks the complete dependency lockfile boundary before installation:
 
 ```bash
+npm run release:locks:check
 npm ci --no-fund --no-audit
 ```
 
-The release workflow does not fall back to `npm install`. This prevents a release tag from silently resolving a new graph when the required lockfile is absent.
+The release workflow does not fall back to `npm install`. It validates both npm and Cargo lockfile identity even though the published web archive consumes the frontend graph directly, because the release source version also contains the supported native application and must not advertise an inconsistent native dependency state.
 
-Normal push/PR CI still uses `npm install` until the real npm lockfile has been generated, reviewed, and committed. After that checkpoint, permanent CI/native frontend installs should be migrated to `npm ci` as a separate reviewed change.
+After the lockfile and install gates, the workflow checks release-tag identity, runs the web quality suite, audits high-severity runtime dependencies, installs Chromium, runs browser/accessibility verification, and only then stages the deterministic release package for publication.
 
 ## Deterministic web release archive
 
@@ -130,7 +143,7 @@ A deterministic archive does not prove that the build itself is reproducible if 
 
 ## Native release boundary
 
-Native source support currently covers Windows, macOS, Linux, Android, and iOS/iPadOS through Tauri 2, but source support is not a claim of signed release artifacts.
+Native source support covers Windows, macOS, Linux, Android, and iOS/iPadOS through Tauri 2, but source support is not a claim of signed release artifacts.
 
 Before publishing native binaries, release engineering must additionally verify:
 
@@ -158,15 +171,17 @@ npm run native:check
 
 Hosted evidence should also include the complete Native CI matrix and the tag-triggered release verification job.
 
-A source inspection, successful file write, or local syntax review must not be reported as a passing hosted build.
+A source inspection, successful file write, queued workflow, or local syntax review must not be reported as a passing hosted build.
 
 ## Current blockers that must remain explicit
 
 Until separately completed and verified, do not mark these items as done:
 
-- genuine `package-lock.json` generation and review;
-- genuine `src-tauri/Cargo.lock` generation and review;
-- migration of permanent push/PR/native frontend installs to `npm ci`;
-- clean-checkout hosted release-candidate evidence;
+- genuine `package-lock.json` generation and review for the current 2.0.13 dependency graph;
+- genuine `src-tauri/Cargo.lock` generation and review for the current 2.0.13 native graph;
+- clean-checkout hosted web quality/E2E evidence using the accepted npm lockfile;
+- complete hosted Native CI evidence using the accepted npm and Cargo lockfiles;
 - effective `main` branch protection/rulesets;
 - signed/notarized/store-ready native artifacts.
+
+The source migration to lockfile-only permanent workflows is staged in the release-preparation PR, but it must not be described as operationally proven until the real lockfiles are generated and the hosted jobs pass.
