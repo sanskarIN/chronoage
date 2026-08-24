@@ -1,8 +1,8 @@
 # ChronoAge Roadmap
 
-## Current release — v2.0.12
+## Current release candidate — v2.0.13
 
-ChronoAge `2.0.12` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, release-hardening, and cross-platform native-delivery work described below. Remaining unchecked items are deliberately evidence-gated; they are not silently treated as complete for the `2.0.12` source tree.
+ChronoAge `2.0.13` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, release-hardening, and cross-platform native-delivery work described below. Remaining unchecked items are deliberately evidence-gated; they are not silently treated as complete for the `2.0.13` source tree.
 
 ## v1.0 — Core production PWA
 
