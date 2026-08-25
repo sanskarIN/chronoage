@@ -143,6 +143,7 @@ npm run release:manifest -- \
 
 For tag workflows, release identity is taken from `GITHUB_REF_NAME`, `GITHUB_SHA`, and the commit-derived `SOURCE_DATE_EPOCH`. The generator refuses to write evidence unless:
 
+- the running Node version exactly matches the release pin in `.nvmrc`;
 - the tag exactly matches `v${package.json.version}`;
 - the commit identity is a full 40-character Git SHA;
 - `SOURCE_DATE_EPOCH` is a positive integer;
@@ -156,7 +157,7 @@ The manifest records:
 - semantic release tag;
 - exact source commit;
 - normalized source-date epoch;
-- pinned Node runtime observed during generation;
+- exact pinned Node runtime observed during generation;
 - archive filename, byte size, and SHA-256 digest;
 - SHA-256 digests for `package-lock.json` and `src-tauri/Cargo.lock` when those generated lockfiles exist.
 
