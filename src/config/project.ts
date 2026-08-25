@@ -1,6 +1,6 @@
 export const project = {
   name: 'ChronoAge',
-  version: '2.0.12',
+  version: '2.0.13',
   credit: 'Made by the Sanskar',
   repositoryUrl: 'https://github.com/sanskarIN/chronoage',
   profileUrl: 'https://github.com/sanskarIN',
