@@ -16,7 +16,12 @@ const requiredFragments = [
   ['normalized tar group', '--group=0'],
   ['numeric tar ownership', '--numeric-owner'],
   ['timestamp-free gzip metadata', 'gzip -n "$archive"'],
+  ['source date evidence export', 'echo "SOURCE_DATE_EPOCH=${source_date_epoch}" >> "$GITHUB_ENV"'],
   ['SHA-256 checksum', 'sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz"'],
+  ['release evidence manifest', 'npm run release:manifest --'],
+  ['release manifest artifact', 'chronoage-web-${{ github.ref_name }}.manifest.json'],
+  ['downloaded artifact checksum verification', 'sha256sum --check "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"'],
+  ['published release manifest', '"chronoage-web-${GITHUB_REF_NAME}.manifest.json"'],
   ['verified release tag', '--verify-tag'],
   ['publish dependency on verification', 'needs: verify'],
 ];
@@ -45,8 +50,28 @@ if (preflightIndex >= 0 && npmCiIndex >= 0 && preflightIndex > npmCiIndex) {
 
 const archiveIndex = workflow.indexOf('gzip -n "$archive"');
 const checksumIndex = workflow.indexOf('sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz"');
+const manifestIndex = workflow.indexOf('npm run release:manifest --');
 if (archiveIndex >= 0 && checksumIndex >= 0 && archiveIndex > checksumIndex) {
   failures.push('release artifact: checksum must be generated after the deterministic archive');
+}
+if (checksumIndex >= 0 && manifestIndex >= 0 && checksumIndex > manifestIndex) {
+  failures.push('release evidence: manifest must be generated after the archive checksum');
+}
+
+const downloadIndex = workflow.indexOf('uses: actions/download-artifact@v7');
+const downloadedChecksumIndex = workflow.indexOf(
+  'sha256sum --check "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"',
+);
+const releaseCreateIndex = workflow.indexOf('gh release create "$GITHUB_REF_NAME"');
+if (
+  downloadIndex >= 0 &&
+  downloadedChecksumIndex >= 0 &&
+  (downloadIndex > downloadedChecksumIndex ||
+    (releaseCreateIndex >= 0 && downloadedChecksumIndex > releaseCreateIndex))
+) {
+  failures.push(
+    'publish integrity: downloaded checksum verification must run after artifact download and before release creation',
+  );
 }
 
 const verifyJobIndex = workflow.indexOf('  verify:');
@@ -61,6 +86,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Release workflow preserves lockfile-only installation, deterministic packaging, checksum generation, and verify-before-publish policy.',
+    'Release workflow preserves lockfile-only installation, deterministic packaging, checksums, evidence manifests, publish-time integrity verification, and verify-before-publish policy.',
   );
 }
