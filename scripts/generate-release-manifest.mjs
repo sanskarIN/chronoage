@@ -75,6 +75,14 @@ if (!process.exitCode) {
       const packageJson = JSON.parse(
         await readFile(new URL('../package.json', import.meta.url), 'utf8'),
       );
+      const nodePin = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
+      const expectedNode = `v${nodePin}`;
+      if (process.version !== expectedNode) {
+        throw new Error(
+          `Release manifest generation requires Node ${nodePin}; running ${process.version}.`,
+        );
+      }
+
       const expectedTag = `v${packageJson.version}`;
       if (tag !== expectedTag) {
         throw new Error(`Release manifest tag ${JSON.stringify(tag)} must equal ${expectedTag}.`);
