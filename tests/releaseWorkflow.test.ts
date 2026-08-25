@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const temporaryRoots: string[] = [];
 
-async function createFixture(transform: (workflow: string) => string = (workflow) => workflow) {
+async function createFixture(
+  transformWorkflow: (workflow: string) => string = (workflow) => workflow,
+  manifestScript = 'node scripts/generate-release-manifest.mjs',
+) {
   const root = await mkdtemp(join(tmpdir(), 'chronoage-release-workflow-'));
   temporaryRoots.push(root);
   await mkdir(join(root, 'scripts'), { recursive: true });
@@ -16,7 +19,14 @@ async function createFixture(transform: (workflow: string) => string = (workflow
     join(root, 'scripts', 'check-release-workflow.mjs'),
   );
   const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
-  await writeFile(join(root, '.github', 'workflows', 'release.yml'), transform(workflow));
+  await writeFile(
+    join(root, '.github', 'workflows', 'release.yml'),
+    transformWorkflow(workflow),
+  );
+  await writeFile(
+    join(root, 'package.json'),
+    JSON.stringify({ scripts: { 'release:manifest': manifestScript } }, null, 2),
+  );
   return root;
 }
 
@@ -38,8 +48,18 @@ describe('release workflow policy', () => {
     const result = runPolicy(root);
 
     expect(result.status).toBe(0);
+    expect(result.stdout).toContain('canonical manifest generator');
     expect(result.stdout).toContain('evidence manifests');
     expect(result.stdout).toContain('publish-time integrity verification');
+  });
+
+  it('rejects a redirected release manifest package script', async () => {
+    const root = await createFixture((workflow) => workflow, 'node scripts/unreviewed-generator.mjs');
+
+    const result = runPolicy(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('package scripts: release:manifest');
   });
 
   it('rejects removal of publish-time checksum verification', async () => {
