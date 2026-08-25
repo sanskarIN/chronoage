@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const temporaryRoots: string[] = [];
 const releaseCommit = '0123456789abcdef0123456789abcdef01234567';
 const sourceDateEpoch = '1787600000';
+const fixtureVersion = '2.0.13';
 
 function digest(content: string | Buffer) {
   return createHash('sha256').update(content).digest('hex');
@@ -24,14 +25,15 @@ async function createFixture(withLocks = false) {
   );
   await writeFile(
     join(root, 'package.json'),
-    JSON.stringify({ name: 'chronoage', version: '2.0.12' }, null, 2),
+    JSON.stringify({ name: 'chronoage', version: fixtureVersion }, null, 2),
   );
+  await writeFile(join(root, '.nvmrc'), `${process.version.slice(1)}\n`);
 
   const archive = Buffer.from('deterministic release archive\n');
-  await writeFile(join(root, 'chronoage-web-v2.0.12.tar.gz'), archive);
+  await writeFile(join(root, `chronoage-web-v${fixtureVersion}.tar.gz`), archive);
   await writeFile(
-    join(root, 'chronoage-web-v2.0.12.tar.gz.sha256'),
-    `${digest(archive)}  chronoage-web-v2.0.12.tar.gz\n`,
+    join(root, `chronoage-web-v${fixtureVersion}.tar.gz.sha256`),
+    `${digest(archive)}  chronoage-web-v${fixtureVersion}.tar.gz\n`,
   );
 
   if (withLocks) {
@@ -48,11 +50,11 @@ function runManifest(root: string, extraArgs: string[] = [], env: Record<string,
     [
       join(root, 'scripts', 'generate-release-manifest.mjs'),
       '--archive',
-      'chronoage-web-v2.0.12.tar.gz',
+      `chronoage-web-v${fixtureVersion}.tar.gz`,
       '--checksum',
-      'chronoage-web-v2.0.12.tar.gz.sha256',
+      `chronoage-web-v${fixtureVersion}.tar.gz.sha256`,
       '--output',
-      'chronoage-web-v2.0.12.manifest.json',
+      `chronoage-web-v${fixtureVersion}.manifest.json`,
       ...extraArgs,
     ],
     {
@@ -60,7 +62,7 @@ function runManifest(root: string, extraArgs: string[] = [], env: Record<string,
       encoding: 'utf8',
       env: {
         ...process.env,
-        GITHUB_REF_NAME: 'v2.0.12',
+        GITHUB_REF_NAME: `v${fixtureVersion}`,
         GITHUB_SHA: releaseCommit,
         SOURCE_DATE_EPOCH: sourceDateEpoch,
         ...env,
@@ -79,19 +81,19 @@ describe('release evidence manifest generation', () => {
 
     const result = runManifest(root);
     const manifest = JSON.parse(
-      await readFile(join(root, 'chronoage-web-v2.0.12.manifest.json'), 'utf8'),
+      await readFile(join(root, `chronoage-web-v${fixtureVersion}.manifest.json`), 'utf8'),
     );
 
     expect(result.status).toBe(0);
     expect(manifest).toMatchObject({
       schemaVersion: 1,
       name: 'chronoage',
-      version: '2.0.12',
-      tag: 'v2.0.12',
+      version: fixtureVersion,
+      tag: `v${fixtureVersion}`,
       commit: releaseCommit,
       sourceDateEpoch: Number(sourceDateEpoch),
       artifact: {
-        file: 'chronoage-web-v2.0.12.tar.gz',
+        file: `chronoage-web-v${fixtureVersion}.tar.gz`,
         sha256: digest(Buffer.from('deterministic release archive\n')),
       },
     });
@@ -102,11 +104,21 @@ describe('release evidence manifest generation', () => {
     ]);
   });
 
+  it('rejects a runtime that differs from the repository Node pin', async () => {
+    const root = await createFixture();
+    await writeFile(join(root, '.nvmrc'), '0.0.1\n');
+
+    const result = runManifest(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Release manifest generation requires Node 0.0.1');
+  });
+
   it('rejects a checksum that does not match the release archive', async () => {
     const root = await createFixture();
     await writeFile(
-      join(root, 'chronoage-web-v2.0.12.tar.gz.sha256'),
-      `${'0'.repeat(64)}  chronoage-web-v2.0.12.tar.gz\n`,
+      join(root, `chronoage-web-v${fixtureVersion}.tar.gz.sha256`),
+      `${'0'.repeat(64)}  chronoage-web-v${fixtureVersion}.tar.gz\n`,
     );
 
     const result = runManifest(root);
@@ -118,10 +130,10 @@ describe('release evidence manifest generation', () => {
   it('rejects release tag drift from package version', async () => {
     const root = await createFixture();
 
-    const result = runManifest(root, [], { GITHUB_REF_NAME: 'v2.0.13' });
+    const result = runManifest(root, [], { GITHUB_REF_NAME: 'v9.9.9' });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('must equal v2.0.12');
+    expect(result.stderr).toContain(`must equal v${fixtureVersion}`);
   });
 
   it('requires a full commit SHA for release evidence', async () => {
