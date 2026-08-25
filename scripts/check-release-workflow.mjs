@@ -21,7 +21,6 @@ const requiredFragments = [
   ['release evidence manifest', 'npm run release:manifest --'],
   ['release manifest artifact', 'chronoage-web-${{ github.ref_name }}.manifest.json'],
   ['downloaded artifact checksum verification', 'sha256sum --check "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"'],
-  ['published release manifest', '"chronoage-web-${GITHUB_REF_NAME}.manifest.json"'],
   ['verified release tag', '--verify-tag'],
   ['publish dependency on verification', 'needs: verify'],
 ];
@@ -50,9 +49,15 @@ if (preflightIndex >= 0 && npmCiIndex >= 0 && preflightIndex > npmCiIndex) {
 
 const archiveIndex = workflow.indexOf('gzip -n "$archive"');
 const checksumIndex = workflow.indexOf('sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz"');
+const sourceDateExportIndex = workflow.indexOf(
+  'echo "SOURCE_DATE_EPOCH=${source_date_epoch}" >> "$GITHUB_ENV"',
+);
 const manifestIndex = workflow.indexOf('npm run release:manifest --');
 if (archiveIndex >= 0 && checksumIndex >= 0 && archiveIndex > checksumIndex) {
   failures.push('release artifact: checksum must be generated after the deterministic archive');
+}
+if (sourceDateExportIndex >= 0 && manifestIndex >= 0 && sourceDateExportIndex > manifestIndex) {
+  failures.push('release evidence: SOURCE_DATE_EPOCH must be exported before manifest generation');
 }
 if (checksumIndex >= 0 && manifestIndex >= 0 && checksumIndex > manifestIndex) {
   failures.push('release evidence: manifest must be generated after the archive checksum');
@@ -72,6 +77,16 @@ if (
   failures.push(
     'publish integrity: downloaded checksum verification must run after artifact download and before release creation',
   );
+}
+
+if (releaseCreateIndex >= 0) {
+  const publishedManifestIndex = workflow.indexOf(
+    '"chronoage-web-${GITHUB_REF_NAME}.manifest.json"',
+    releaseCreateIndex,
+  );
+  if (publishedManifestIndex < 0) {
+    failures.push('publish evidence: GitHub Release creation must attach the release manifest');
+  }
 }
 
 const verifyJobIndex = workflow.indexOf('  verify:');
