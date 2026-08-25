@@ -4,6 +4,10 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
+No changes yet.
+
+## [2.0.13] - 2026-08-25
+
 ### Added
 - Tauri 2 native shell targeting Windows, macOS, Linux, Android, and iOS/iPadOS while reusing the existing React + TypeScript frontend and deterministic date-domain implementation.
 - Shared Rust desktop/mobile entrypoint, Tauri bundle configuration, and least-privilege `core:default` capability for the main native window.
@@ -17,6 +21,8 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - npm/Cargo release lockfile preflight commands with regression coverage for missing, inconsistent, and malformed release dependency state.
 - A dedicated static release-workflow policy check covering lockfile-only release installation, deterministic packaging, checksums, and verify-before-publish ordering.
 - Reproducible-build documentation covering real lockfile generation/review, `npm ci`, Cargo `--locked`, deterministic archives, and release-candidate evidence.
+- Deterministic machine-readable release evidence manifests containing source identity, archive identity, runtime identity, and generated dependency-lock hashes when available.
+- Regression coverage for release evidence generation, archive/checksum mismatch rejection, tag/commit identity validation, and release workflow evidence policy.
 
 ### Changed
 - Desktop delivery now supports native Tauri packages in addition to the existing PWA/browser path.
@@ -27,16 +33,21 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 - Architecture and roadmap documentation now describe one shared product implementation delivered through web/PWA and native shells.
 - Tag-triggered web releases now fail before installation when the npm lockfile is absent/inconsistent and use `npm ci` rather than resolving dependencies with `npm install`.
 - Web release archives now normalize entry ordering, timestamps, ownership, and gzip metadata before generating their SHA-256 checksum.
+- Release verification now exports the commit-derived `SOURCE_DATE_EPOCH` into deterministic release evidence.
+- The publish job now re-verifies the downloaded archive checksum before GitHub Release creation and publishes the archive, checksum, and evidence manifest together.
 - Native CI now reruns when `package-lock.json` changes because native builds consume the shared frontend dependency graph.
 - Native security documentation now describes the implemented Tauri 2 capability/runtime boundary instead of the superseded future-wrapper model.
+- Canonical package, runtime, Tauri, Cargo, and PWA cache metadata now identify source version `2.0.13`.
 
 ### Fixed
 - The lockfile preflight no longer lets `--all` mask an unknown command-line target.
+- Release workflow policy now fails if publish-time checksum verification, release evidence generation, or GitHub Release manifest attachment is removed.
 
 ### Planned
 - Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate the remaining push/PR/native frontend installs to `npm ci`.
 - Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution, then use locked Cargo resolution in release/native verification.
 - Record passing clean-checkout full quality/E2E/native CI evidence for the final release candidate.
+- Enable and verify effective `main` branch protection/rulesets.
 - Produce and verify signed/notarized/store-ready native artifacts when platform release credentials are configured.
 - Additional locale packs after complete human translation review.
 
