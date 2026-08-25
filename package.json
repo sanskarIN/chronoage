@@ -34,6 +34,7 @@
     "security:check": "node scripts/check-security.mjs",
     "performance:check": "node scripts/check-bundle-size.mjs",
     "release:check": "node scripts/check-release-tag.mjs",
+    "release:manifest": "node scripts/generate-release-manifest.mjs",
     "release:locks:check": "node scripts/check-lockfiles.mjs --all",
     "release:npm-lock:check": "node scripts/check-lockfiles.mjs --npm",
     "release:cargo-lock:check": "node scripts/check-lockfiles.mjs --cargo",
