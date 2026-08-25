@@ -39,6 +39,7 @@ jobs:
         run: |
           archive="chronoage-web-${GITHUB_REF_NAME}.tar"
           source_date_epoch="$(git log -1 --format=%ct)"
+          echo "SOURCE_DATE_EPOCH=${source_date_epoch}" >> "$GITHUB_ENV"
           tar \
             --sort=name \
             --mtime="@${source_date_epoch}" \
@@ -50,6 +51,12 @@ jobs:
           gzip -n "$archive"
       - name: Generate release checksum
         run: sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz" > "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+      - name: Generate release evidence manifest
+        run: >-
+          npm run release:manifest --
+          --archive "chronoage-web-${GITHUB_REF_NAME}.tar.gz"
+          --checksum "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+          --output "chronoage-web-${GITHUB_REF_NAME}.manifest.json"
       - name: Stage verified release package
         uses: actions/upload-artifact@v7
         with:
@@ -57,6 +64,7 @@ jobs:
           path: |
             chronoage-web-${{ github.ref_name }}.tar.gz
             chronoage-web-${{ github.ref_name }}.tar.gz.sha256
+            chronoage-web-${{ github.ref_name }}.manifest.json
           if-no-files-found: error
           retention-days: 7
 
@@ -72,6 +80,8 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: chronoage-release-package
+      - name: Verify downloaded release checksum
+        run: sha256sum --check "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,6 +89,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME"
           "chronoage-web-${GITHUB_REF_NAME}.tar.gz"
           "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+          "chronoage-web-${GITHUB_REF_NAME}.manifest.json"
           --repo "$GITHUB_REPOSITORY"
           --generate-notes
           --verify-tag
