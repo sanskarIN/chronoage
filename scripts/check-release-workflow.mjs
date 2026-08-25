@@ -4,8 +4,15 @@ const workflow = await readFile(
   new URL('../.github/workflows/release.yml', import.meta.url),
   'utf8',
 );
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 const failures = [];
+
+if (packageJson.scripts?.['release:manifest'] !== 'node scripts/generate-release-manifest.mjs') {
+  failures.push(
+    `package scripts: release:manifest=${JSON.stringify(packageJson.scripts?.['release:manifest'])} expected="node scripts/generate-release-manifest.mjs"`,
+  );
+}
 
 const requiredFragments = [
   ['npm lockfile preflight', 'npm run release:npm-lock:check'],
@@ -101,6 +108,6 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Release workflow preserves lockfile-only installation, deterministic packaging, checksums, evidence manifests, publish-time integrity verification, and verify-before-publish policy.',
+    'Release workflow preserves the canonical manifest generator, lockfile-only installation, deterministic packaging, checksums, evidence manifests, publish-time integrity verification, and verify-before-publish policy.',
   );
 }
