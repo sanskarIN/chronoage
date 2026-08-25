@@ -128,6 +128,40 @@ These controls make repeated packaging of identical `dist/` content substantiall
 
 A deterministic archive does not prove that the build itself is reproducible if dependency resolution, toolchains, environment-sensitive transforms, or generated inputs differ. Lockfiles and pinned toolchains are therefore required parts of the same policy.
 
+## Release evidence manifest
+
+Each verified web release now generates a deterministic JSON evidence manifest beside the archive and checksum.
+
+The generator is exposed as:
+
+```bash
+npm run release:manifest -- \
+  --archive chronoage-web-vX.Y.Z.tar.gz \
+  --checksum chronoage-web-vX.Y.Z.tar.gz.sha256 \
+  --output chronoage-web-vX.Y.Z.manifest.json
+```
+
+For tag workflows, release identity is taken from `GITHUB_REF_NAME`, `GITHUB_SHA`, and the commit-derived `SOURCE_DATE_EPOCH`. The generator refuses to write evidence unless:
+
+- the tag exactly matches `v${package.json.version}`;
+- the commit identity is a full 40-character Git SHA;
+- `SOURCE_DATE_EPOCH` is a positive integer;
+- the checksum file names the archive being packaged;
+- the checksum digest exactly matches a fresh SHA-256 hash of the archive.
+
+The manifest records:
+
+- schema version;
+- package name and version;
+- semantic release tag;
+- exact source commit;
+- normalized source-date epoch;
+- pinned Node runtime observed during generation;
+- archive filename, byte size, and SHA-256 digest;
+- SHA-256 digests for `package-lock.json` and `src-tauri/Cargo.lock` when those generated lockfiles exist.
+
+The publish job then verifies the downloaded archive again with `sha256sum --check` before creating the GitHub Release. The archive, checksum, and evidence manifest are attached together. This closes the gap between verification-job packaging and publish-job release creation without claiming cryptographic signing or provenance attestation that has not been configured.
+
 ## Native release boundary
 
 Native source support currently covers Windows, macOS, Linux, Android, and iOS/iPadOS through Tauri 2, but source support is not a claim of signed release artifacts.
@@ -156,7 +190,7 @@ npm run test:e2e
 npm run native:check
 ```
 
-Hosted evidence should also include the complete Native CI matrix and the tag-triggered release verification job.
+Hosted evidence should also include the complete Native CI matrix and the tag-triggered release verification job. For a published web release, retain the generated `.manifest.json` with its sibling archive and checksum so the released commit/artifact identity remains machine-readable.
 
 A source inspection, successful file write, or local syntax review must not be reported as a passing hosted build.
 
