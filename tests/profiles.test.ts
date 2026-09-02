@@ -117,6 +117,27 @@ describe('local profiles', () => {
     );
   });
 
+  it('rejects invalid export metadata', () => {
+    const backup = JSON.stringify({
+      schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+      exportedAt: 'not-a-timestamp',
+      profiles: [],
+    });
+
+    expect(() => importProfiles(backup)).toThrow('Backup contains invalid export metadata.');
+    expect(loadProfiles()).toEqual([]);
+  });
+
+  it('accepts version-1 backups without optional export metadata', () => {
+    const backup = JSON.stringify({
+      schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+      profiles: [],
+    });
+
+    expect(importProfiles(backup)).toEqual([]);
+    expect(loadProfiles()).toEqual([]);
+  });
+
   it('keeps existing profiles unchanged when an imported backup is invalid', () => {
     const existing = saveProfile({ name: 'Keep me', birthDate: '2000-01-01' });
     const before = localStorage.getItem(STORAGE_KEY);
