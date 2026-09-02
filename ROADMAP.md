@@ -14,7 +14,8 @@ The next milestone focuses first on reproducibility and repository governance, t
 - [ ] Generate and review a genuine `src-tauri/Cargo.lock` using Rust `1.97.1`.
 - [ ] Switch permanent push/PR and Native CI frontend installation to `npm ci`.
 - [x] Add an explicit fail-closed installation policy for the pre-lockfile/locked transition.
-- [ ] Enforce locked native dependency verification where required.
+- [x] Add a fail-closed Cargo lock transition policy and locked metadata verification path.
+- [ ] Enforce locked native dependency verification where required after the genuine lockfile is committed.
 - [ ] Record a clean web/E2E/native release-candidate verification run.
 - [ ] Configure and verify effective `main` branch protection/ruleset.
 
@@ -89,6 +90,7 @@ The next milestone focuses first on reproducibility and repository governance, t
 - [x] Re-verify the downloaded archive checksum in the publish job before GitHub Release creation
 - [x] Enforce release evidence generation/publication and publish-time integrity checks with static policy plus regression tests
 - [x] Add a fail-closed workflow dependency-install policy for the lockfile transition
+- [x] Add a fail-closed Cargo lock transition policy and a pre-lockfile-safe locked metadata check
 - [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
 - [ ] Switch permanent push/PR and Native CI frontend installation from `npm install` to `npm ci` after the lockfile is committed
 - [ ] Generate and review `src-tauri/Cargo.lock` from a successful clean native dependency resolution
