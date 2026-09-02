@@ -88,8 +88,25 @@ describe('local profiles', () => {
     expect(importProfiles(backup)).toHaveLength(1);
   });
 
+  it('exports the current backup schema and timestamp metadata', () => {
+    saveProfile({ name: 'Example', birthDate: '2001-02-03' });
+    const exported = JSON.parse(exportProfiles()) as Record<string, unknown>;
+
+    expect(exported.schemaVersion).toBe(1);
+    expect(typeof exported.exportedAt).toBe('string');
+    expect(new Date(exported.exportedAt as string).toISOString()).toBe(exported.exportedAt);
+    expect(exported.profiles).toHaveLength(1);
+  });
+
   it('rejects malformed backup JSON with a stable user-safe error', () => {
     expect(() => importProfiles('{"schemaVersion":1,"profiles":[')).toThrow('Invalid backup file.');
+    expect(loadProfiles()).toEqual([]);
+  });
+
+  it('rejects unsupported future backup schemas', () => {
+    expect(() => importProfiles('{"schemaVersion":2,"profiles":[]}')).toThrow(
+      'Unsupported backup format',
+    );
     expect(loadProfiles()).toEqual([]);
   });
 
@@ -97,6 +114,35 @@ describe('local profiles', () => {
     expect(() => importProfiles('{"schemaVersion":9,"profiles":[]}')).toThrow(
       'Unsupported backup format',
     );
+  });
+
+  it('keeps existing profiles unchanged when an imported backup is invalid', () => {
+    const existing = saveProfile({ name: 'Keep me', birthDate: '2000-01-01' });
+    const before = localStorage.getItem(STORAGE_KEY);
+
+    const invalidBackup = JSON.stringify({
+      schemaVersion: 1,
+      profiles: [
+        {
+          id: 'valid-id',
+          name: 'Imported',
+          birthDate: '2001-01-01',
+          createdAt: '2026-08-19T00:00:00.000Z',
+          updatedAt: '2026-08-19T00:00:00.000Z',
+        },
+        {
+          id: 'broken-id',
+          name: 'Broken',
+          birthDate: 'not-a-date',
+          createdAt: '2026-08-19T00:00:00.000Z',
+          updatedAt: '2026-08-19T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(() => importProfiles(invalidBackup)).toThrow('Backup contains an invalid profile.');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
+    expect(loadProfiles()).toEqual([existing]);
   });
 
   it('rejects backups larger than the configured preflight limit', () => {
