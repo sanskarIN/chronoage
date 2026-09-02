@@ -8,10 +8,11 @@ const STORAGE_KEY = 'chronoage.profiles.v1';
 const MAX_PROFILES = 100;
 const MAX_PROFILE_ID_LENGTH = 128;
 const STORAGE_UNAVAILABLE_MESSAGE = 'Browser storage is unavailable. Changes could not be saved.';
+export const CURRENT_BACKUP_SCHEMA_VERSION = 1;
 export const MAX_BACKUP_FILE_BYTES = 1_000_000;
 
 interface ProfileEnvelope {
-  schemaVersion: 1;
+  schemaVersion: typeof CURRENT_BACKUP_SCHEMA_VERSION;
   profiles: SavedProfile[];
 }
 
@@ -67,13 +68,17 @@ function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
   return normalized;
 }
 
+function emptyEnvelope(): ProfileEnvelope {
+  return { schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION, profiles: [] };
+}
+
 function parseEnvelope(raw: string | null): ProfileEnvelope {
-  if (!raw) return { schemaVersion: 1, profiles: [] };
+  if (!raw) return emptyEnvelope();
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') throw new Error('Invalid profile envelope');
     const candidate = parsed as Record<string, unknown>;
-    if (candidate.schemaVersion !== 1 || !Array.isArray(candidate.profiles)) {
+    if (candidate.schemaVersion !== CURRENT_BACKUP_SCHEMA_VERSION || !Array.isArray(candidate.profiles)) {
       throw new Error('Unsupported profile schema');
     }
 
@@ -90,12 +95,12 @@ function parseEnvelope(raw: string | null): ProfileEnvelope {
     if (ignoredCount > 0) {
       logger.warn('Invalid saved profile entries were ignored.', { ignoredCount });
     }
-    return { schemaVersion: 1, profiles };
+    return { schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION, profiles };
   } catch (error) {
     logger.warn('Saved profile data was invalid and was ignored.', {
       errorType: error instanceof Error ? error.name : 'unknown',
     });
-    return { schemaVersion: 1, profiles: [] };
+    return emptyEnvelope();
   }
 }
 
@@ -111,7 +116,10 @@ function readStoredProfiles(): string | null {
 }
 
 function persist(profiles: SavedProfile[]): void {
-  const envelope: ProfileEnvelope = { schemaVersion: 1, profiles: profiles.slice(0, MAX_PROFILES) };
+  const envelope: ProfileEnvelope = {
+    schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+    profiles: profiles.slice(0, MAX_PROFILES),
+  };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
   } catch (error) {
@@ -204,7 +212,11 @@ export function clearProfiles(): void {
 
 export function exportProfiles(): string {
   return JSON.stringify(
-    { schemaVersion: 1, exportedAt: new Date().toISOString(), profiles: loadProfiles() },
+    {
+      schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      profiles: loadProfiles(),
+    },
     null,
     2,
   );
@@ -223,7 +235,7 @@ export function importProfiles(raw: string): SavedProfile[] {
   }
   if (!parsed || typeof parsed !== 'object') throw new UserVisibleError('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
-  if (value.schemaVersion !== 1 || !Array.isArray(value.profiles)) {
+  if (value.schemaVersion !== CURRENT_BACKUP_SCHEMA_VERSION || !Array.isArray(value.profiles)) {
     throw new UserVisibleError('Unsupported backup format.');
   }
   if (value.profiles.length > MAX_PROFILES) {
