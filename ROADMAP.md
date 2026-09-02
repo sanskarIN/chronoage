@@ -4,6 +4,27 @@
 
 ChronoAge `2.0.13` consolidates the completed core PWA, polish, advanced date tooling, accessibility, privacy, saved-profile, reliability, security, release-hardening, cross-platform native-delivery, and deterministic release-evidence work described below. Remaining unchecked items are deliberately evidence-gated; they are not silently treated as complete for the `2.0.13` source tree.
 
+## Next planned milestone — v2.1.0
+
+The next milestone focuses first on reproducibility and repository governance, then on carefully scoped product improvements. See [docs/releases/2.1.0-plan.md](docs/releases/2.1.0-plan.md) for the implementation order and release gates.
+
+### Reproducibility and governance
+
+- [ ] Generate and review a genuine `package-lock.json` using Node.js `22.13.0`.
+- [ ] Generate and review a genuine `src-tauri/Cargo.lock` using Rust `1.97.1`.
+- [ ] Switch permanent push/PR and Native CI frontend installation to `npm ci`.
+- [ ] Enforce locked native dependency verification where required.
+- [ ] Record a clean web/E2E/native release-candidate verification run.
+- [ ] Configure and verify effective `main` branch protection/ruleset.
+
+### Product and compatibility improvements
+
+- [ ] Add explicit backup schema-version metadata for future migrations.
+- [ ] Reject unsupported future backup schemas with a stable user-safe message.
+- [ ] Complete human translation review for the first additional locale pack.
+- [ ] Add locale-aware date/number/weekday/duration formatting tests.
+- [ ] Add locale selection without serializing private calculator/profile data into URLs.
+
 ## v1.0 — Core production PWA
 
 - [x] Exact age calculator
