@@ -4,7 +4,15 @@ All notable changes to ChronoAge are documented here. The project follows Keep a
 
 ## [Unreleased]
 
-No changes yet.
+### Planned
+- ChronoAge `2.1.0` engineering cycle focused on reproducible dependency state, deterministic CI, repository governance, backup-schema compatibility, and the first fully reviewed additional locale pack.
+- Generate and review genuine `package-lock.json` and `src-tauri/Cargo.lock` from the pinned toolchains; no lockfile will be hand-authored.
+- Migrate permanent push/PR and Native CI frontend installation to `npm ci` only after the genuine npm lockfile is accepted.
+- Enforce locked Cargo verification for native release checks after the genuine Cargo lockfile is accepted.
+- Record clean-checkout web, Playwright, and Native CI evidence for the exact release candidate.
+- Configure and verify effective `main` branch protection/ruleset before treating repository governance as complete.
+- Add explicit backup schema-version metadata and safe unsupported-future-schema handling.
+- Add locale-aware date, number, weekday, and duration formatting coverage while preserving privacy-safe page URLs.
 
 ## [2.0.13] - 2026-08-25
 
@@ -42,14 +50,6 @@ No changes yet.
 ### Fixed
 - The lockfile preflight no longer lets `--all` mask an unknown command-line target.
 - Release workflow policy now fails if publish-time checksum verification, release evidence generation, or GitHub Release manifest attachment is removed.
-
-### Planned
-- Generate and review a real npm lockfile from a successful clean network-enabled resolution, then migrate the remaining push/PR/native frontend installs to `npm ci`.
-- Generate and review a real `src-tauri/Cargo.lock` from a successful clean native dependency resolution, then use locked Cargo resolution in release/native verification.
-- Record passing clean-checkout full quality/E2E/native CI evidence for the final release candidate.
-- Enable and verify effective `main` branch protection/rulesets.
-- Produce and verify signed/notarized/store-ready native artifacts when platform release credentials are configured.
-- Additional locale packs after complete human translation review.
 
 ## [2.0.12] - 2026-08-19
 
