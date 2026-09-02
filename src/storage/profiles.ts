@@ -238,6 +238,9 @@ export function importProfiles(raw: string): SavedProfile[] {
   if (value.schemaVersion !== CURRENT_BACKUP_SCHEMA_VERSION || !Array.isArray(value.profiles)) {
     throw new UserVisibleError('Unsupported backup format.');
   }
+  if (value.exportedAt !== undefined && (typeof value.exportedAt !== 'string' || !isIsoTimestamp(value.exportedAt))) {
+    throw new UserVisibleError('Backup contains invalid export metadata.');
+  }
   if (value.profiles.length > MAX_PROFILES) {
     throw new UserVisibleError(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
   }
