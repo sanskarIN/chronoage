@@ -24,6 +24,8 @@ Each profile contains:
 - `createdAt` — ISO timestamp.
 - `updatedAt` — ISO timestamp that must not precede `createdAt`.
 
+`exportedAt` records when the backup was created. It is intentionally not treated as stable content for byte-for-byte comparison; tests should validate its ISO timestamp shape rather than expect a fixed value.
+
 ## Compatibility rules
 
 1. Import accepts only a supported schema version.
@@ -32,8 +34,8 @@ Each profile contains:
 4. Invalid timestamps, dates, names, or IDs are invalid profile data.
 5. A backup containing more than the supported profile limit is rejected.
 6. Backup size is checked using UTF-8 bytes before JSON parsing.
-7. Successful import replaces the current local profile collection only after the UI's explicit replacement confirmation flow.
-8. Export is deterministic in field structure and uses the current profile data loaded from local storage.
+7. Import validates the complete backup before replacing the existing local profile collection, so an invalid backup must not partially overwrite valid local data.
+8. Successful import replaces the current local profile collection only after the UI's explicit replacement confirmation flow.
 
 ## Migration policy
 
