@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearProfiles,
+  CURRENT_BACKUP_SCHEMA_VERSION,
   deleteProfile,
   exportProfiles,
   importProfiles,
@@ -92,7 +93,7 @@ describe('local profiles', () => {
     saveProfile({ name: 'Example', birthDate: '2001-02-03' });
     const exported = JSON.parse(exportProfiles()) as Record<string, unknown>;
 
-    expect(exported.schemaVersion).toBe(1);
+    expect(exported.schemaVersion).toBe(CURRENT_BACKUP_SCHEMA_VERSION);
     expect(typeof exported.exportedAt).toBe('string');
     expect(new Date(exported.exportedAt as string).toISOString()).toBe(exported.exportedAt);
     expect(exported.profiles).toHaveLength(1);
