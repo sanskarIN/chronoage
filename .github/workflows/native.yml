@@ -48,10 +48,14 @@ jobs:
           node-version: 22.13.0
       - name: Verify dependency install policy
         run: npm run install:policy:check
+      - name: Verify native lock transition policy
+        run: npm run native:lock:policy:check
       - name: Install frontend dependencies
         run: npm install --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify locked native dependency graph
+        run: npm run native:locked:check
       - name: Install Linux Tauri prerequisites
         if: runner.os == 'Linux'
         run: |
@@ -96,10 +100,14 @@ jobs:
           java-version: '17'
       - name: Verify dependency install policy
         run: npm run install:policy:check
+      - name: Verify native lock transition policy
+        run: npm run native:lock:policy:check
       - name: Install frontend dependencies
         run: npm install --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify locked native dependency graph
+        run: npm run native:locked:check
       - name: Install Android Rust target
         run: rustup target add aarch64-linux-android
       - name: Select hosted Android NDK
@@ -128,10 +136,14 @@ jobs:
           node-version: 22.13.0
       - name: Verify dependency install policy
         run: npm run install:policy:check
+      - name: Verify native lock transition policy
+        run: npm run native:lock:policy:check
       - name: Install frontend dependencies
         run: npm install --no-fund --no-audit
       - name: Verify pinned Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify locked native dependency graph
+        run: npm run native:locked:check
       - name: Verify CocoaPods
         run: pod --version
       - name: Initialize generated iOS project
