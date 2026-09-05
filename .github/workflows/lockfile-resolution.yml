@@ -1,0 +1,136 @@
+name: Resolve dependency lockfiles
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/lockfile-resolution.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lockfiles-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  npm-lock:
+    name: Resolve and verify npm lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Report npm runtime
+        run: |
+          node --version
+          npm --version
+
+      - name: Resolve npm lockfile normally
+        id: npm_resolve
+        continue-on-error: true
+        run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit --loglevel verbose
+
+      - name: Preserve npm resolver logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronoage-npm-resolver-logs
+          path: ~/.npm/_logs
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Diagnose peer resolver with legacy mode
+        id: npm_legacy
+        if: steps.npm_resolve.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --package-lock-only --legacy-peer-deps --ignore-scripts --no-fund --no-audit --loglevel verbose
+
+      - name: Upload diagnostic legacy-peer lockfile
+        if: steps.npm_resolve.outcome == 'failure' && steps.npm_legacy.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronoage-npm-lockfile-legacy-peer-diagnostic
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Fail if normal npm resolution failed
+        if: steps.npm_resolve.outcome == 'failure'
+        run: |
+          echo 'Normal npm dependency resolution failed; diagnostic artifacts were preserved.' >&2
+          exit 1
+
+      - name: Verify npm lockfile with clean install
+        run: npm ci --ignore-scripts --no-fund --no-audit
+
+      - name: Run shared quality suite
+        run: npm run check
+
+      - name: Audit production npm dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Upload verified npm lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronoage-npm-lockfile
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+
+  cargo-lock:
+    name: Resolve and verify Cargo lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Report pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Install Linux Tauri prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Resolve Cargo lockfile
+        run: cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+
+      - name: Verify Cargo lockfile
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml
+
+      - name: Run Rust formatting gate
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+
+      - name: Run Rust Clippy gate
+        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+
+      - name: Upload verified Cargo lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronoage-cargo-lockfile
+          path: src-tauri/Cargo.lock
+          if-no-files-found: error
+          retention-days: 7
