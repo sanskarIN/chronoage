@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addDays,
+  addMonthsClamped,
   addYearsClamped,
   ageDifference,
   calculateAge,
+  daysInMonth,
+  formatDateInput,
   intervalDays,
   isLeapYear,
   nextBirthday,
   parseDateInput,
+  weekdayName,
   zonedLocalToUtc,
+  zonedLocalToUtcCandidates,
 } from '../src/domain/dateMath';
 
 describe('date math', () => {
@@ -16,6 +22,17 @@ describe('date math', () => {
     expect(isLeapYear(1900)).toBe(false);
     expect(isLeapYear(2024)).toBe(true);
     expect(isLeapYear(2025)).toBe(false);
+  });
+
+  it('rejects unsupported years in month-length calculations', () => {
+    expect(() => daysInMonth(0, 2)).toThrow('Invalid year or month');
+    expect(() => daysInMonth(10_000, 2)).toThrow('Invalid year or month');
+  });
+
+  it('rejects invalid dates before formatting or weekday normalization', () => {
+    const invalid = { year: 2026, month: 2, day: 30 };
+    expect(() => formatDateInput(invalid)).toThrow('Invalid calendar date');
+    expect(() => weekdayName(invalid)).toThrow('Invalid calendar date');
   });
 
   it('handles four-digit years below 0100 without JavaScript Date remapping', () => {
@@ -29,6 +46,24 @@ describe('date math', () => {
     const leapDay = { year: 2000, month: 2, day: 29 };
     expect(addYearsClamped(leapDay, 1, 'feb28')).toEqual({ year: 2001, month: 2, day: 28 });
     expect(addYearsClamped(leapDay, 1, 'mar1')).toEqual({ year: 2001, month: 3, day: 1 });
+  });
+
+  it('keeps leap-day calendar age normalized under the March 1 policy', () => {
+    const result = calculateAge({
+      birth: { year: 2000, month: 2, day: 29, hour: 0, minute: 0 },
+      reference: { year: 2025, month: 2, day: 28, hour: 0, minute: 0 },
+      timeZone: 'UTC',
+      includeTime: false,
+      leapDayPolicy: 'mar1',
+    });
+    expect(result).toMatchObject({ years: 24, months: 11, days: 30 });
+    expect(result.months).toBeLessThan(12);
+  });
+
+  it('rejects calendar arithmetic outside the supported civil-year range', () => {
+    expect(() => addDays({ year: 1, month: 1, day: 1 }, -1)).toThrow(/outside years 1-9999/);
+    expect(() => addYearsClamped({ year: 9999, month: 1, day: 1 }, 1)).toThrow(/between 1 and 9999/);
+    expect(() => addMonthsClamped({ year: 1, month: 1, day: 1 }, -1)).toThrow(/between 1 and 9999/);
   });
 
   it('calculates a calendar age exactly', () => {
@@ -58,8 +93,17 @@ describe('date math', () => {
   });
 
   it('converts IANA zoned local time to a UTC instant', () => {
-    const timestamp = zonedLocalToUtc({ year: 2026, month: 8, day: 19, hour: 12, minute: 0 }, 'Asia/Kolkata');
+    const timestamp = zonedLocalToUtc(
+      { year: 2026, month: 8, day: 19, hour: 12, minute: 0 },
+      'Asia/Kolkata',
+    );
     expect(new Date(timestamp).toISOString()).toBe('2026-08-19T06:30:00.000Z');
+  });
+
+  it('rejects nonexistent local times in daylight-saving gaps', () => {
+    expect(() =>
+      zonedLocalToUtc({ year: 2026, month: 3, day: 8, hour: 2, minute: 30 }, 'America/New_York'),
+    ).toThrow(/does not exist/);
   });
 
   it('counts exclusive and inclusive intervals', () => {

@@ -6,26 +6,90 @@ on:
       - "v*.*.*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  verify:
+    name: Verify release candidate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
-      - name: Install dependencies
-        run: npm install --no-fund --no-audit
+          node-version: 22.13.0
+      - name: Verify reproducible dependency lockfiles
+        run: npm run release:locks:check
+      - name: Install dependencies from lockfile
+        run: npm ci --no-fund --no-audit
+      - name: Verify release tag matches package version
+        run: npm run release:check
       - name: Verify project
         run: npm run check
-      - name: Archive production build
-        run: tar -czf chronoage-web-${GITHUB_REF_NAME}.tar.gz dist
+      - name: Audit high-severity runtime vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run release browser and accessibility verification
+        run: npm run test:e2e
+      - name: Create deterministic release archive
+        shell: bash
+        run: |
+          archive="chronoage-web-${GITHUB_REF_NAME}.tar"
+          source_date_epoch="$(git log -1 --format=%ct)"
+          echo "SOURCE_DATE_EPOCH=${source_date_epoch}" >> "$GITHUB_ENV"
+          tar \
+            --sort=name \
+            --mtime="@${source_date_epoch}" \
+            --owner=0 \
+            --group=0 \
+            --numeric-owner \
+            -cf "$archive" \
+            dist
+          gzip -n "$archive"
+      - name: Generate release checksum
+        run: sha256sum "chronoage-web-${GITHUB_REF_NAME}.tar.gz" > "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+      - name: Generate release evidence manifest
+        run: >-
+          npm run release:manifest --
+          --archive "chronoage-web-${GITHUB_REF_NAME}.tar.gz"
+          --checksum "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+          --output "chronoage-web-${GITHUB_REF_NAME}.manifest.json"
+      - name: Stage verified release package
+        uses: actions/upload-artifact@v7
+        with:
+          name: chronoage-release-package
+          path: |
+            chronoage-web-${{ github.ref_name }}.tar.gz
+            chronoage-web-${{ github.ref_name }}.tar.gz.sha256
+            chronoage-web-${{ github.ref_name }}.manifest.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified release package
+        uses: actions/download-artifact@v7
+        with:
+          name: chronoage-release-package
+      - name: Verify downloaded release checksum
+        run: sha256sum --check "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "chronoage-web-${GITHUB_REF_NAME}.tar.gz" --generate-notes --verify-tag
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          "chronoage-web-${GITHUB_REF_NAME}.tar.gz"
+          "chronoage-web-${GITHUB_REF_NAME}.tar.gz.sha256"
+          "chronoage-web-${GITHUB_REF_NAME}.manifest.json"
+          --repo "$GITHUB_REPOSITORY"
+          --generate-notes
+          --verify-tag

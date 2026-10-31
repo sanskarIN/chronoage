@@ -22,9 +22,19 @@ body:
     attributes:
       label: Alternatives considered
   - type: dropdown
+    id: local-first
+    attributes:
+      label: Can this remain local-first with no required account or backend?
+      options:
+        - "Yes"
+        - "No"
+        - "Unsure"
+    validations:
+      required: true
+  - type: dropdown
     id: privacy
     attributes:
-      label: Would this introduce network or cloud data handling?
+      label: Would this introduce network, cloud, analytics, authentication, or new data sharing?
       options:
         - "No"
         - "Yes"
@@ -32,7 +42,17 @@ body:
     validations:
       required: true
   - type: textarea
+    id: data-model
+    attributes:
+      label: Data and URL considerations
+      description: If the feature handles dates, names, profiles, backups, routes, or sharing, explain how private values stay out of public URLs/logs unless explicitly shared by the user.
+  - type: textarea
     id: accessibility
     attributes:
       label: Accessibility considerations
-      description: Note keyboard, screen-reader, motion, contrast, or touch implications if relevant.
+      description: Note keyboard, focus, screen-reader, motion, contrast, zoom, responsive, or touch implications if relevant.
+  - type: textarea
+    id: offline
+    attributes:
+      label: Offline/PWA considerations
+      description: Note whether the feature should work offline or changes installation, manifest, service-worker, update, or cache behavior.
