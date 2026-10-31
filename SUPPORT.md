@@ -12,7 +12,23 @@ For security vulnerabilities, follow [SECURITY.md](SECURITY.md) instead of openi
 
 ## Before reporting a bug
 
-Include browser/OS, ChronoAge version, exact dates/timezone needed to reproduce (use fictional dates if privacy matters), expected result, actual result, and whether the issue reproduces after a refresh.
+Include:
+
+- browser and operating system;
+- ChronoAge version/commit when known;
+- the public page route involved, such as `#/difference` or `#/profiles`;
+- exact fictional dates/timezone needed to reproduce a calculation problem;
+- expected result and actual result;
+- whether the issue reproduces after a refresh;
+- whether the issue occurs online, offline, installed as a PWA, or only in one display mode.
+
+## Protect your personal data
+
+Do **not** post a real exported profile backup, browser-storage dump, personal birth dates, private names, credentials, or screenshots containing sensitive information in a public GitHub issue.
+
+Prefer the smallest fictional reproduction that demonstrates the same behavior. ChronoAge page routes contain only public page identifiers, so a route such as `#/profiles` is safe to include; personal calculation values should remain out of issue URLs and public logs.
+
+If a support case truly cannot be described without private information, contact the support email first rather than attaching that data publicly.
 
 ## Funding
 

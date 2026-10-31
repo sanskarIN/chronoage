@@ -1,3 +1,5 @@
+import { addYearsClamped, formatDateInput } from '../domain/dateMath';
+
 export function todayInputValue(): string {
   const now = new Date();
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
@@ -11,7 +13,12 @@ export function currentTimeInputValue(): string {
 
 export function defaultBirthInputValue(): string {
   const now = new Date();
-  return `${now.getFullYear() - 20}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const twentyYearsAgo = addYearsClamped(
+    { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() },
+    -20,
+    'feb28',
+  );
+  return formatDateInput(twentyYearsAgo);
 }
 
 export function systemTimeZone(): string {
