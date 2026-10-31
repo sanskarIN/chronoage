@@ -7,7 +7,7 @@ import {
   isValidLocalDate,
   toEpochDay,
 } from '../src/domain/dateMath';
-import type { LocalDate } from '../src/types/models';
+import type { LeapDayPolicy, LocalDate } from '../src/types/models';
 
 function seededDates(count: number): LocalDate[] {
   let state = 0x5eed1234;
@@ -19,8 +19,9 @@ function seededDates(count: number): LocalDate[] {
   const result: LocalDate[] = [];
   let cursor: LocalDate = { year: 1900, month: 1, day: 1 };
   for (let index = 0; index < count; index += 1) {
+    if (cursor.year > 9800) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
     cursor = addDays(cursor, next() % 45_000);
-    if (cursor.year > 9990) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
+    if (cursor.year > 9800) cursor = { year: 1900 + (next() % 100), month: 1, day: 1 };
     result.push(cursor);
   }
   return result;
@@ -41,6 +42,23 @@ describe('calendar invariants', () => {
       const second = values[index];
       if (!first || !second) continue;
       expect(ageDifference(first, second)).toEqual(ageDifference(second, first));
+    }
+  });
+
+  it('keeps calendar difference components canonical under both leap-day policies', () => {
+    const values = seededDates(120);
+    const policies: LeapDayPolicy[] = ['feb28', 'mar1'];
+    for (const policy of policies) {
+      for (let index = 1; index < values.length; index += 1) {
+        const first = values[index - 1];
+        const second = values[index];
+        if (!first || !second) continue;
+        const result = ageDifference(first, second, policy);
+        expect(result.years).toBeGreaterThanOrEqual(0);
+        expect(result.months).toBeGreaterThanOrEqual(0);
+        expect(result.months).toBeLessThan(12);
+        expect(result.days).toBeGreaterThanOrEqual(0);
+      }
     }
   });
 

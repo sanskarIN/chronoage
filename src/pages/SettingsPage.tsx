@@ -1,48 +1,91 @@
+import { useState } from 'react';
 import type { AppSettings, ThemePreference } from '../types/models';
+import { isValidTimeZone } from '../domain/dateMath';
 import { SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
+import { TimeZoneField } from '../components/TimeZoneField';
+import { mailto, project } from '../config/project';
+import { usePwaLifecycle } from '../hooks/usePwaLifecycle';
+import { en } from '../i18n/en';
+import { sharedText } from '../i18n/shared';
 
 interface Props {
   settings: AppSettings;
-  onChange: (settings: AppSettings) => void;
+  onChange: (settings: AppSettings) => boolean | void;
 }
 
 export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
-  const patch = (next: Partial<AppSettings>): void => onChange({ ...settings, ...next });
+  const pwa = usePwaLifecycle();
+  const [installMessage, setInstallMessage] = useState('');
+  const [timeZoneDraft, setTimeZoneDraft] = useState(settings.defaultTimeZone);
+  const [storageWarning, setStorageWarning] = useState('');
+  const timeZoneError = isValidTimeZone(timeZoneDraft) ? undefined : sharedText.invalidTimeZone;
+
+  const patch = (next: Partial<AppSettings>): void => {
+    const persisted = onChange({ ...settings, ...next });
+    setStorageWarning(persisted === false ? en.settings.storageUnavailable : '');
+  };
+
+  const installApp = async (): Promise<void> => {
+    const outcome = await pwa.install();
+    setInstallMessage(
+      outcome === 'accepted'
+        ? en.settings.installAccepted
+        : outcome === 'dismissed'
+          ? en.settings.installDismissed
+          : en.settings.promptUnavailable,
+    );
+  };
+
+  const changeTimeZone = (value: string): void => {
+    setTimeZoneDraft(value);
+    if (isValidTimeZone(value)) patch({ defaultTimeZone: value });
+  };
+
+  const updateMessage =
+    pwa.updateStatus === 'checking'
+      ? en.settings.checking
+      : pwa.updateStatus === 'current'
+        ? en.settings.current
+        : pwa.updateStatus === 'update-ready'
+          ? en.settings.updateReady
+          : pwa.updateStatus === 'error'
+            ? en.settings.updateError
+            : en.settings.updateIdle;
 
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Preferences"
-        title="Settings"
-        description="Control appearance, accessibility, local data behavior, date rules, updates, and project information."
+        eyebrow={en.settings.eyebrow}
+        title={en.settings.title}
+        description={en.settings.description}
       />
 
       <section className="settings-section panel" aria-labelledby="appearance-title">
         <div>
-          <p className="eyebrow">Appearance</p>
-          <h2 id="appearance-title">Theme</h2>
+          <p className="eyebrow">{en.settings.appearanceEyebrow}</p>
+          <h2 id="appearance-title">{en.settings.themeTitle}</h2>
         </div>
         <SelectField
-          label="Theme"
+          label={en.settings.theme}
           value={settings.theme}
           onChange={(event) => patch({ theme: event.target.value as ThemePreference })}
         >
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
+          <option value="system">{en.settings.system}</option>
+          <option value="light">{en.settings.light}</option>
+          <option value="dark">{en.settings.dark}</option>
         </SelectField>
       </section>
 
       <section className="settings-section panel" aria-labelledby="accessibility-title">
         <div>
-          <p className="eyebrow">Accessibility</p>
-          <h2 id="accessibility-title">Comfort and contrast</h2>
+          <p className="eyebrow">{en.settings.accessibilityEyebrow}</p>
+          <h2 id="accessibility-title">{en.settings.comfortTitle}</h2>
         </div>
         <label className="switch-row">
           <span>
-            <strong>Reduce motion</strong>
-            <small>Minimize transitions and animated effects.</small>
+            <strong>{en.settings.reduceMotion}</strong>
+            <small>{en.settings.reduceMotionHint}</small>
           </span>
           <input
             type="checkbox"
@@ -52,8 +95,8 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
         </label>
         <label className="switch-row">
           <span>
-            <strong>High contrast</strong>
-            <small>Strengthen boundaries and text contrast.</small>
+            <strong>{en.settings.highContrast}</strong>
+            <small>{en.settings.highContrastHint}</small>
           </span>
           <input
             type="checkbox"
@@ -65,94 +108,136 @@ export function SettingsPage({ settings, onChange }: Props): React.JSX.Element {
 
       <section className="settings-section panel" aria-labelledby="date-title">
         <div>
-          <p className="eyebrow">Date behavior</p>
-          <h2 id="date-title">Calculation defaults</h2>
+          <p className="eyebrow">{en.settings.dateEyebrow}</p>
+          <h2 id="date-title">{en.settings.calculationDefaults}</h2>
         </div>
+        <TimeZoneField
+          label={en.settings.defaultTimezone}
+          value={timeZoneDraft}
+          onChange={(event) => changeTimeZone(event.target.value)}
+          hint={en.settings.defaultTimezoneHint}
+          error={timeZoneError}
+        />
         <SelectField
-          label="Default timezone"
-          value={settings.defaultTimeZone}
-          onChange={(event) => patch({ defaultTimeZone: event.target.value })}
-          hint="Used when time-of-day precision is enabled."
+          label={en.settings.leapDay}
+          value={settings.leapDayPolicy}
+          onChange={(event) =>
+            patch({ leapDayPolicy: event.target.value === 'mar1' ? 'mar1' : 'feb28' })
+          }
+          hint={en.settings.leapDayHint}
         >
-          {Array.from(
-            new Set([
-              settings.defaultTimeZone,
-              'UTC',
-              'Asia/Kolkata',
-              'America/New_York',
-              'Europe/London',
-              'Asia/Tokyo',
-              'Australia/Sydney',
-            ]),
-          ).map((zone) => (
-            <option key={zone} value={zone}>
-              {zone}
-            </option>
-          ))}
+          <option value="feb28">{en.settings.february28}</option>
+          <option value="mar1">{en.settings.march1}</option>
         </SelectField>
         <SelectField
-          label="Leap-day anniversary"
-          value={settings.leapDayPolicy}
-          onChange={(event) => patch({ leapDayPolicy: event.target.value === 'mar1' ? 'mar1' : 'feb28' })}
-          hint="Applied when a February 29 birthday lands in a non-leap year."
+          label={en.settings.repeatedDst}
+          value={settings.dstAmbiguityPolicy}
+          onChange={(event) =>
+            patch({ dstAmbiguityPolicy: event.target.value === 'later' ? 'later' : 'earlier' })
+          }
+          hint={en.settings.repeatedDstHint}
         >
-          <option value="feb28">February 28</option>
-          <option value="mar1">March 1</option>
+          <option value="earlier">{en.settings.earlierOccurrence}</option>
+          <option value="later">{en.settings.laterOccurrence}</option>
         </SelectField>
       </section>
 
       <section className="settings-section panel" aria-labelledby="data-title">
         <div>
-          <p className="eyebrow">Data</p>
-          <h2 id="data-title">Local storage and backups</h2>
+          <p className="eyebrow">{en.settings.dataEyebrow}</p>
+          <h2 id="data-title">{en.settings.localStorageTitle}</h2>
         </div>
         <div className="privacy-box">
-          <strong>Profiles stay in this browser unless you explicitly export them.</strong>
-          <p>
-            Use the Profiles page to add, delete, export, or import local profile data. Export files are plain JSON and are not encrypted.
-          </p>
+          <strong>{en.settings.localStorageStrong}</strong>
+          <p>{en.settings.localStorageDescription}</p>
         </div>
+        {storageWarning && (
+          <div className="alert error" role="alert">
+            {storageWarning}
+          </div>
+        )}
       </section>
 
       <section className="settings-section panel" aria-labelledby="privacy-title">
         <div>
-          <p className="eyebrow">Privacy</p>
-          <h2 id="privacy-title">Local-first defaults</h2>
+          <p className="eyebrow">{en.settings.privacyEyebrow}</p>
+          <h2 id="privacy-title">{en.settings.privacyTitle}</h2>
         </div>
         <div className="privacy-box">
-          <strong>No analytics, account, advertising SDK, or cloud sync is built in.</strong>
-          <p>
-            Calculator inputs are transient UI state. Saved profiles and preferences use browser localStorage only after user actions.
-          </p>
+          <strong>{en.settings.privacyStrong}</strong>
+          <p>{en.settings.privacyDescription}</p>
         </div>
+      </section>
+
+      <section className="settings-section panel" aria-labelledby="install-title">
+        <div>
+          <p className="eyebrow">{en.settings.installEyebrow}</p>
+          <h2 id="install-title">{en.settings.installTitle}</h2>
+        </div>
+        <p className="muted">
+          {pwa.installed
+            ? en.settings.installed
+            : pwa.canInstall
+              ? en.settings.installReady
+              : en.settings.installUnavailable}
+        </p>
+        {!pwa.installed && (
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={!pwa.canInstall}
+            onClick={() => void installApp()}
+          >
+            {en.settings.installApp}
+          </button>
+        )}
+        {installMessage && (
+          <p className="status-line" role="status">
+            {installMessage}
+          </p>
+        )}
       </section>
 
       <section className="settings-section panel" aria-labelledby="update-title">
         <div>
-          <p className="eyebrow">Updates</p>
-          <h2 id="update-title">PWA update check</h2>
+          <p className="eyebrow">{en.settings.updatesEyebrow}</p>
+          <h2 id="update-title">{en.settings.updatesTitle}</h2>
         </div>
-        <p className="muted">
-          ChronoAge uses the browser service-worker lifecycle. Reloading checks the deployed app shell for a newer version.
+        <p className="muted" role="status">
+          {updateMessage}
         </p>
-        <button type="button" className="secondary-button" onClick={() => window.location.reload()}>
-          Reload and check for updates
-        </button>
+        <div className="button-row">
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={pwa.updateStatus === 'checking'}
+            onClick={() => void pwa.checkForUpdate()}
+          >
+            {pwa.updateStatus === 'checking' ? en.settings.checkingButton : en.settings.checkUpdates}
+          </button>
+          {pwa.updateStatus === 'update-ready' && (
+            <button type="button" className="primary-button" onClick={() => void pwa.applyUpdate()}>
+              {en.settings.applyUpdate}
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="settings-section panel" aria-labelledby="about-settings-title">
         <div>
-          <p className="eyebrow">About</p>
-          <h2 id="about-settings-title">ChronoAge 1.0.0</h2>
+          <p className="eyebrow">{en.settings.aboutEyebrow}</p>
+          <h2 id="about-settings-title">
+            {project.name} {project.version}
+          </h2>
         </div>
         <p className="muted">
-          Open-source MIT project · Made by the Sanskar ·{' '}
-          <a href="https://github.com/sanskarIN/chronoage" target="_blank" rel="noreferrer">
-            GitHub repository
+          {sharedText.openSourceProjectMeta(project.license, project.credit)}{' '}
+          <a href={project.repositoryUrl} target="_blank" rel="noreferrer">
+            {en.settings.githubRepository}
           </a>
         </p>
         <p className="muted">
-          Support: <a href="mailto:supportramsandesh@gmail.com">supportramsandesh@gmail.com</a>
+          {en.settings.support} <a href={mailto(project.supportEmail)}>{project.supportEmail}</a>
         </p>
       </section>
     </div>

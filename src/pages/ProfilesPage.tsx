@@ -12,10 +12,12 @@ import {
   updateProfile,
 } from '../storage/profiles';
 import { defaultBirthInputValue } from '../utils/dateDefaults';
-import { Field } from '../components/Field';
+import { sortProfiles, type ProfileSort } from '../utils/profileSort';
+import { Field, SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icons';
+import { en } from '../i18n/en';
 
 interface ProfilesPageProps {
   onUseProfile: (profile: SavedProfile) => void;
@@ -61,7 +63,7 @@ export function ProfilesPage({ onUseProfile }: ProfilesPageProps): React.JSX.Ele
       setError('');
       resetEditor();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to save profile.');
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableSave));
     }
   };
 
@@ -106,14 +108,40 @@ export function ProfilesPage({ onUseProfile }: ProfilesPageProps): React.JSX.Ele
 
   const restoreBackup = async (file: File): Promise<void> => {
     try {
+      if (file.size > MAX_BACKUP_FILE_BYTES) throw new UserVisibleError(en.profiles.backupTooLarge);
+      if (profiles.length > 0 && !window.confirm(en.profiles.importReplaceConfirm)) {
+        setError('');
+        setMessage(en.profiles.importCancelled);
+        return;
+      }
       const text = await file.text();
       setProfiles(importProfiles(text));
+      setEditingId(null);
+      setRecentlyDeleted(null);
+      setVisibleCount(PROFILE_PAGE_SIZE);
+      setError('');
+      setMessage(en.profiles.restored);
+    } catch (caught) {
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableImport));
+    }
+  };
+
+  const deleteAllProfiles = (): void => {
+    if (!window.confirm(en.profiles.deleteAllConfirm)) return;
+    try {
+      clearProfiles();
+      setProfiles([]);
+      setEditingId(null);
+      setRecentlyDeleted(null);
+      setQuery('');
+      setSort('recent');
+      setVisibleCount(PROFILE_PAGE_SIZE);
       setError('');
       setLastDeleted(null);
       setMessage('Backup restored successfully.');
       resetEditor();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to import backup.');
+      setError(getUserSafeErrorMessage(caught, en.profiles.unableClear));
     }
   };
 

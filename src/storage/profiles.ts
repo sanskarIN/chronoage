@@ -1,26 +1,58 @@
 import type { SavedProfile } from '../types/models';
 import { validateBirthDateString, validateProfileName } from '../domain/validation';
+import { UserVisibleError } from '../errors';
 import { logger } from '../utils/logger';
+import { createRandomUuid } from '../utils/randomId';
 
 const STORAGE_KEY = 'chronoage.profiles.v1';
 export const MAX_PROFILES = 100;
 const MAX_BACKUP_BYTES = 1_000_000;
 
 interface ProfileEnvelope {
-  schemaVersion: 1;
+  schemaVersion: typeof CURRENT_BACKUP_SCHEMA_VERSION;
   profiles: SavedProfile[];
 }
 
 function isSavedProfileShape(value: unknown): value is SavedProfile {
   if (!value || typeof value !== 'object') return false;
   const profile = value as Record<string, unknown>;
-  return (
-    typeof profile.id === 'string' &&
-    typeof profile.name === 'string' &&
-    typeof profile.birthDate === 'string' &&
-    typeof profile.createdAt === 'string' &&
-    typeof profile.updatedAt === 'string'
-  );
+  if (
+    typeof profile.id !== 'string' ||
+    profile.id.length < 1 ||
+    profile.id.length > MAX_PROFILE_ID_LENGTH ||
+    /[\u0000-\u001F\u007F]/.test(profile.id)
+  ) {
+    throw new Error('Profile has an invalid id.');
+  }
+  if (seenIds.has(profile.id)) throw new Error('Profile ids must be unique.');
+  if (typeof profile.name !== 'string' || typeof profile.birthDate !== 'string') {
+    throw new Error('Profile has invalid fields.');
+  }
+  if (
+    typeof profile.createdAt !== 'string' ||
+    typeof profile.updatedAt !== 'string' ||
+    !isIsoTimestamp(profile.createdAt) ||
+    !isIsoTimestamp(profile.updatedAt)
+  ) {
+    throw new Error('Profile has invalid timestamps.');
+  }
+  if (new Date(profile.updatedAt).getTime() < new Date(profile.createdAt).getTime()) {
+    throw new Error('Profile update timestamp cannot precede creation.');
+  }
+
+  const normalized: SavedProfile = {
+    id: profile.id,
+    name: validateProfileName(profile.name),
+    birthDate: validateBirthDateString(profile.birthDate),
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+  };
+  seenIds.add(normalized.id);
+  return normalized;
+}
+
+function emptyEnvelope(): ProfileEnvelope {
+  return { schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION, profiles: [] };
 }
 
 function isValidTimestamp(value: string): boolean {
@@ -45,12 +77,12 @@ function normalizeProfile(value: unknown, regenerateId = false): SavedProfile | 
 }
 
 function parseEnvelope(raw: string | null): ProfileEnvelope {
-  if (!raw) return { schemaVersion: 1, profiles: [] };
+  if (!raw) return emptyEnvelope();
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') throw new Error('Invalid profile envelope');
     const candidate = parsed as Record<string, unknown>;
-    if (candidate.schemaVersion !== 1 || !Array.isArray(candidate.profiles)) {
+    if (candidate.schemaVersion !== CURRENT_BACKUP_SCHEMA_VERSION || !Array.isArray(candidate.profiles)) {
       throw new Error('Unsupported profile schema');
     }
 
@@ -68,25 +100,48 @@ function parseEnvelope(raw: string | null): ProfileEnvelope {
     logger.warn('Saved profile data was invalid and was ignored.', {
       errorType: error instanceof Error ? error.name : 'unknown',
     });
-    return { schemaVersion: 1, profiles: [] };
+    return emptyEnvelope();
+  }
+}
+
+function readStoredProfiles(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Profile storage could not be read; no saved profiles are being loaded.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    return null;
   }
 }
 
 function persist(profiles: SavedProfile[]): void {
-  const envelope: ProfileEnvelope = { schemaVersion: 1, profiles: profiles.slice(0, MAX_PROFILES) };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+  const envelope: ProfileEnvelope = {
+    schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+    profiles: profiles.slice(0, MAX_PROFILES),
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+  } catch (error) {
+    logger.warn('Profile storage could not be written.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    throw new UserVisibleError(STORAGE_UNAVAILABLE_MESSAGE);
+  }
 }
 
 export function loadProfiles(): SavedProfile[] {
-  return parseEnvelope(localStorage.getItem(STORAGE_KEY)).profiles;
+  return parseEnvelope(readStoredProfiles()).profiles;
 }
 
 export function saveProfile(input: { name: string; birthDate: string }): SavedProfile {
   const profiles = loadProfiles();
-  if (profiles.length >= MAX_PROFILES) throw new Error(`Profile limit of ${MAX_PROFILES} reached.`);
+  if (profiles.length >= MAX_PROFILES) {
+    throw new UserVisibleError(`Profile limit of ${MAX_PROFILES} reached.`);
+  }
   const now = new Date().toISOString();
   const profile: SavedProfile = {
-    id: crypto.randomUUID(),
+    id: createRandomUuid(),
     name: validateProfileName(input.name),
     birthDate: validateBirthDateString(input.birthDate),
     createdAt: now,
@@ -99,19 +154,47 @@ export function saveProfile(input: { name: string; birthDate: string }): SavedPr
 export function updateProfile(id: string, input: { name: string; birthDate: string }): SavedProfile {
   const profiles = loadProfiles();
   const current = profiles.find((profile) => profile.id === id);
-  if (!current) throw new Error('Profile not found.');
+  if (!current) throw new UserVisibleError('Profile not found.');
   const updated: SavedProfile = {
     ...current,
     name: validateProfileName(input.name),
     birthDate: validateBirthDateString(input.birthDate),
-    updatedAt: new Date().toISOString(),
+    updatedAt: nextUpdateTimestamp(current),
   };
   persist(profiles.map((profile) => (profile.id === id ? updated : profile)));
   return updated;
 }
 
 export function deleteProfile(id: string): SavedProfile[] {
-  const next = loadProfiles().filter((profile) => profile.id !== id);
+  const profiles = loadProfiles();
+  if (!profiles.some((profile) => profile.id === id)) {
+    throw new UserVisibleError('Profile not found.');
+  }
+  const next = profiles.filter((profile) => profile.id !== id);
+  persist(next);
+  return next;
+}
+
+export function restoreProfile(profile: SavedProfile, position = 0): SavedProfile[] {
+  const profiles = loadProfiles();
+  if (profiles.length >= MAX_PROFILES) {
+    throw new UserVisibleError(`Profile limit of ${MAX_PROFILES} reached.`);
+  }
+  if (profiles.some((entry) => entry.id === profile.id)) {
+    throw new UserVisibleError('Profile already exists.');
+  }
+
+  let restored: SavedProfile;
+  try {
+    restored = normalizeProfile(profile, new Set<string>());
+  } catch {
+    throw new UserVisibleError('Profile could not be restored.');
+  }
+  const normalizedPosition = Number.isFinite(position)
+    ? Math.min(Math.max(0, Math.trunc(position)), profiles.length)
+    : 0;
+  const next = [...profiles];
+  next.splice(normalizedPosition, 0, restored);
   persist(next);
   return next;
 }
@@ -128,7 +211,14 @@ export function restoreProfile(profile: SavedProfile): SavedProfile[] {
 }
 
 export function clearProfiles(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Profile storage could not be cleared.', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+    });
+    throw new UserVisibleError(STORAGE_UNAVAILABLE_MESSAGE);
+  }
 }
 
 export function exportProfiles(): string {

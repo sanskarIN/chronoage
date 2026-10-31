@@ -9,6 +9,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { Icon } from './components/Icons';
 import { Logo } from './components/Logo';
 import { Onboarding } from './components/Onboarding';
+import { project } from './config/project';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useSettings } from './hooks/useSettings';
 import { en } from './i18n/en';
@@ -27,12 +28,47 @@ const pageOrder: Page[] = [
 ];
 
 export default function App(): React.JSX.Element {
-  const [page, setPage] = useState<Page>('calculate');
+  const [page, setPage] = useState<PageId>(() => pageFromHash(window.location.hash) ?? 'calculate');
+  const [profileBirthDate, setProfileBirthDate] = useState<string | undefined>();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [calculatorBirthDate, setCalculatorBirthDate] = useState(defaultBirthInputValue());
   const [settings, setSettings] = useSettings();
   const online = useOnlineStatus();
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const firstCommandRef = useRef<HTMLButtonElement>(null);
+  const handledMainFocusRequestRef = useRef(0);
+  const blockingModalOpen = !settings.onboardingComplete || searchOpen;
+  const contentBlocked = blockingModalOpen || mobileNavOpen;
+
+  const commitPage = useCallback((next: PageId): void => {
+    const nextHash = hashForPage(next);
+    if (window.location.hash !== nextHash) {
+      window.history.pushState(null, '', nextHash);
+    }
+    setPage(next);
+  }, []);
+
+  const focusMainContent = useCallback((): void => {
+    document.getElementById('main-content')?.focus();
+  }, []);
+
+  const requestMainFocus = useCallback((): void => {
+    setMainFocusRequest((request) => request + 1);
+  }, []);
+
+  const useProfile = useCallback(
+    (profile: SavedProfile): void => {
+      setProfileBirthDate(profile.birthDate);
+      previousFocusRef.current = null;
+      requestMainFocus();
+      commitPage('calculate');
+      setMobileNavOpen(false);
+      setSearchOpen(false);
+      window.scrollTo({ top: 0, behavior: settings.reducedMotion ? 'auto' : 'smooth' });
+    },
+    [commitPage, requestMainFocus, settings.reducedMotion],
+  );
 
   const navigate = (next: Page): void => {
     setPage(next);
@@ -75,18 +111,23 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (!settings.onboardingComplete) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setSearchOpen((current) => !current);
+        if (searchOpen) {
+          closeSearch();
+        } else {
+          openSearch();
+        }
       }
       if (event.key === 'Escape') {
-        setSearchOpen(false);
+        closeSearch();
         setMobileNavOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [closeSearch, openSearch, searchOpen, settings.onboardingComplete]);
 
   return (
     <div className="app-shell">

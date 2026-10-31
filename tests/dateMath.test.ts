@@ -5,11 +5,15 @@ import {
   addYearsClamped,
   ageDifference,
   calculateAge,
+  daysInMonth,
+  formatDateInput,
   intervalDays,
   isLeapYear,
   nextBirthday,
   parseDateInput,
+  weekdayName,
   zonedLocalToUtc,
+  zonedLocalToUtcCandidates,
 } from '../src/domain/dateMath';
 
 describe('date math', () => {
@@ -18,6 +22,17 @@ describe('date math', () => {
     expect(isLeapYear(1900)).toBe(false);
     expect(isLeapYear(2024)).toBe(true);
     expect(isLeapYear(2025)).toBe(false);
+  });
+
+  it('rejects unsupported years in month-length calculations', () => {
+    expect(() => daysInMonth(0, 2)).toThrow('Invalid year or month');
+    expect(() => daysInMonth(10_000, 2)).toThrow('Invalid year or month');
+  });
+
+  it('rejects invalid dates before formatting or weekday normalization', () => {
+    const invalid = { year: 2026, month: 2, day: 30 };
+    expect(() => formatDateInput(invalid)).toThrow('Invalid calendar date');
+    expect(() => weekdayName(invalid)).toThrow('Invalid calendar date');
   });
 
   it('handles four-digit years below 0100 without JavaScript Date remapping', () => {
@@ -78,7 +93,10 @@ describe('date math', () => {
   });
 
   it('converts IANA zoned local time to a UTC instant', () => {
-    const timestamp = zonedLocalToUtc({ year: 2026, month: 8, day: 19, hour: 12, minute: 0 }, 'Asia/Kolkata');
+    const timestamp = zonedLocalToUtc(
+      { year: 2026, month: 8, day: 19, hour: 12, minute: 0 },
+      'Asia/Kolkata',
+    );
     expect(new Date(timestamp).toISOString()).toBe('2026-08-19T06:30:00.000Z');
   });
 
