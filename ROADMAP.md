@@ -61,15 +61,22 @@ ChronoAge `2.0.13` consolidates the completed core PWA, polish, advanced date to
 - [x] Pin permanent CI/release Node runtime to `.nvmrc` and enforce runtime-pin consistency
 - [x] Reject saved-profile histories whose update timestamp precedes creation
 - [x] Enforce native Tauri/Cargo version consistency and Native CI Node runtime pins in metadata checks
+- [x] Require tag releases to pass npm lockfile preflight and use `npm ci`
+- [x] Create deterministic web archives with normalized ordering, timestamps, ownership, and gzip metadata
+- [x] Generate deterministic machine-readable release evidence manifests tied to the tag, full commit SHA, archive digest, and source-date epoch
+- [x] Re-verify the downloaded archive checksum in the publish job before GitHub Release creation
+- [x] Enforce release evidence generation/publication and publish-time integrity checks with static policy plus regression tests
+- [x] Add a fail-closed workflow dependency-install policy for the lockfile transition
+- [x] Add a fail-closed Cargo lock transition policy and a pre-lockfile-safe locked metadata check
 - [ ] Generate and review a real `package-lock.json` from a successful clean npm resolution
-- [ ] Switch CI/release installation from `npm install` to `npm ci` after the lockfile is committed
+- [ ] Switch permanent push/PR and Native CI frontend installation from `npm install` to `npm ci` after the lockfile is committed
 - [ ] Generate and review `src-tauri/Cargo.lock` from a successful clean native dependency resolution
 - [ ] Execute the complete clean-checkout install/check/E2E/native release gate in a network-enabled environment and record the passing run
 - [ ] Enable and verify the documented `main` branch protection/ruleset in GitHub repository settings
 
 The dependency-lock items above depend on real registry resolution. Lock metadata must not be hand-authored or inferred. A dedicated network-enabled verification branch/PR may be used to generate the lockfiles, but these items remain unchecked until the resulting dependency graphs and quality runs are actually verified.
 
-`main` branch protection is a separate GitHub repository-setting task. The GitHub API reported the branch as unprotected on 2026-08-19; see [docs/github.md](docs/github.md) for the intended ruleset. Do not mark that item complete until GitHub reports an effective protection/ruleset configuration.
+`main` branch protection is a separate GitHub repository-setting task. The GitHub API still reports the branch as unprotected; see [docs/github.md](docs/github.md) for the intended ruleset. Do not mark that item complete until GitHub reports an effective protection/ruleset configuration.
 
 ## Cross-platform native delivery
 

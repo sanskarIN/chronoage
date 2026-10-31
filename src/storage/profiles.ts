@@ -5,32 +5,16 @@ import { logger } from '../utils/logger';
 import { createRandomUuid } from '../utils/randomId';
 
 const STORAGE_KEY = 'chronoage.profiles.v1';
-const MAX_PROFILES = 100;
-const MAX_PROFILE_ID_LENGTH = 128;
-const STORAGE_UNAVAILABLE_MESSAGE = 'Browser storage is unavailable. Changes could not be saved.';
-export const MAX_BACKUP_FILE_BYTES = 1_000_000;
+export const MAX_PROFILES = 100;
+const MAX_BACKUP_BYTES = 1_000_000;
 
 interface ProfileEnvelope {
-  schemaVersion: 1;
+  schemaVersion: typeof CURRENT_BACKUP_SCHEMA_VERSION;
   profiles: SavedProfile[];
 }
 
-function isIsoTimestamp(value: string): boolean {
-  try {
-    return new Date(value).toISOString() === value;
-  } catch {
-    return false;
-  }
-}
-
-function nextUpdateTimestamp(profile: SavedProfile): string {
-  const previous = new Date(profile.updatedAt).getTime();
-  const created = new Date(profile.createdAt).getTime();
-  return new Date(Math.max(Date.now(), previous, created)).toISOString();
-}
-
-function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
-  if (!value || typeof value !== 'object') throw new Error('Profile must be an object.');
+function isSavedProfileShape(value: unknown): value is SavedProfile {
+  if (!value || typeof value !== 'object') return false;
   const profile = value as Record<string, unknown>;
   if (
     typeof profile.id !== 'string' ||
@@ -67,35 +51,56 @@ function normalizeProfile(value: unknown, seenIds: Set<string>): SavedProfile {
   return normalized;
 }
 
+function emptyEnvelope(): ProfileEnvelope {
+  return { schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION, profiles: [] };
+}
+
+function isValidTimestamp(value: string): boolean {
+  return Number.isFinite(Date.parse(value));
+}
+
+function normalizeProfile(value: unknown, regenerateId = false): SavedProfile | null {
+  if (!isSavedProfileShape(value)) return null;
+  try {
+    const createdAt = isValidTimestamp(value.createdAt) ? value.createdAt : new Date().toISOString();
+    const updatedAt = isValidTimestamp(value.updatedAt) ? value.updatedAt : createdAt;
+    return {
+      id: regenerateId || value.id.trim().length === 0 ? crypto.randomUUID() : value.id,
+      name: validateProfileName(value.name),
+      birthDate: validateBirthDateString(value.birthDate),
+      createdAt,
+      updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function parseEnvelope(raw: string | null): ProfileEnvelope {
-  if (!raw) return { schemaVersion: 1, profiles: [] };
+  if (!raw) return emptyEnvelope();
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') throw new Error('Invalid profile envelope');
     const candidate = parsed as Record<string, unknown>;
-    if (candidate.schemaVersion !== 1 || !Array.isArray(candidate.profiles)) {
+    if (candidate.schemaVersion !== CURRENT_BACKUP_SCHEMA_VERSION || !Array.isArray(candidate.profiles)) {
       throw new Error('Unsupported profile schema');
     }
 
-    const seenIds = new Set<string>();
     const profiles: SavedProfile[] = [];
-    let ignoredCount = 0;
-    for (const entry of candidate.profiles.slice(0, MAX_PROFILES)) {
-      try {
-        profiles.push(normalizeProfile(entry, seenIds));
-      } catch {
-        ignoredCount += 1;
-      }
-    }
-    if (ignoredCount > 0) {
-      logger.warn('Invalid saved profile entries were ignored.', { ignoredCount });
+    const ids = new Set<string>();
+    for (const entry of candidate.profiles) {
+      const normalized = normalizeProfile(entry);
+      if (!normalized || ids.has(normalized.id)) continue;
+      ids.add(normalized.id);
+      profiles.push(normalized);
+      if (profiles.length === MAX_PROFILES) break;
     }
     return { schemaVersion: 1, profiles };
   } catch (error) {
     logger.warn('Saved profile data was invalid and was ignored.', {
       errorType: error instanceof Error ? error.name : 'unknown',
     });
-    return { schemaVersion: 1, profiles: [] };
+    return emptyEnvelope();
   }
 }
 
@@ -111,7 +116,10 @@ function readStoredProfiles(): string | null {
 }
 
 function persist(profiles: SavedProfile[]): void {
-  const envelope: ProfileEnvelope = { schemaVersion: 1, profiles: profiles.slice(0, MAX_PROFILES) };
+  const envelope: ProfileEnvelope = {
+    schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
+    profiles: profiles.slice(0, MAX_PROFILES),
+  };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
   } catch (error) {
@@ -191,6 +199,17 @@ export function restoreProfile(profile: SavedProfile, position = 0): SavedProfil
   return next;
 }
 
+export function restoreProfile(profile: SavedProfile): SavedProfile[] {
+  const profiles = loadProfiles();
+  if (profiles.some((item) => item.id === profile.id)) return profiles;
+  if (profiles.length >= MAX_PROFILES) throw new Error(`Profile limit of ${MAX_PROFILES} reached.`);
+  const normalized = normalizeProfile(profile);
+  if (!normalized) throw new Error('Profile can no longer be restored.');
+  const next = [normalized, ...profiles];
+  persist(next);
+  return next;
+}
+
 export function clearProfiles(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -211,33 +230,33 @@ export function exportProfiles(): string {
 }
 
 export function importProfiles(raw: string): SavedProfile[] {
-  if (new TextEncoder().encode(raw).byteLength > MAX_BACKUP_FILE_BYTES) {
-    throw new UserVisibleError('Backup file is too large.');
-  }
-
+  if (new Blob([raw]).size > MAX_BACKUP_BYTES) throw new Error('Backup file is too large.');
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch {
-    throw new UserVisibleError('Invalid backup file.');
+    throw new Error('Backup is not valid JSON.');
   }
-  if (!parsed || typeof parsed !== 'object') throw new UserVisibleError('Invalid backup file.');
+  if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup file.');
   const value = parsed as Record<string, unknown>;
   if (value.schemaVersion !== 1 || !Array.isArray(value.profiles)) {
-    throw new UserVisibleError('Unsupported backup format.');
+    throw new Error('Unsupported backup format.');
   }
   if (value.profiles.length > MAX_PROFILES) {
-    throw new UserVisibleError(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
+    throw new Error(`Backup exceeds the ${MAX_PROFILES} profile limit.`);
   }
 
-  const seenIds = new Set<string>();
-  const imported = value.profiles.map((entry) => {
-    try {
-      return normalizeProfile(entry, seenIds);
-    } catch {
-      throw new UserVisibleError('Backup contains an invalid profile.');
+  const imported: SavedProfile[] = [];
+  const ids = new Set<string>();
+  for (const entry of value.profiles) {
+    let normalized = normalizeProfile(entry);
+    if (!normalized) throw new Error('Backup contains an invalid profile.');
+    if (ids.has(normalized.id)) {
+      normalized = { ...normalized, id: crypto.randomUUID() };
     }
-  });
+    ids.add(normalized.id);
+    imported.push(normalized);
+  }
   persist(imported);
   return imported;
 }

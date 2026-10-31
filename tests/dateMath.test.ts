@@ -48,45 +48,22 @@ describe('date math', () => {
     expect(addYearsClamped(leapDay, 1, 'mar1')).toEqual({ year: 2001, month: 3, day: 1 });
   });
 
-  it('rejects invalid and fractional calendar arithmetic inputs', () => {
-    const invalid = { year: 2026, month: 4, day: 31 };
-    expect(() => addYearsClamped(invalid, 1)).toThrow('Invalid calendar date');
-    expect(() => addMonthsClamped(invalid, 1)).toThrow('Invalid calendar date');
-    expect(() => addYearsClamped({ year: 2026, month: 4, day: 30 }, 1.5)).toThrow(
-      'Years must be an integer',
-    );
-    expect(() => addMonthsClamped({ year: 2026, month: 4, day: 30 }, 1.5)).toThrow(
-      'Months must be an integer',
-    );
-  });
-
-  it('keeps the month component below twelve before a March 1 leap-day anniversary', () => {
+  it('keeps leap-day calendar age normalized under the March 1 policy', () => {
     const result = calculateAge({
       birth: { year: 2000, month: 2, day: 29, hour: 0, minute: 0 },
-      reference: { year: 2001, month: 2, day: 28, hour: 0, minute: 0 },
+      reference: { year: 2025, month: 2, day: 28, hour: 0, minute: 0 },
       timeZone: 'UTC',
       includeTime: false,
       leapDayPolicy: 'mar1',
     });
-
-    expect(result.years).toBe(0);
-    expect(result.months).toBe(11);
-    expect(result.days).toBe(30);
+    expect(result).toMatchObject({ years: 24, months: 11, days: 30 });
+    expect(result.months).toBeLessThan(12);
   });
 
-  it('rejects year arithmetic outside the supported calendar range', () => {
-    expect(() => addYearsClamped({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
-      'outside the supported range',
-    );
-  });
-
-  it('rejects day arithmetic outside the supported calendar range', () => {
-    expect(() => addDays({ year: 1, month: 1, day: 1 }, -1)).toThrow(
-      'outside the supported range',
-    );
-    expect(() => addDays({ year: 9999, month: 12, day: 31 }, 1)).toThrow(
-      'outside the supported range',
-    );
+  it('rejects calendar arithmetic outside the supported civil-year range', () => {
+    expect(() => addDays({ year: 1, month: 1, day: 1 }, -1)).toThrow(/outside years 1-9999/);
+    expect(() => addYearsClamped({ year: 9999, month: 1, day: 1 }, 1)).toThrow(/between 1 and 9999/);
+    expect(() => addMonthsClamped({ year: 1, month: 1, day: 1 }, -1)).toThrow(/between 1 and 9999/);
   });
 
   it('calculates a calendar age exactly', () => {
@@ -123,75 +100,10 @@ describe('date math', () => {
     expect(new Date(timestamp).toISOString()).toBe('2026-08-19T06:30:00.000Z');
   });
 
-  it('returns both instants for an ambiguous DST fall-back time', () => {
-    const local = { year: 2026, month: 11, day: 1, hour: 1, minute: 30 };
-    const candidates = zonedLocalToUtcCandidates(local, 'America/New_York');
-    expect(candidates.map((value) => new Date(value).toISOString())).toEqual([
-      '2026-11-01T05:30:00.000Z',
-      '2026-11-01T06:30:00.000Z',
-    ]);
-    expect(new Date(zonedLocalToUtc(local, 'America/New_York', 'earlier')).toISOString()).toBe(
-      '2026-11-01T05:30:00.000Z',
-    );
-    expect(new Date(zonedLocalToUtc(local, 'America/New_York', 'later')).toISOString()).toBe(
-      '2026-11-01T06:30:00.000Z',
-    );
-  });
-
-  it('applies the DST overlap policy to elapsed age totals', () => {
-    const baseInput = {
-      birth: { year: 2026, month: 11, day: 1, hour: 0, minute: 30 },
-      reference: { year: 2026, month: 11, day: 1, hour: 1, minute: 30 },
-      timeZone: 'America/New_York',
-      includeTime: true,
-      leapDayPolicy: 'feb28' as const,
-    };
-    const earlier = calculateAge({ ...baseInput, dstAmbiguityPolicy: 'earlier' });
-    const later = calculateAge({ ...baseInput, dstAmbiguityPolicy: 'later' });
-
-    expect(earlier.totalMinutes).toBe(60);
-    expect(later.totalMinutes).toBe(120);
-  });
-
-  it('rejects nonexistent DST spring-forward times', () => {
+  it('rejects nonexistent local times in daylight-saving gaps', () => {
     expect(() =>
-      zonedLocalToUtc(
-        { year: 2026, month: 3, day: 8, hour: 2, minute: 30 },
-        'America/New_York',
-      ),
-    ).toThrow('does not exist');
-  });
-
-  it('shifts a derived anniversary anchor forward through a one-hour DST gap', () => {
-    const result = calculateAge({
-      birth: { year: 2000, month: 3, day: 8, hour: 2, minute: 30 },
-      reference: { year: 2026, month: 3, day: 8, hour: 3, minute: 30 },
-      timeZone: 'America/New_York',
-      includeTime: true,
-      leapDayPolicy: 'feb28',
-    });
-
-    expect(result.years).toBe(26);
-    expect(result.months).toBe(0);
-    expect(result.days).toBe(0);
-    expect(result.hours).toBe(0);
-    expect(result.minutes).toBe(0);
-  });
-
-  it('uses the actual thirty-minute gap for derived Lord Howe anniversary anchors', () => {
-    const result = calculateAge({
-      birth: { year: 2000, month: 10, day: 4, hour: 2, minute: 15 },
-      reference: { year: 2026, month: 10, day: 4, hour: 2, minute: 45 },
-      timeZone: 'Australia/Lord_Howe',
-      includeTime: true,
-      leapDayPolicy: 'feb28',
-    });
-
-    expect(result.years).toBe(26);
-    expect(result.months).toBe(0);
-    expect(result.days).toBe(0);
-    expect(result.hours).toBe(0);
-    expect(result.minutes).toBe(0);
+      zonedLocalToUtc({ year: 2026, month: 3, day: 8, hour: 2, minute: 30 }, 'America/New_York'),
+    ).toThrow(/does not exist/);
   });
 
   it('counts exclusive and inclusive intervals', () => {

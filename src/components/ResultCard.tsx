@@ -5,11 +5,10 @@ import { Icon } from './Icons';
 
 interface ResultCardProps {
   result: AgeBreakdown;
-  birthday?: BirthdayCountdown;
-  showTime?: boolean;
+  birthday?: BirthdayCountdown | undefined;
   onPrint: () => void;
   onShare: () => void;
-  status?: string;
+  status?: string | undefined;
 }
 
 export function ResultCard({

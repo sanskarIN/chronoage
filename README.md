@@ -52,6 +52,7 @@ ChronoAge goes beyond a basic age calculator. It combines calendar-accurate age 
 - Browser-level accessibility regression checks and release-candidate screenshot capture.
 - Local crash-recovery UI with privacy-safe structured diagnostics.
 - Automated production JavaScript/CSS gzip budget enforcement.
+- Deterministic web-release archives, SHA-256 checksums, and machine-readable release evidence manifests.
 - Internationalization-ready string organization (English ships first).
 
 ## Supported platforms
@@ -173,6 +174,8 @@ npm run check
 npm run build
 npm run release:check -- v2.0.13
 ```
+
+The tag workflow additionally requires a reviewed `package-lock.json`, installs with `npm ci`, creates a deterministic web archive and SHA-256 checksum, emits a machine-readable release evidence manifest, and re-verifies the downloaded checksum before GitHub Release creation. See [docs/reproducible-builds.md](docs/reproducible-builds.md).
 
 Native release candidates are built on the target platform:
 

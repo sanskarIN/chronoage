@@ -11,11 +11,17 @@ import type {
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
-const NONEXISTENT_LOCAL_TIME_MESSAGE = 'That local time does not exist in the selected timezone.';
-const OFFSET_SAMPLE_HOURS = [-48, -36, -24, -18, -12, -6, 0, 6, 12, 18, 24, 36, 48];
+const MIN_YEAR = 1;
+const MAX_YEAR = 9999;
 
 export class DateCalculationError extends Error {
   override name = 'DateCalculationError';
+}
+
+function assertSupportedYear(year: number): void {
+  if (!Number.isInteger(year) || year < MIN_YEAR || year > MAX_YEAR) {
+    throw new DateCalculationError(`Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`);
+  }
 }
 
 export function isLeapYear(year: number): boolean {
@@ -23,15 +29,9 @@ export function isLeapYear(year: number): boolean {
 }
 
 export function daysInMonth(year: number, month: number): number {
-  if (
-    !Number.isInteger(year) ||
-    year < 1 ||
-    year > 9999 ||
-    !Number.isInteger(month) ||
-    month < 1 ||
-    month > 12
-  ) {
-    throw new DateCalculationError('Invalid year or month.');
+  assertSupportedYear(year);
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    throw new DateCalculationError('Invalid month.');
   }
   const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const value = lengths[month - 1];
@@ -40,17 +40,19 @@ export function daysInMonth(year: number, month: number): number {
 }
 
 export function isValidLocalDate(value: LocalDate): boolean {
-  return (
-    Number.isInteger(value.year) &&
-    value.year >= 1 &&
-    value.year <= 9999 &&
-    Number.isInteger(value.month) &&
-    value.month >= 1 &&
-    value.month <= 12 &&
-    Number.isInteger(value.day) &&
-    value.day >= 1 &&
-    value.day <= daysInMonth(value.year, value.month)
-  );
+  if (
+    !Number.isInteger(value.year) ||
+    value.year < MIN_YEAR ||
+    value.year > MAX_YEAR ||
+    !Number.isInteger(value.month) ||
+    value.month < 1 ||
+    value.month > 12 ||
+    !Number.isInteger(value.day) ||
+    value.day < 1
+  ) {
+    return false;
+  }
+  return value.day <= daysInMonth(value.year, value.month);
 }
 
 export function isValidLocalDateTime(value: LocalDateTime): boolean {
@@ -121,13 +123,13 @@ export function toEpochDay(date: LocalDate): number {
 export function fromEpochDay(epochDay: number): LocalDate {
   if (!Number.isInteger(epochDay)) throw new DateCalculationError('Epoch day must be an integer.');
   const date = new Date(epochDay * MS_PER_DAY);
-  const result = {
+  const result: LocalDate = {
     year: date.getUTCFullYear(),
     month: date.getUTCMonth() + 1,
     day: date.getUTCDate(),
   };
   if (!isValidLocalDate(result)) {
-    throw new DateCalculationError('Resulting date is outside the supported range.');
+    throw new DateCalculationError(`Calculated date is outside years ${MIN_YEAR}-${MAX_YEAR}.`);
   }
   return result;
 }
@@ -145,9 +147,7 @@ export function addYearsClamped(
   if (!isValidLocalDate(date)) throw new DateCalculationError('Invalid calendar date.');
   if (!Number.isInteger(years)) throw new DateCalculationError('Years must be an integer.');
   const targetYear = date.year + years;
-  if (targetYear < 1 || targetYear > 9999) {
-    throw new DateCalculationError('Resulting year is outside the supported range.');
-  }
+  assertSupportedYear(targetYear);
   if (date.month === 2 && date.day === 29 && !isLeapYear(targetYear)) {
     return leapDayPolicy === 'mar1'
       ? { year: targetYear, month: 3, day: 1 }
@@ -165,6 +165,7 @@ export function addMonthsClamped(date: LocalDate, months: number): LocalDate {
   if (!Number.isInteger(months)) throw new DateCalculationError('Months must be an integer.');
   const zeroBased = date.year * 12 + (date.month - 1) + months;
   const year = Math.floor(zeroBased / 12);
+  assertSupportedYear(year);
   const month = ((zeroBased % 12) + 12) % 12 + 1;
   if (year < 1 || year > 9999) {
     throw new DateCalculationError('Resulting year is outside the supported range.');
@@ -234,9 +235,10 @@ export function isValidTimeZone(timeZone: string): boolean {
 }
 
 /**
- * Returns every UTC instant represented by a civil date/time in an IANA timezone.
- * Normal times produce one candidate, fall-back overlaps produce two, and spring-forward
- * gaps throw because the requested civil time does not exist.
+ * Converts a civil date/time in an IANA timezone into a UTC timestamp without a timezone library.
+ * The correction loop is deterministic for normal civil times. During a DST gap the browser's
+ * timezone data may map the nonexistent time forward; ChronoAge rejects that mapping by checking
+ * the round-trip civil fields. Ambiguous fall-back times resolve to a matching occurrence.
  */
 export function zonedLocalToUtcCandidates(value: LocalDateTime, timeZone: string): number[] {
   if (!isValidLocalDateTime(value)) throw new DateCalculationError('Invalid date or time.');
@@ -444,7 +446,8 @@ export function ageDifference(
   second: LocalDate,
   leapDayPolicy: LeapDayPolicy = 'feb28',
 ): AgeBreakdown {
-  const [start, end] = compareLocalDate(first, second) <= 0 ? [first, second] : [second, first];
+  const [start, end]: [LocalDate, LocalDate] =
+    compareLocalDate(first, second) <= 0 ? [first, second] : [second, first];
   return calculateAge({
     birth: { ...start, hour: 0, minute: 0 },
     reference: { ...end, hour: 0, minute: 0 },

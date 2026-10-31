@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
-import {
-  calculateAge,
-  DateCalculationError,
-  isValidTimeZone,
-  nextBirthday,
-  parseDateInput,
-  parseTimeInput,
-} from '../domain/dateMath';
-import { getUserSafeErrorMessage } from '../errors';
-import type { AppSettings } from '../types/models';
-import { currentTimeInputValue, defaultBirthInputValue, todayInputValue } from '../utils/dateDefaults';
+import { calculateAge, nextBirthday, parseDateInput, parseTimeInput } from '../domain/dateMath';
+import type { AppSettings, BirthdayCountdown } from '../types/models';
+import { currentTimeInputValue, todayInputValue } from '../utils/dateDefaults';
 import { printResult, shareText } from '../utils/share';
 import { Field } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
@@ -18,18 +10,17 @@ import { TimeZoneField } from '../components/TimeZoneField';
 import { en } from '../i18n/en';
 import { sharedText } from '../i18n/shared';
 
-function isBirthdayRangeOverflow(error: unknown): boolean {
-  return error instanceof DateCalculationError && error.message.includes('outside the supported range');
+interface CalculatorPageProps {
+  settings: AppSettings;
+  birthDate: string;
+  onBirthDateChange: (value: string) => void;
 }
 
 export function CalculatorPage({
   settings,
-  initialBirthDate,
-}: {
-  settings: AppSettings;
-  initialBirthDate?: string;
-}): React.JSX.Element {
-  const [birthDate, setBirthDate] = useState(initialBirthDate ?? defaultBirthInputValue());
+  birthDate,
+  onBirthDateChange,
+}: CalculatorPageProps): React.JSX.Element {
   const [birthTime, setBirthTime] = useState('00:00');
   const [referenceDate, setReferenceDate] = useState(todayInputValue());
   const [referenceTime, setReferenceTime] = useState(currentTimeInputValue());
@@ -53,18 +44,14 @@ export function CalculatorPage({
         dstAmbiguityPolicy: settings.dstAmbiguityPolicy,
       });
 
-      let birthday;
+      let birthday: BirthdayCountdown | undefined;
       try {
         birthday = nextBirthday(birth, reference, settings.leapDayPolicy);
-      } catch (error) {
-        if (!isBirthdayRangeOverflow(error)) throw error;
+      } catch {
+        birthday = undefined;
       }
 
-      return {
-        result,
-        birthday,
-        error: '',
-      };
+      return { result, birthday, error: '' };
     } catch (error) {
       return {
         result: null,
@@ -115,30 +102,32 @@ export function CalculatorPage({
           </div>
           <div className="form-grid two-columns">
             <Field
-              label={en.calculator.birthDate}
+              label="Birth date"
               type="date"
               value={birthDate}
-              onChange={(event) => setBirthDate(event.target.value)}
+              onChange={(event) => onBirthDateChange(event.target.value)}
+              min="0001-01-01"
               max="9999-12-31"
             />
             {includeTime && (
               <Field
-                label={en.calculator.birthTime}
+                label="Birth time"
                 type="time"
                 value={birthTime}
                 onChange={(event) => setBirthTime(event.target.value)}
               />
             )}
             <Field
-              label={en.calculator.referenceDate}
+              label="Reference date"
               type="date"
               value={referenceDate}
               onChange={(event) => setReferenceDate(event.target.value)}
+              min="0001-01-01"
               max="9999-12-31"
             />
             {includeTime && (
               <Field
-                label={en.calculator.referenceTime}
+                label="Reference time"
                 type="time"
                 value={referenceTime}
                 onChange={(event) => setReferenceTime(event.target.value)}
@@ -157,13 +146,28 @@ export function CalculatorPage({
             />
           </label>
           {includeTime && (
-            <TimeZoneField
-              label={en.calculator.timezone}
+            <SelectField
+              label="Timezone"
               value={timeZone}
               onChange={(event) => setTimeZone(event.target.value)}
-              hint={en.calculator.timezoneHint(settings.dstAmbiguityPolicy)}
-              error={timeZoneError}
-            />
+              hint="Uses your browser's IANA timezone database."
+            >
+              {Array.from(
+                new Set([
+                  settings.defaultTimeZone,
+                  'UTC',
+                  'Asia/Kolkata',
+                  'America/New_York',
+                  'Europe/London',
+                  'Asia/Tokyo',
+                  'Australia/Sydney',
+                ]),
+              ).map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
+              ))}
+            </SelectField>
           )}
           {calculation.error && (
             <div className="alert error" role="alert">
@@ -190,12 +194,10 @@ export function CalculatorPage({
         )}
       </div>
       <div className="info-strip">
-        <strong>{en.calculator.calendarRules}</strong>
+        <strong>Leap-day birthdays:</strong>
         <span>
-          {en.calculator.calendarRulesDescription(
-            settings.leapDayPolicy === 'mar1' ? en.settings.march1 : en.settings.february28,
-            settings.dstAmbiguityPolicy,
-          )}
+          Non-leap anniversaries currently use{' '}
+          {settings.leapDayPolicy === 'mar1' ? 'March 1' : 'February 28'}, configurable in Settings.
         </span>
       </div>
     </div>
