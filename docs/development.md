@@ -25,9 +25,11 @@ npm run build
 npm run performance:check
 npm run test:e2e
 npm run check
+npm run ci:reproducibility:check
 npm run release:npm-lock:check
 npm run release:cargo-lock:check
 npm run release:locks:check
+npm run native:lock:check
 npm run native:format:check
 npm run native:lint
 npm run native:check
@@ -37,7 +39,9 @@ npm run native:check
 
 The release lockfile commands validate committed npm/Cargo lockfile identity and consistency. They intentionally fail while a required lockfile is absent rather than inventing dependency state. For generation, review, `npm ci`, locked Cargo, deterministic archive, and evidence requirements, read [Reproducible Builds and Lockfiles](reproducible-builds.md).
 
-`npm run native:format:check` verifies Rust formatting with `rustfmt`. `npm run native:lint` runs Clippy across all native targets/features and treats warnings as failures. `npm run native:check` regenerates native icons, checks Rust formatting, performs `cargo check`, and runs Clippy.
+`npm run ci:reproducibility:check` protects permanent CI, Native CI, and release workflows from drifting back to `npm install`, and requires the native matrix to verify locked Cargo metadata. This policy is staged for the 2.0.13 release candidate; until genuine registry-generated npm and Cargo lockfiles are present, the lockfile-dependent CI jobs are expected to fail rather than silently resolve a new dependency graph.
+
+`npm run native:lock:check` asks Cargo to read the native dependency graph with `--locked`. `npm run native:format:check` verifies Rust formatting with `rustfmt`. `npm run native:lint` runs Clippy across all native targets/features with `--locked` and treats warnings as failures. `npm run native:check` validates the Cargo lockfile, verifies locked metadata, regenerates native icons, checks Rust formatting, performs locked `cargo check`, and runs locked Clippy.
 
 For the complete native quality, dependency-pin, CI, and lockfile policy, read [Native Quality and Reproducibility](native-quality.md).
 

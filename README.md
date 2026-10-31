@@ -173,7 +173,6 @@ npm install
 npm run check
 npm run build
 npm run release:check -- v2.0.13
-npm run release:workflow:check
 ```
 
 The tag workflow additionally requires a reviewed `package-lock.json`, installs with `npm ci`, creates a deterministic web archive and SHA-256 checksum, emits a machine-readable release evidence manifest, and re-verifies the downloaded checksum before GitHub Release creation. See [docs/reproducible-builds.md](docs/reproducible-builds.md).
